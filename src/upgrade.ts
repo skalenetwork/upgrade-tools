@@ -1,5 +1,5 @@
 import { deployLibraries, getLinkedContractFactory, getManifestFile } from "./deploy";
-import { SkaleManifestData } from "./types";
+import { SkaleABIFile, SkaleManifestData } from "./types";
 import { promises as fs } from "fs";
 import { artifacts, ethers } from "hardhat";
 import { hashBytecode } from "@openzeppelin/upgrades-core";
