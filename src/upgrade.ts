@@ -2,7 +2,11 @@ import { deployLibraries, getLinkedContractFactory, getManifestFile } from "./de
 import { SkaleABIFile, SkaleManifestData } from "./types";
 import { promises as fs } from "fs";
 import { artifacts, ethers } from "hardhat";
+import hre from "hardhat";
 import { hashBytecode } from "@openzeppelin/upgrades-core";
+import { Contract } from "ethers";
+import chalk from "chalk";
+import { getManifestAdmin } from "@openzeppelin/hardhat-upgrades/dist/admin";
 
 export async function getContractFactoryAndUpdateManifest(contract: string) {
     const manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
@@ -39,13 +43,15 @@ export async function getContractFactoryAndUpdateManifest(contract: string) {
     return await getLinkedContractFactory(contract, libraries);
 }
 
-type DeploymentAction = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManager) => Promise<void>;
+type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManagerType) => Promise<void>;
 
-export async function upgrade(
+export async function upgrade<ContractManagerType extends Contract>(
     targetVersion: string,
     contractNamesToUpgrade: string[],
-    deployNewContracts: DeploymentAction,
-    initialize: DeploymentAction)
+    deployNewContracts: DeploymentAction<ContractManagerType>,
+    initialize: DeploymentAction<ContractManagerType>,
+    getDeployedVersion: () => Promise<string | undefined>,
+    setVersion: () => Promise<void>)
 {
     if (!process.env.ABI) {
         console.log(chalk.red("Set path to file with ABI and addresses to ABI environment variables"));
@@ -58,18 +64,9 @@ export async function upgrade(
     const proxyAdmin = await getManifestAdmin(hre) as ProxyAdmin;
     const contractManagerName = "ContractManager";
     const contractManagerFactory = await ethers.getContractFactory(contractManagerName);
-    const contractManager = (contractManagerFactory.attach(abi[getContractKeyInAbiFile(contractManagerName) + "_address"] as string)) as ContractManager;
-    const skaleManagerName = "SkaleManager";
-    const skaleManager = ((await ethers.getContractFactory(skaleManagerName)).attach(
-        abi[getContractKeyInAbiFile(skaleManagerName) + "_address"] as string
-    )) as SkaleManager;
+    const contractManager = (contractManagerFactory.attach(abi[getContractKeyInAbiFile(contractManagerName) + "_address"] as string)) as ContractManagerType;
 
-    let deployedVersion = "";
-    try {
-        deployedVersion = await skaleManager.version();
-    } catch {
-        console.log("Can't read deployed version");
-    }
+    const deployedVersion = await getDeployedVersion();
     const version = await getVersion();
     if (deployedVersion) {
         if (deployedVersion !== targetVersion) {
