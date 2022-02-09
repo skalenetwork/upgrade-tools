@@ -1,0 +1,25 @@
+import { HardhatUserConfig } from "hardhat/config";
+import '@typechain/hardhat'
+import "@nomiclabs/hardhat-ethers";
+import "@openzeppelin/hardhat-upgrades";
+
+const config: HardhatUserConfig = {
+    solidity: {
+        compilers: [
+            {
+                version: '0.8.11',
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200
+                    }
+                }
+            }
+        ]
+    },
+    typechain: {
+        externalArtifacts: ['node_modules/@openzeppelin/upgrades-core/artifacts/*.json']
+    }
+};
+
+export default config;

@@ -5,6 +5,7 @@
       "outDir": "./dist",
       "declaration": true,
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["./src", "./typechain-types"],
+  "exclude": ["node_modules", "dist"],
+  "files": ["./hardhat.config.ts"]
 }

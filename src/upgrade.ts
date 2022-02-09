@@ -1,12 +1,18 @@
-import { deployLibraries, getLinkedContractFactory, getManifestFile } from "./deploy";
+import { deployLibraries, getContractKeyInAbiFile, getLinkedContractFactory, getManifestFile } from "./deploy";
 import { SkaleABIFile, SkaleManifestData } from "./types";
 import { promises as fs } from "fs";
-import { artifacts, ethers } from "hardhat";
+import { artifacts, ethers, network, upgrades } from "hardhat";
 import hre from "hardhat";
-import { hashBytecode } from "@openzeppelin/upgrades-core";
+import { getImplementationAddress, hashBytecode } from "@openzeppelin/upgrades-core";
 import { Contract } from "ethers";
 import chalk from "chalk";
 import { getManifestAdmin } from "@openzeppelin/hardhat-upgrades/dist/admin";
+import { AccessControlUpgradeable, ProxyAdmin, SafeMock } from "../typechain-types";
+import { getVersion } from "./version";
+import { getAbi } from "./abi";
+import { verify } from "./verification";
+import { encodeTransaction } from "./multiSend";
+import { createMultiSendTransaction, sendSafeTransaction } from "./gnosis-safe";
 
 export async function getContractFactoryAndUpdateManifest(contract: string) {
     const manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
@@ -46,12 +52,14 @@ export async function getContractFactoryAndUpdateManifest(contract: string) {
 type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManagerType) => Promise<void>;
 
 export async function upgrade<ContractManagerType extends Contract>(
+    projectName: string,
     targetVersion: string,
     contractNamesToUpgrade: string[],
     deployNewContracts: DeploymentAction<ContractManagerType>,
     initialize: DeploymentAction<ContractManagerType>,
     getDeployedVersion: () => Promise<string | undefined>,
-    setVersion: () => Promise<void>)
+    setVersion: (version: string) => Promise<void>,
+    safeMockAccessRequirements: string[])
 {
     if (!process.env.ABI) {
         console.log(chalk.red("Set path to file with ABI and addresses to ABI environment variables"));
@@ -74,7 +82,7 @@ export async function upgrade<ContractManagerType extends Contract>(
             process.exit(1);
         }
     } else {
-        console.log(chalk.yellow("Can't check currently deployed version of skale-manager"));
+        console.log(chalk.yellow(`Can't check currently deployed version of ${projectName}`));
     }
     console.log(`Will mark updated version as ${version}`);
 
@@ -85,7 +93,7 @@ export async function upgrade<ContractManagerType extends Contract>(
     if (await ethers.provider.getCode(safe) === "0x") {
         console.log("Owner is not a contract");
         if (deployer.address !== safe) {
-            console.log(chalk.red("Used address does not have permissions to upgrade skale-manager"));
+            console.log(chalk.red(`Used address does not have permissions to upgrade ${projectName}`));
             process.exit(1);
         }
         console.log(chalk.blue("Deploy SafeMock to simulate upgrade via multisig"));
@@ -97,17 +105,10 @@ export async function upgrade<ContractManagerType extends Contract>(
         safe = safeMock.address;
         await (await proxyAdmin.transferOwnership(safe)).wait();
         await (await contractManager.transferOwnership(safe)).wait();
-        for (const contractName of
-            ["SkaleToken"].concat(contractNamesToUpgrade
-                .filter(name => !['ContractManager', 'TimeHelpers', 'Decryption', 'ECDH', 'SyncManager'].includes(name)))) {
+        for (const contractName of safeMockAccessRequirements) {
                     const contractFactory = await getContractFactoryAndUpdateManifest(contractName);
-                    let _contract = contractName;
-                    if (contractName === "BountyV2") {
-                        if (!abi[getContractKeyInAbiFile(contractName) + "_address"])
-                        _contract = "Bounty";
-                    }
-                    const contractAddress = abi[getContractKeyInAbiFile(_contract) + "_address"] as string;
-                    const contract = contractFactory.attach(contractAddress) as Permissions;
+                    const contractAddress = abi[getContractKeyInAbiFile(contractName) + "_address"] as string;
+                    const contract = contractFactory.attach(contractAddress) as AccessControlUpgradeable;
                     console.log(chalk.blue(`Grant access to ${contractName}`));
                     await (await contract.grantRole(await contract.DEFAULT_ADMIN_ROLE(), safe)).wait();
         }
@@ -175,16 +176,7 @@ export async function upgrade<ContractManagerType extends Contract>(
     await initialize(safeTransactions, abi, contractManager);
 
     // write version
-    if (safeMock) {
-        console.log(chalk.blue("Grant access to set version"));
-        await (await skaleManager.grantRole(await skaleManager.DEFAULT_ADMIN_ROLE(), safe)).wait();
-    }
-    safeTransactions.push(encodeTransaction(
-        0,
-        skaleManager.address,
-        0,
-        skaleManager.interface.encodeFunctionData("setVersion", [version]),
-    ));
+    await setVersion(version);
 
     await fs.writeFile(`data/transactions-${version}-${network.name}.json`, JSON.stringify(safeTransactions, null, 4));
 
@@ -211,16 +203,14 @@ export async function upgrade<ContractManagerType extends Contract>(
             console.log(chalk.blue("Return ownership to wallet"));
             await (await safeMock.transferProxyAdminOwnership(contractManager.address, deployer.address)).wait();
             await (await safeMock.transferProxyAdminOwnership(proxyAdmin.address, deployer.address)).wait();
-            if (await proxyAdmin.owner() === deployer.address) {
-                await (await safeMock.destroy({gasLimit: 1000000})).wait();
-            } else {
+            if (await proxyAdmin.owner() !== deployer.address) {
                 console.log(chalk.blue("Something went wrong with ownership transfer"));
                 process.exit(1);
             }
         }
     }
 
-    await fs.writeFile(`data/skale-manager-${version}-${network.name}-abi.json`, JSON.stringify(abi, null, 4));
+    await fs.writeFile(`data/${projectName}-${version}-${network.name}-abi.json`, JSON.stringify(abi, null, 4));
 
     console.log("Done");
 }
