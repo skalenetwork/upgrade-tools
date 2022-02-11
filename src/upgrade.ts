@@ -54,12 +54,12 @@ type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions:
 export async function upgrade<ContractManagerType extends Contract>(
     projectName: string,
     targetVersion: string,
+    getDeployedVersion: (abi: SkaleABIFile) => Promise<string | undefined>,
+    setVersion: (safeTransaction: string[], abi: SkaleABIFile, newVersion: string) => Promise<void>,
+    safeMockAccessRequirements: string[],
     contractNamesToUpgrade: string[],
     deployNewContracts: DeploymentAction<ContractManagerType>,
-    initialize: DeploymentAction<ContractManagerType>,
-    getDeployedVersion: () => Promise<string | undefined>,
-    setVersion: (version: string) => Promise<void>,
-    safeMockAccessRequirements: string[])
+    initialize: DeploymentAction<ContractManagerType>)
 {
     if (!process.env.ABI) {
         console.log(chalk.red("Set path to file with ABI and addresses to ABI environment variables"));
@@ -74,7 +74,7 @@ export async function upgrade<ContractManagerType extends Contract>(
     const contractManagerFactory = await ethers.getContractFactory(contractManagerName);
     const contractManager = (contractManagerFactory.attach(abi[getContractKeyInAbiFile(contractManagerName) + "_address"] as string)) as ContractManagerType;
 
-    const deployedVersion = await getDeployedVersion();
+    const deployedVersion = await getDeployedVersion(abi);
     const version = await getVersion();
     if (deployedVersion) {
         if (deployedVersion !== targetVersion) {
@@ -89,7 +89,7 @@ export async function upgrade<ContractManagerType extends Contract>(
     const [ deployer ] = await ethers.getSigners();
     let safe = await proxyAdmin.owner();
     const safeTransactions: string[] = [];
-    let safeMock;
+    let safeMock: SafeMock | undefined = undefined;
     if (await ethers.provider.getCode(safe) === "0x") {
         console.log("Owner is not a contract");
         if (deployer.address !== safe) {
@@ -176,7 +176,7 @@ export async function upgrade<ContractManagerType extends Contract>(
     await initialize(safeTransactions, abi, contractManager);
 
     // write version
-    await setVersion(version);
+    await setVersion(safeTransactions, abi, version);
 
     await fs.writeFile(`data/transactions-${version}-${network.name}.json`, JSON.stringify(safeTransactions, null, 4));
 
@@ -199,6 +199,7 @@ export async function upgrade<ContractManagerType extends Contract>(
                 value: safeTx.value,
                 data: safeTx.data,
             })).wait();
+            console.log(chalk.blue("Transactions have been sent"));
         } finally {
             console.log(chalk.blue("Return ownership to wallet"));
             await (await safeMock.transferProxyAdminOwnership(contractManager.address, deployer.address)).wait();
