@@ -28,8 +28,7 @@
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^4.4.2",
     "axios": "^0.25.0",
-    "ethereumjs-util": "^7.1.4",
-    "ethers-eip712": "^0.2.0"
+    "ethereumjs-util": "^7.1.4"
   },
   "peerDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",
