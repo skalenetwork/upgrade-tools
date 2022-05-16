@@ -18,8 +18,9 @@
     "install-peers": "install-peers -f",
     "hooks": "git config core.hooksPath .githooks || true",
     "no-hooks": "git config core.hooksPath .git/hooks",
-    "fullCheck": "yarn compile && yarn lint && yarn cspell",
+    "fullCheck": "yarn compile && yarn lint && yarn cspell && yarn slither",
     "lint": "npx solhint \"contracts/**/*.sol\"",
+    "slither": "slither .",
     "cspell": "npx cspell \"**/*\""
   },
   "devDependencies": {

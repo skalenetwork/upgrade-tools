@@ -40,7 +40,7 @@ interface ISafeMock {
         uint256 gasPrice,
         address gasToken,
         address refundReceiver,
-        uint256 _nonce
+        uint256 nonce
     ) external view returns (bytes32);
 }
 
@@ -62,6 +62,46 @@ contract SafeMock is OwnableUpgradeable, ISafeMock {
 
     function transferProxyAdminOwnership(OwnableUpgradeable proxyAdmin, address newOwner) external override onlyOwner {
         proxyAdmin.transferOwnership(newOwner);
+    }
+
+    /// @dev Returns hash to be signed by owners.
+    /// @param to Destination address.
+    /// @param value Ether value.
+    /// @param data Data payload.
+    /// @param operation Operation type.
+    /// @param safeTxGas Fas that should be used for the safe transaction.
+    /// @param baseGas Gas costs for data used to trigger the safe transaction.
+    /// @param gasPrice Maximum gas price that should be used for this transaction.
+    /// @param gasToken Token address (or 0 if ETH) that is used for the payment.
+    /// @param refundReceiver Address of receiver of gas payment (or 0 if tx.origin).
+    /// @param nonce Transaction nonce.
+    /// @return Transaction hash.
+    function getTransactionHash(
+        address to,
+        uint256 value,
+        bytes calldata data,
+        Operation operation,
+        uint256 safeTxGas,
+        uint256 baseGas,
+        uint256 gasPrice,
+        address gasToken,
+        address refundReceiver,
+        uint256 nonce
+    ) external view override returns (bytes32) {
+        return keccak256(
+            _encodeTransactionData(
+                to,
+                value,
+                data,
+                operation,
+                safeTxGas,
+                baseGas,
+                gasPrice,
+                gasToken,
+                refundReceiver,
+                nonce
+            )
+        );
     }
 
     /// @dev Sends multiple transactions and reverts all if one fails.
@@ -107,46 +147,6 @@ contract SafeMock is OwnableUpgradeable, ISafeMock {
                 i := add(i, add(0x55, dataLength))
             }
         }
-    }
-
-    /// @dev Returns hash to be signed by owners.
-    /// @param to Destination address.
-    /// @param value Ether value.
-    /// @param data Data payload.
-    /// @param operation Operation type.
-    /// @param safeTxGas Fas that should be used for the safe transaction.
-    /// @param baseGas Gas costs for data used to trigger the safe transaction.
-    /// @param gasPrice Maximum gas price that should be used for this transaction.
-    /// @param gasToken Token address (or 0 if ETH) that is used for the payment.
-    /// @param refundReceiver Address of receiver of gas payment (or 0 if tx.origin).
-    /// @param _nonce Transaction nonce.
-    /// @return Transaction hash.
-    function getTransactionHash(
-        address to,
-        uint256 value,
-        bytes calldata data,
-        Operation operation,
-        uint256 safeTxGas,
-        uint256 baseGas,
-        uint256 gasPrice,
-        address gasToken,
-        address refundReceiver,
-        uint256 _nonce
-    ) public view override returns (bytes32) {
-        return keccak256(
-            _encodeTransactionData(
-                to,
-                value,
-                data,
-                operation,
-                safeTxGas,
-                baseGas,
-                gasPrice,
-                gasToken,
-                refundReceiver,
-                _nonce
-            )
-        );
     }
 
     /// @dev Returns the bytes that are hashed to be signed by owners.
