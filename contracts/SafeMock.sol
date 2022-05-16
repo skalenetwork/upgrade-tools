@@ -22,7 +22,8 @@
 pragma solidity 0.8.11;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol"; // this is needed to generate type
+// AccessControlEnumerableUpgradeable is needed to generate type
+import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
 
 interface ISafeMock {
     enum Operation {Call, DelegateCall}
