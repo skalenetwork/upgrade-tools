@@ -12,7 +12,7 @@
   "license": "AGPL-3.0",
   "private": false,
   "scripts": {
-    "prepare": "yarn compile && yarn hooks",
+    "prepare": "yarn hooks",
     "compile": "tsc",
     "prepublishOnly": "yarn compile",
     "install-peers": "install-peers -f",

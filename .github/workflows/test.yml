@@ -56,5 +56,8 @@ jobs:
     - name: Install dependencies
       run: yarn install-peers
 
+    - name: Compile
+      run: yarn compile
+
     - name: lint
       run: yarn fullCheck
