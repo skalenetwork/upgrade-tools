@@ -7,7 +7,7 @@ import { getImplementationAddress, hashBytecode } from "@openzeppelin/upgrades-c
 import { Contract } from "ethers";
 import chalk from "chalk";
 import { getManifestAdmin } from "@openzeppelin/hardhat-upgrades/dist/admin";
-import { AccessControlUpgradeable, ProxyAdmin, SafeMock } from "../typechain-types";
+import { AccessControlUpgradeable, OwnableUpgradeable, ProxyAdmin, SafeMock } from "../typechain-types";
 import { getVersion } from "./version";
 import { getAbi } from "./abi";
 import { verify } from "./verification";
@@ -51,7 +51,7 @@ export async function getContractFactoryAndUpdateManifest(contract: string) {
 
 type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManagerType) => Promise<void>;
 
-export async function upgrade<ContractManagerType extends Contract>(
+export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     projectName: string,
     targetVersion: string,
     getDeployedVersion: (abi: SkaleABIFile) => Promise<string | undefined>,
@@ -98,7 +98,7 @@ export async function upgrade<ContractManagerType extends Contract>(
         }
         console.log(chalk.blue("Deploy SafeMock to simulate upgrade via multisig"));
         const safeMockFactory = await ethers.getContractFactory("SafeMock");
-        safeMock = (await safeMockFactory.deploy()) as SafeMock;
+        safeMock = await safeMockFactory.deploy();
         await safeMock.deployTransaction.wait();
 
         console.log(chalk.blue("Transfer ownership to SafeMock"));
@@ -115,7 +115,7 @@ export async function upgrade<ContractManagerType extends Contract>(
     } else {
         try {
             const safeMockFactory = await ethers.getContractFactory("SafeMock");
-            const checkSafeMock = (safeMockFactory.attach(safe)) as SafeMock;
+            const checkSafeMock = safeMockFactory.attach(safe);
             if (await checkSafeMock.IS_SAFE_MOCK()) {
                 safeMock = checkSafeMock;
             }
