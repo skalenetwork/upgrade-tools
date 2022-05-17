@@ -15,7 +15,7 @@
     "prepare": "yarn compile && yarn hooks",
     "compile": "tsc",
     "prepublishOnly": "yarn compile",
-    "install-peers": "install-peers -f",
+    "install-peers": "npx install-peers -f",
     "hooks": "git config core.hooksPath .githooks || true",
     "no-hooks": "git config core.hooksPath .git/hooks",
     "fullCheck": "yarn compile && yarn lint && yarn eslint && yarn cspell && yarn slither",
