@@ -91,4 +91,4 @@ jobs:
       run: |
         export SOURCE_BRANCH=${GITHUB_HEAD_REF##*/}
         echo "Source branch: $SOURCE_BRANCH"
-        npm dist-tag rm @skalenetwork/skale-manager-interfaces $SOURCE_BRANCH
+        npm dist-tag rm @${{ github.repository }} $SOURCE_BRANCH
