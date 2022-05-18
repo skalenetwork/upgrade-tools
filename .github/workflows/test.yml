@@ -1,6 +1,9 @@
 name: Build and test
 on: [push, pull_request]
 
+env:
+  PYTHON_VERSION: 3.9
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -8,9 +11,6 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x, 14.x, 16.x]
-
-    env:
-      python-version: 3.9
 
     steps:
     - uses: actions/checkout@v2
@@ -42,7 +42,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ env.python-version }}
+        python-version: ${{ env.PYTHON_VERSION }}
 
     - name: Install slither
       run: pip3 install -r scripts/requirements.txt
