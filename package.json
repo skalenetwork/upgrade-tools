@@ -1,6 +1,6 @@
 {
   "name": "@skalenetwork/upgrade-tools",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Scripts to support upgrades of smart contracts",
   "files": [
     "dist/**/*"
