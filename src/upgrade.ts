@@ -50,6 +50,7 @@ export async function getContractFactoryAndUpdateManifest(contract: string) {
 }
 
 type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManagerType) => Promise<void>;
+type MultiTransactionAction<ContractManagerType extends Contract> = (abi: SkaleABIFile, contractManager: ContractManagerType) => Promise<string[][]>;
 
 export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     projectName: string,
@@ -59,7 +60,8 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     safeMockAccessRequirements: string[],
     contractNamesToUpgrade: string[],
     deployNewContracts: DeploymentAction<ContractManagerType>,
-    initialize: DeploymentAction<ContractManagerType>)
+    initialize: DeploymentAction<ContractManagerType>,
+    afterUpgrade?: MultiTransactionAction<ContractManagerType>)
 {
     if (!process.env.ABI) {
         console.log(chalk.red("Set path to file with ABI and addresses to ABI environment variables"));
@@ -188,9 +190,19 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     }
 
     const safeTx = await createMultiSendTransaction(ethers, safe, privateKey, safeTransactions, safeMock !== undefined);
+    let transactionsBatches: string[][] | undefined;
+    if (afterUpgrade !== undefined) {
+        transactionsBatches = await afterUpgrade(abi, contractManager);
+    }
     if (!safeMock) {
         const chainId = (await ethers.provider.getNetwork()).chainId;
         await sendSafeTransaction(safe, chainId, safeTx);
+        if (transactionsBatches !== undefined) {
+            for (const batch of transactionsBatches) {
+                const multiSendTransaction = await createMultiSendTransaction(ethers, safe, privateKey, batch, safeMock !== undefined);
+                await sendSafeTransaction(safe, chainId, multiSendTransaction);
+            }
+        }
     } else {
         console.log(chalk.blue("Send upgrade transactions to safe mock"));
         try {
@@ -199,6 +211,16 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
                 value: safeTx.value,
                 data: safeTx.data,
             })).wait();
+            if (transactionsBatches !== undefined) {
+                for (const batch of transactionsBatches) {
+                    const multiSendTransaction = await createMultiSendTransaction(ethers, safe, privateKey, batch, safeMock !== undefined);
+                    await (await deployer.sendTransaction({
+                        to: safeMock.address,
+                        value: multiSendTransaction.value,
+                        data: multiSendTransaction.data,
+                    })).wait();
+                }
+            }
             console.log(chalk.blue("Transactions have been sent"));
         } finally {
             console.log(chalk.blue("Return ownership to wallet"));
