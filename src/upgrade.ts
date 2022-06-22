@@ -146,7 +146,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
                 unsafeAllowLinkedLibraries: true,
                 unsafeAllowRenames: true
             }
-        );
+        ) as string;
         const currentImplementationAddress = await getImplementationAddress(network.provider, proxyAddress);
         if (newImplementationAddress !== currentImplementationAddress)
         {

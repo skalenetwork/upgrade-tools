@@ -75,7 +75,9 @@ export async function getContractFactory(contract: string) {
         manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
         Object.assign(libraryArtifacts, manifest.libraries);
     } finally {
-        Object.assign(manifest, {libraries: libraryArtifacts});
+        if (manifest !== undefined) {
+            Object.assign(manifest, {libraries: libraryArtifacts});
+        }
         await fs.writeFile(await getManifestFile(), JSON.stringify(manifest, null, 4));
     }
     return await getLinkedContractFactory(contract, libraries);
