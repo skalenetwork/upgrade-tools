@@ -175,7 +175,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         abi[getContractKeyInAbiFile(contract.name) + "_abi"] = contract.abi;
     }
 
-    await initialize(safeTransactions, abi, contractManager);
+    await initialize(safeTransactions, abi, safe);
 
     // write version
     await setVersion(safeTransactions, abi, version);
