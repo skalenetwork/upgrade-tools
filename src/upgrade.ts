@@ -193,6 +193,9 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     let transactionsBatches: string[][] | undefined;
     if (afterUpgrade !== undefined) {
         transactionsBatches = await afterUpgrade(abi, contractManager);
+        for (const { index, batch } of transactionsBatches.map((batch, index) => ({index, batch}))) {
+            await fs.writeFile(`data/after-transactions-${index}-${version}-${network.name}.json`, JSON.stringify(batch, null, 4));
+        }
     }
     if (!safeMock) {
         const chainId = (await ethers.provider.getNetwork()).chainId;
