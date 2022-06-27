@@ -123,7 +123,7 @@ function concatTransactions(transactions: string[]) {
     }).join("");
 }
 
-export async function createMultiSendTransaction(ethers: Ethers, safeAddress: string, privateKey: string, transactions: string[], isSafeMock = false) {
+export async function createMultiSendTransaction(ethers: Ethers, safeAddress: string, privateKey: string, transactions: string[], nonce?: number) {
     const chainId = (await ethers.provider.getNetwork()).chainId;
     const multiSendAddress = getMultiSendAddress(chainId);
     const multiSendAbi = [{"constant":false,"inputs":[{"internalType":"bytes","name":"transactions","type":"bytes"}],"name":"multiSend","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}];
@@ -145,16 +145,18 @@ export async function createMultiSendTransaction(ethers: Ethers, safeAddress: st
     }
     const safe = new ethers.Contract(safeAddress, new ethers.utils.Interface(safeAbi), ethers.provider) as Safe;
 
-    let nonce = 0;
-    if (!isSafeMock) {
+    let nonceValue = 0;
+    if (nonce === undefined) {
         try {
             const nonceResponse = await axios.get<SafeInfoResponse>(`${getSafeTransactionUrl(chainId)}/api/v1/safes/${safeAddress}/`);
-            nonce = nonceResponse.data.nonce;
+            nonceValue = nonceResponse.data.nonce;
         } catch (e) {
             if (!(e instanceof Error) || !e.toString().startsWith("Error: Can't get safe-transaction url")) {
                 throw e;
             }
         }
+    } else {
+        nonceValue = nonce;
     }
 
     const tx = {
@@ -168,7 +170,7 @@ export async function createMultiSendTransaction(ethers: Ethers, safeAddress: st
         "baseGas": 0,  // Gas costs not related to the transaction execution (signature check, refund payment...)
         "gasPrice": 0,  // Gas price used for the refund calculation
         "refundReceiver": ethers.constants.AddressZero, // Address of receiver of gas payment (or `null` if tx.origin)
-        "nonce": nonce,  // Nonce of the Safe, transaction cannot be executed until Safe's nonce is not equal to this nonce
+        "nonce": nonceValue,  // Nonce of the Safe, transaction cannot be executed until Safe's nonce is not equal to this nonce
     }
 
     const digestHex = await safe.getTransactionHash(

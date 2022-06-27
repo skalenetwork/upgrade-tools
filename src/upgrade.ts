@@ -189,7 +189,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         privateKey = ethers.Wallet.createRandom().privateKey;
     }
 
-    const safeTx = await createMultiSendTransaction(ethers, safe, privateKey, safeTransactions, safeMock !== undefined);
+    const safeTx = await createMultiSendTransaction(ethers, safe, privateKey, safeTransactions, safeMock !== undefined ? 0 : undefined);
     let transactionsBatches: string[][] | undefined;
     if (afterUpgrade !== undefined) {
         transactionsBatches = await afterUpgrade(abi, contractManager);
@@ -201,8 +201,8 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         const chainId = (await ethers.provider.getNetwork()).chainId;
         await sendSafeTransaction(safe, chainId, safeTx);
         if (transactionsBatches !== undefined) {
-            for (const batch of transactionsBatches) {
-                const multiSendTransaction = await createMultiSendTransaction(ethers, safe, privateKey, batch, safeMock !== undefined);
+            for (const { batch, index } of transactionsBatches.map((batch, index) => ({batch, index}))) {
+                const multiSendTransaction = await createMultiSendTransaction(ethers, safe, privateKey, batch, safeTx.nonce + index + 1);
                 await sendSafeTransaction(safe, chainId, multiSendTransaction);
             }
         }
@@ -216,7 +216,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
             })).wait();
             if (transactionsBatches !== undefined) {
                 for (const batch of transactionsBatches) {
-                    const multiSendTransaction = await createMultiSendTransaction(ethers, safe, privateKey, batch, safeMock !== undefined);
+                    const multiSendTransaction = await createMultiSendTransaction(ethers, safe, privateKey, batch, 0);
                     await (await deployer.sendTransaction({
                         to: safeMock.address,
                         value: multiSendTransaction.value,
