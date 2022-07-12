@@ -31,16 +31,47 @@ const URLS = {
     }
 }
 
-interface SafeInfoResponse{
-    address: string,
+interface SafeMultisigTransactionWithTransfersResponse{
+    safe: string,
+    to: string,
+    value: number,
+    data?: string,
+    operation: number,
+    gasToken?: string,
+    safeTxGas: number,
+    baseGas: number,
+    gasPrice: number,
+    refundReceiver?: string,
     nonce: number,
-    threshold: number,
-    owners:	string[],
-    masterCopy:	string,
-    modules: string[],
-    fallbackHandler: string,
-    guard: string,
-    version: string
+    executionDate: string,
+    submissionDate: string,
+    modified: string,
+    blockNumber?: number,
+    transactionHash: string,
+    safeTxHash: string,
+    executor?: string,
+    isExecuted: boolean,
+    isSuccessful?: boolean,
+    ethGasPrice?: string,
+    maxFeePerGas?: string,
+    maxPriorityFeePerGas?: string,
+    gasUsed?: number,
+    fee?: number,
+    origin: string,
+    dataDecoded?: string,
+    confirmationsRequired: number,
+    confirmations?: unknown,
+    trusted: boolean,
+    signatures?: string,
+    transfers: unknown,
+    txType?: string
+}
+
+interface AllTransactionsSchema{
+    count: number,
+    next: string,
+    previous: string | null,
+    results: SafeMultisigTransactionWithTransfersResponse[]
 }
 
 interface SafeMultisigEstimateTx{
@@ -148,7 +179,7 @@ export async function createMultiSendTransaction(ethers: Ethers, safeAddress: st
     let nonceValue = 0;
     if (nonce === undefined) {
         try {
-            const nonceResponse = await axios.get<SafeInfoResponse>(`${getSafeTransactionUrl(chainId)}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&queued=true&trusted=true`);
+            const nonceResponse = await axios.get<AllTransactionsSchema>(`${getSafeTransactionUrl(chainId)}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&queued=true&trusted=true`);
             nonceValue = nonceResponse.data.results[0].nonce + 1;
         } catch (e) {
             if (!(e instanceof Error) || !e.toString().startsWith("Error: Can't get safe-transaction url")) {
