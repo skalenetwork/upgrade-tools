@@ -148,8 +148,8 @@ export async function createMultiSendTransaction(ethers: Ethers, safeAddress: st
     let nonceValue = 0;
     if (nonce === undefined) {
         try {
-            const nonceResponse = await axios.get<SafeInfoResponse>(`${getSafeTransactionUrl(chainId)}/api/v1/safes/${safeAddress}/`);
-            nonceValue = nonceResponse.data.nonce;
+            const nonceResponse = await axios.get<SafeInfoResponse>(`${getSafeTransactionUrl(chainId)}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&queued=true&trusted=true`);
+            nonceValue = nonceResponse.data.results[0].nonce + 1;
         } catch (e) {
             if (!(e instanceof Error) || !e.toString().startsWith("Error: Can't get safe-transaction url")) {
                 throw e;
@@ -158,6 +158,8 @@ export async function createMultiSendTransaction(ethers: Ethers, safeAddress: st
     } else {
         nonceValue = nonce;
     }
+
+    console.log("Will send tx to Gnosis with nonce", nonce);
 
     const tx = {
         "safe": safeAddress,
