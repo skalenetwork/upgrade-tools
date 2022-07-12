@@ -180,6 +180,8 @@ export async function createMultiSendTransaction(ethers: Ethers, safeAddress: st
     if (nonce === undefined) {
         try {
             const nonceResponse = await axios.get<AllTransactionsSchema>(`${getSafeTransactionUrl(chainId)}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&queued=true&trusted=true`);
+            console.log(nonceResponse);
+            console.log(nonceResponse.data.results[0].nonce);
             nonceValue = nonceResponse.data.results[0].nonce + 1;
         } catch (e) {
             if (!(e instanceof Error) || !e.toString().startsWith("Error: Can't get safe-transaction url")) {
