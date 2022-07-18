@@ -4,6 +4,8 @@ import chalk from "chalk";
 import { ethers } from "ethers";
 import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
 
+// types
+
 type Ethers = typeof ethers & HardhatEthersHelpers;
 
 enum Network {
@@ -11,24 +13,6 @@ enum Network {
     RINKEBY = 4,
     GANACHE = 1337,
     HARDHAT = 31337,
-}
-
-const ADDRESSES = {
-    multiSend: {
-        [Network.MAINNET]: "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
-        [Network.RINKEBY]: "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
-    },
-}
-
-const URLS = {
-    safe_transaction: {
-        [Network.MAINNET]: "https://safe-transaction.mainnet.gnosis.io",
-        [Network.RINKEBY]: "https://safe-transaction.rinkeby.gnosis.io",
-    },
-    safe_relay: {
-        [Network.MAINNET]: "https://safe-relay.mainnet.gnosis.io",
-        [Network.RINKEBY]: "https://safe-relay.rinkeby.gnosis.io",
-    }
 }
 
 interface SafeMultisigTransactionWithTransfersResponse{
@@ -112,17 +96,39 @@ interface SafeMultisigTransaction {
     origin?: string
 }
 
-function getMultiSendAddress(chainId: number) {
-    if (chainId === Network.MAINNET) {
-        return ADDRESSES.multiSend[chainId];
-    } else if (chainId === Network.RINKEBY) {
-        return ADDRESSES.multiSend[chainId];
-    } else if ([Network.GANACHE, Network.HARDHAT].includes(chainId)) {
-        return ethers.constants.AddressZero;
-    } else {
-        throw Error(`Can't get multiSend contract at network with chainId = ${chainId}`);
+interface SafeInfoResponse {
+    address: string,
+    nonce: number,
+    threshold: number,
+    owners:	string[],
+    masterCopy:	string,
+    modules: string[],
+    fallbackHandler: string,
+    guard: string,
+    version: string
+}
+
+// constants
+
+const ADDRESSES = {
+    multiSend: {
+        [Network.MAINNET]: "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
+        [Network.RINKEBY]: "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
+    },
+}
+
+const URLS = {
+    safe_transaction: {
+        [Network.MAINNET]: "https://safe-transaction.mainnet.gnosis.io",
+        [Network.RINKEBY]: "https://safe-transaction.rinkeby.gnosis.io",
+    },
+    safe_relay: {
+        [Network.MAINNET]: "https://safe-relay.mainnet.gnosis.io",
+        [Network.RINKEBY]: "https://safe-relay.rinkeby.gnosis.io",
     }
 }
+
+// public functions
 
 export function getSafeTransactionUrl(chainId: number) {
     if (chainId === Network.MAINNET) {
@@ -142,16 +148,6 @@ export function getSafeRelayUrl(chainId: number) {
     } else {
         throw Error(`Can't get safe-relay url at network with chainId = ${chainId}`);
     }
-}
-
-function concatTransactions(transactions: string[]) {
-    return "0x" + transactions.map( (transaction) => {
-        if (transaction.startsWith("0x")) {
-            return transaction.slice(2);
-        } else {
-            return transaction;
-        }
-    }).join("");
 }
 
 export async function createMultiSendTransaction(ethers: Ethers, safeAddress: string, privateKey: string, transactions: string[], nonce?: number) {
@@ -179,8 +175,23 @@ export async function createMultiSendTransaction(ethers: Ethers, safeAddress: st
     let nonceValue = 0;
     if (nonce === undefined) {
         try {
-            const nonceResponse = await axios.get<AllTransactionsSchema>(`${getSafeTransactionUrl(chainId)}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&queued=true&trusted=true`);
-            nonceValue = nonceResponse.data.results[0].nonce + 1;
+            if (process.env.NONCE) {    
+                // NONCE variable is set
+                if (isNaN(Number.parseInt(process.env.NONCE))) {
+                    // NONCE variable is not a number
+                    if (process.env.NONCE.toLowerCase() === "pending") {
+                        nonceValue = await getSafeNonceWithPending(chainId, safeAddress);
+                    } else {
+                        nonceValue = await getSafeNonce(chainId, safeAddress);
+                    }
+                } else {
+                    // NONCE variable is a number
+                    nonceValue = Number.parseInt(process.env.NONCE);
+                }
+            } else {
+                // NONCE variable is not set
+                nonceValue = await getSafeNonce(chainId, safeAddress);
+            }
         } catch (e) {
             if (!(e instanceof Error) || !e.toString().startsWith("Error: Can't get safe-transaction url")) {
                 throw e;
@@ -264,5 +275,43 @@ export async function sendSafeTransaction(safe: string, chainId: number, safeTx:
             }
         }
         throw e;
+    }
+}
+
+// private functions
+
+function getMultiSendAddress(chainId: number) {
+    if (chainId === Network.MAINNET) {
+        return ADDRESSES.multiSend[chainId];
+    } else if (chainId === Network.RINKEBY) {
+        return ADDRESSES.multiSend[chainId];
+    } else if ([Network.GANACHE, Network.HARDHAT].includes(chainId)) {
+        return ethers.constants.AddressZero;
+    } else {
+        throw Error(`Can't get multiSend contract at network with chainId = ${chainId}`);
+    }
+}
+
+function concatTransactions(transactions: string[]) {
+    return "0x" + transactions.map( (transaction) => {
+        if (transaction.startsWith("0x")) {
+            return transaction.slice(2);
+        } else {
+            return transaction;
+        }
+    }).join("");
+}
+
+async function getSafeNonce(chainId: number, safeAddress: string) {
+    const safeInfo = await axios.get<SafeInfoResponse>(`${getSafeTransactionUrl(chainId)}/api/v1/safes/${safeAddress}/`);
+    return safeInfo.data.nonce;
+}
+
+async function getSafeNonceWithPending(chainId: number, safeAddress: string) {
+    const allTransactions = await axios.get<AllTransactionsSchema>(`${getSafeTransactionUrl(chainId)}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&queued=true&trusted=true`);
+    if (allTransactions.data.results.length > 0) {
+        return allTransactions.data.results[0].nonce + 1;
+    } else {
+        return 0;
     }
 }
