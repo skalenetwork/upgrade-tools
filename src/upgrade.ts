@@ -225,6 +225,10 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
                 }
             }
             console.log(chalk.blue("Transactions have been sent"));
+        } catch (exception) {
+            console.log(chalk.red("Error during upgrade"));
+            console.log(exception);
+            process.exitCode = 13;
         } finally {
             console.log(chalk.blue("Return ownership to wallet"));
             await (await safeMock.transferProxyAdminOwnership(contractManager.address, deployer.address)).wait();
