@@ -49,8 +49,8 @@ export async function getContractFactoryAndUpdateManifest(contract: string) {
     return await getLinkedContractFactory(contract, libraries);
 }
 
-type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManagerType) => Promise<void>;
-type MultiTransactionAction<ContractManagerType extends Contract> = (abi: SkaleABIFile, contractManager: ContractManagerType) => Promise<string[][]>;
+type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManagerType | undefined) => Promise<void>;
+type MultiTransactionAction<ContractManagerType extends Contract> = (abi: SkaleABIFile, contractManager: ContractManagerType | undefined) => Promise<string[][]>;
 
 export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     projectName: string,
@@ -72,9 +72,16 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     const abi = JSON.parse(await fs.readFile(abiFilename, "utf-8")) as SkaleABIFile;
 
     const proxyAdmin = await getManifestAdmin(hre) as ProxyAdmin;
-    const contractManagerName = "ContractManager";
-    const contractManagerFactory = await ethers.getContractFactory(contractManagerName);
-    const contractManager = (contractManagerFactory.attach(abi[getContractKeyInAbiFile(contractManagerName) + "_address"] as string)) as ContractManagerType;
+
+    let contractManager: ContractManagerType | undefined;
+    try {
+        const contractManagerName = "ContractManager";
+        const contractManagerFactory = await ethers.getContractFactory(contractManagerName);
+        contractManager = (contractManagerFactory.attach(abi[getContractKeyInAbiFile(contractManagerName) + "_address"] as string)) as ContractManagerType;
+    } catch (e) {
+        console.log(chalk.yellow("ContractManager is undefined"));
+        
+    }
 
     const deployedVersion = await getDeployedVersion(abi);
     const version = await getVersion();
@@ -106,7 +113,9 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         console.log(chalk.blue("Transfer ownership to SafeMock"));
         safe = safeMock.address;
         await (await proxyAdmin.transferOwnership(safe)).wait();
-        await (await contractManager.transferOwnership(safe)).wait();
+        if (contractManager !== undefined) {
+            await (await contractManager.transferOwnership(safe)).wait();
+        }
         for (const contractName of safeMockAccessRequirements) {
                     const contractFactory = await getContractFactoryAndUpdateManifest(contractName);
                     const contractAddress = abi[getContractKeyInAbiFile(contractName) + "_address"] as string;
@@ -231,7 +240,9 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
             process.exitCode = 13;
         } finally {
             console.log(chalk.blue("Return ownership to wallet"));
-            await (await safeMock.transferProxyAdminOwnership(contractManager.address, deployer.address)).wait();
+            if (contractManager !== undefined) {
+                await (await safeMock.transferProxyAdminOwnership(contractManager.address, deployer.address)).wait();
+            }
             await (await safeMock.transferProxyAdminOwnership(proxyAdmin.address, deployer.address)).wait();
             if (await proxyAdmin.owner() !== deployer.address) {
                 console.log(chalk.blue("Something went wrong with ownership transfer"));
