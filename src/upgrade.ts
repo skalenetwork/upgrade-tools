@@ -146,6 +146,9 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         if (contract === "BountyV2") {
             if (!abi[getContractKeyInAbiFile(contract) + "_address"])
             _contract = "Bounty";
+        } else if (contract === "EtherbaseUpgradeable") {
+            if (!abi[getContractKeyInAbiFile(contract) + "_address"])
+            _contract = "Etherbase"
         }
         const proxyAddress = abi[getContractKeyInAbiFile(_contract) + "_address"] as string;
 
