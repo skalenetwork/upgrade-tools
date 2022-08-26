@@ -63,6 +63,7 @@ function getContractNameForAbi(contractName: string, abi: SkaleABIFile) {
 
 type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManagerType | undefined) => Promise<void>;
 type MultiTransactionAction<ContractManagerType extends Contract> = (abi: SkaleABIFile, contractManager: ContractManagerType | undefined) => Promise<string[][]>;
+type SafeMockAction = (safe: string) => Promise<void>;
 
 export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     projectName: string,
@@ -73,6 +74,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     contractNamesToUpgrade: string[],
     deployNewContracts: DeploymentAction<ContractManagerType>,
     initialize: DeploymentAction<ContractManagerType>,
+    beforeUpgrade?: SafeMockAction,
     afterUpgrade?: MultiTransactionAction<ContractManagerType>)
 {
     if (!process.env.ABI) {
@@ -121,7 +123,9 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         const safeMockFactory = await ethers.getContractFactory("SafeMock");
         safeMock = await safeMockFactory.deploy();
         await safeMock.deployTransaction.wait();
-
+        if (beforeUpgrade !== undefined) {
+            await beforeUpgrade(safe);
+        }
         console.log(chalk.blue("Transfer ownership to SafeMock"));
         safe = safeMock.address;
         await (await proxyAdmin.transferOwnership(safe)).wait();
