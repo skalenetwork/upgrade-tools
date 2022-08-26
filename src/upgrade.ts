@@ -69,11 +69,10 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     targetVersion: string,
     getDeployedVersion: (abi: SkaleABIFile) => Promise<string | undefined>,
     setVersion: (safeTransaction: string[], abi: SkaleABIFile, newVersion: string) => Promise<void>,
-    safeMockAccessRequirements: string[],
+    safeMockAccessRequirements: {[contract: string] : string},
     contractNamesToUpgrade: string[],
     deployNewContracts: DeploymentAction<ContractManagerType>,
     initialize: DeploymentAction<ContractManagerType>,
-    beforeUpgrade?: DeploymentAction<ContractManagerType>,
     afterUpgrade?: MultiTransactionAction<ContractManagerType>)
 {
     if (!process.env.ABI) {
@@ -111,10 +110,6 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     const [ deployer ] = await ethers.getSigners();
     let safe = await proxyAdmin.owner();
     const safeTransactions: string[] = [];
-    if (beforeUpgrade !== undefined) {
-        await beforeUpgrade(safeTransactions, abi, contractManager);
-    }
-
     let safeMock: SafeMock | undefined = undefined;
     if (await ethers.provider.getCode(safe) === "0x") {
         console.log("Owner is not a contract");
@@ -133,12 +128,13 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         if (contractManager !== undefined) {
             await (await contractManager.transferOwnership(safe)).wait();
         }
-        for (const contractName of safeMockAccessRequirements) {
-                    const contractFactory = await getContractFactoryAndUpdateManifest(contractName);
-                    const contractAddress = abi[getContractKeyInAbiFile(contractName) + "_address"] as string;
-                    const contract = contractFactory.attach(contractAddress) as AccessControlUpgradeable;
-                    console.log(chalk.blue(`Grant access to ${contractName}`));
-                    await (await contract.grantRole(await contract.DEFAULT_ADMIN_ROLE(), safe)).wait();
+        for (const [contractName, role] of Object.entries(safeMockAccessRequirements)) {
+            const contractFactory = await getContractFactoryAndUpdateManifest(contractName);
+            const contractAddress = abi[getContractKeyInAbiFile(contractName) + "_address"] as string;
+            const contract = contractFactory.attach(contractAddress) as AccessControlUpgradeable;
+            console.log(chalk.blue(`Grant access to ${contractName}`));
+            const roleHashed = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(role));
+            await (await contract.grantRole(roleHashed, safe)).wait();
         }
     } else {
         try {
