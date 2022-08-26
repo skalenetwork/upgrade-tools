@@ -123,11 +123,12 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         const safeMockFactory = await ethers.getContractFactory("SafeMock");
         safeMock = await safeMockFactory.deploy();
         await safeMock.deployTransaction.wait();
+        safe = safeMock.address;
         if (beforeUpgrade !== undefined) {
+            console.log(chalk.blue("Run beforeUpgrade callback"));
             await beforeUpgrade(safe, abi);
         }
         console.log(chalk.blue("Transfer ownership to SafeMock"));
-        safe = safeMock.address;
         await (await proxyAdmin.transferOwnership(safe)).wait();
         if (contractManager !== undefined) {
             await (await contractManager.transferOwnership(safe)).wait();
