@@ -70,7 +70,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     targetVersion: string,
     getDeployedVersion: (abi: SkaleABIFile) => Promise<string | undefined>,
     setVersion: (safeTransaction: string[], abi: SkaleABIFile, newVersion: string) => Promise<void>,
-    safeMockAccessRequirements: {[contract: string] : string},
+    safeMockAccessRequirements: string[],
     contractNamesToUpgrade: string[],
     deployNewContracts: DeploymentAction<ContractManagerType>,
     initialize: DeploymentAction<ContractManagerType>,
@@ -132,13 +132,12 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         if (contractManager !== undefined) {
             await (await contractManager.transferOwnership(safe)).wait();
         }
-        for (const [contractName, role] of Object.entries(safeMockAccessRequirements)) {
+        for (const contractName of safeMockAccessRequirements) {
             const contractFactory = await getContractFactoryAndUpdateManifest(contractName);
             const contractAddress = abi[getContractKeyInAbiFile(contractName) + "_address"] as string;
             const contract = contractFactory.attach(contractAddress) as AccessControlUpgradeable;
             console.log(chalk.blue(`Grant access to ${contractName}`));
-            const roleHashed = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(role));
-            await (await contract.grantRole(roleHashed, safe)).wait();
+            await (await contract.grantRole(await contract.DEFAULT_ADMIN_ROLE(), safe)).wait();
         }
     } else {
         try {
