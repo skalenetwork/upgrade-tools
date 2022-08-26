@@ -49,6 +49,18 @@ export async function getContractFactoryAndUpdateManifest(contract: string) {
     return await getLinkedContractFactory(contract, libraries);
 }
 
+function getContractNameForAbi(contractName: string, abi: SkaleABIFile) {
+    let _contract = contractName;
+    if (!abi[getContractKeyInAbiFile(contractName) + "_address"]) {
+        if (contractName === "BountyV2") {
+            _contract = "Bounty";
+        } else if (contractName === "EtherbaseUpgradeable") {
+            _contract = "Etherbase"
+        }
+    }
+    return _contract;
+}
+
 type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManagerType | undefined) => Promise<void>;
 type MultiTransactionAction<ContractManagerType extends Contract> = (abi: SkaleABIFile, contractManager: ContractManagerType | undefined) => Promise<string[][]>;
 
@@ -61,6 +73,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     contractNamesToUpgrade: string[],
     deployNewContracts: DeploymentAction<ContractManagerType>,
     initialize: DeploymentAction<ContractManagerType>,
+    beforeUpgrade?: DeploymentAction<ContractManagerType>,
     afterUpgrade?: MultiTransactionAction<ContractManagerType>)
 {
     if (!process.env.ABI) {
@@ -98,6 +111,10 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     const [ deployer ] = await ethers.getSigners();
     let safe = await proxyAdmin.owner();
     const safeTransactions: string[] = [];
+    if (beforeUpgrade !== undefined) {
+        await beforeUpgrade(safeTransactions, abi, contractManager);
+    }
+
     let safeMock: SafeMock | undefined = undefined;
     if (await ethers.provider.getCode(safe) === "0x") {
         console.log("Owner is not a contract");
@@ -142,15 +159,8 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     const contractsToUpgrade: {proxyAddress: string, implementationAddress: string, name: string, abi: []}[] = [];
     for (const contract of contractNamesToUpgrade) {
         const contractFactory = await getContractFactoryAndUpdateManifest(contract);
-        let _contract = contract;
-        if (contract === "BountyV2") {
-            if (!abi[getContractKeyInAbiFile(contract) + "_address"])
-            _contract = "Bounty";
-        } else if (contract === "EtherbaseUpgradeable") {
-            if (!abi[getContractKeyInAbiFile(contract) + "_address"])
-            _contract = "Etherbase"
-        }
-        const proxyAddress = abi[getContractKeyInAbiFile(_contract) + "_address"] as string;
+        const contractName = getContractNameForAbi(contract, abi);
+        const proxyAddress = abi[getContractKeyInAbiFile(contractName) + "_address"] as string;
 
         console.log(`Prepare upgrade of ${contract}`);
         const newImplementationAddress = await upgrades.prepareUpgrade(
