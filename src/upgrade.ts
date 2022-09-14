@@ -197,10 +197,10 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         abi[getContractKeyInAbiFile(contract.name) + "_abi"] = contract.abi;
     }
 
-    await initialize(safeTransactions, abi, contractManager);
-
     // write version
     await setVersion(safeTransactions, abi, version);
+
+    await initialize(safeTransactions, abi, contractManager);
 
     await fs.writeFile(`data/transactions-${version}-${network.name}.json`, JSON.stringify(safeTransactions, null, 4));
 
