@@ -278,6 +278,16 @@ export async function sendSafeTransaction(safe: string, chainId: number, safeTx:
     }
 }
 
+export function concatTransactions(transactions: string[]) {
+    return "0x" + transactions.map( (transaction) => {
+        if (transaction.startsWith("0x")) {
+            return transaction.slice(2);
+        } else {
+            return transaction;
+        }
+    }).join("");
+}
+
 // private functions
 
 function getMultiSendAddress(chainId: number) {
@@ -290,16 +300,6 @@ function getMultiSendAddress(chainId: number) {
     } else {
         throw Error(`Can't get multiSend contract at network with chainId = ${chainId}`);
     }
-}
-
-function concatTransactions(transactions: string[]) {
-    return "0x" + transactions.map( (transaction) => {
-        if (transaction.startsWith("0x")) {
-            return transaction.slice(2);
-        } else {
-            return transaction;
-        }
-    }).join("");
 }
 
 async function getSafeNonce(chainId: number, safeAddress: string) {
