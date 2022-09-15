@@ -168,7 +168,8 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
             contractFactory,
             {
                 unsafeAllowLinkedLibraries: true,
-                unsafeAllowRenames: true
+                unsafeAllowRenames: true,
+                unsafeAllow: ['delegatecall']
             }
         ) as string;
         const currentImplementationAddress = await getImplementationAddress(network.provider, proxyAddress);
