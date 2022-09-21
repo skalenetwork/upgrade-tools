@@ -61,7 +61,7 @@ function getContractNameForAbi(contractName: string, abi: SkaleABIFile) {
     return _contract;
 }
 
-type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManagerType | undefined) => Promise<void>;
+type DeploymentAction<ContractManagerType extends Contract> = (safeTransactions: string[], abi: SkaleABIFile, contractManager: ContractManagerType | undefined, safeMockAddress: string | undefined) => Promise<void>;
 type MultiTransactionAction<ContractManagerType extends Contract> = (abi: SkaleABIFile, contractManager: ContractManagerType | undefined) => Promise<string[][]>;
 type SafeMockAction = (safe: SafeMock, abi: SkaleABIFile) => Promise<void>;
 
@@ -153,7 +153,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     }
 
     // Deploy new contracts
-    await deployNewContracts(safeTransactions, abi, contractManager);
+    await deployNewContracts(safeTransactions, abi, contractManager, undefined);
 
     // deploy new implementations
     const contractsToUpgrade: {proxyAddress: string, implementationAddress: string, name: string, abi: []}[] = [];
@@ -201,7 +201,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     // write version
     await setVersion(safeTransactions, abi, version);
 
-    await initialize(safeTransactions, abi, contractManager);
+    await initialize(safeTransactions, abi, contractManager, safeMock !== undefined ? safeMock.address : undefined);
 
     await fs.writeFile(`data/transactions-${version}-${network.name}.json`, JSON.stringify(safeTransactions, null, 4));
 
