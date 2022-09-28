@@ -201,7 +201,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     // write version
     await setVersion(safeTransactions, abi, version);
 
-    await initialize(safeTransactions, abi, contractManager, safeMock !== undefined ? safeMock.address : undefined);
+    await initialize(safeTransactions, abi, contractManager, safeMock?.address);
 
     await fs.writeFile(`data/transactions-${version}-${network.name}.json`, JSON.stringify(safeTransactions, null, 4));
 
