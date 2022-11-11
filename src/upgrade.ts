@@ -189,6 +189,11 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         privateKey = ethers.Wallet.createRandom().privateKey;
     }
 
+    if (process.env.NEW_SAFE) {
+        console.log("Will use new Gnosis Safe Multisig!");
+        console.log("Address: ", process.env.NEW_SAFE);
+        safe = process.env.NEW_SAFE;
+    }
     const safeTx = await createMultiSendTransaction(ethers, safe, privateKey, safeTransactions, safeMock !== undefined ? 0 : undefined);
     let transactionsBatches: string[][] | undefined;
     if (afterUpgrade !== undefined) {
