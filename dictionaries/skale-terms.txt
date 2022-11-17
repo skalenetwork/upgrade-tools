@@ -12,4 +12,5 @@ thirdparty
 undelegate
 undelegation
 unwithdrawn
+upgrader
 workdir

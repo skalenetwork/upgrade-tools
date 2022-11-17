@@ -45,10 +45,6 @@ export async function getLinkedContractFactory(contractName: string, libraries: 
     return ContractFactory;
 }
 
-export function getContractKeyInAbiFile(contract: string) {
-    return contract.replace(/([a-zA-Z])(?=[A-Z])/g, '$1_').toLowerCase();
-}
-
 export async function getManifestFile(): Promise<string> {
     return (await Manifest.forNetwork(ethers.provider)).file;
 }
