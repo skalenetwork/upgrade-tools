@@ -13,6 +13,7 @@ import { getAbi } from "../abi";
 import { verify } from "../verification";
 import { Submitter } from "../submitters/Submitter";
 import { SkaleManifestData } from "../types/SkaleManifestData";
+import { AutoSubmitter } from "../submitters/AutoSubmitter";
 
 export abstract class Upgrader {
     abi: SkaleABIFile;
@@ -26,7 +27,7 @@ export abstract class Upgrader {
                 targetVersion: string,
                 abi: SkaleABIFile,
                 contractNamesToUpgrade: string[],
-                submitter: Submitter) {
+                submitter: Submitter = new AutoSubmitter()) {
         this.targetVersion = targetVersion;
         this.abi = abi;
         this.contractNamesToUpgrade = contractNamesToUpgrade;

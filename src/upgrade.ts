@@ -1,5 +1,4 @@
-import { deployLibraries, getContractKeyInAbiFile, getLinkedContractFactory, getManifestFile } from "./deploy";
-import { SkaleABIFile, SkaleManifestData } from "./types";
+import { deployLibraries, getLinkedContractFactory, getManifestFile } from "./deploy";
 import { promises as fs } from "fs";
 import { artifacts, ethers, network, upgrades } from "hardhat";
 import hre from "hardhat";
@@ -13,6 +12,8 @@ import { getAbi } from "./abi";
 import { verify } from "./verification";
 import { encodeTransaction } from "./multiSend";
 import { createMultiSendTransaction, sendSafeTransaction } from "./gnosis-safe";
+import { SkaleManifestData } from "./types/SkaleManifestData";
+import { SkaleABIFile } from "./types/SkaleABIFile";
 
 export async function getContractFactoryAndUpdateManifest(contract: string) {
     const manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
@@ -74,7 +75,8 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
     const proxyAdmin = await getManifestAdmin(hre) as ProxyAdmin;
     const contractManagerName = "ContractManager";
     const contractManagerFactory = await ethers.getContractFactory(contractManagerName);
-    const contractManager = (contractManagerFactory.attach(abi[getContractKeyInAbiFile(contractManagerName) + "_address"] as string)) as ContractManagerType;
+    // const contractManager = (contractManagerFactory.attach(abi[getContractKeyInAbiFile(contractManagerName) + "_address"] as string)) as ContractManagerType;
+    const contractManager = (contractManagerFactory.attach(abi["Mock"] as string)) as ContractManagerType;
 
     const deployedVersion = await getDeployedVersion(abi);
     const version = await getVersion();
@@ -109,7 +111,8 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         await (await contractManager.transferOwnership(safe)).wait();
         for (const contractName of safeMockAccessRequirements) {
                     const contractFactory = await getContractFactoryAndUpdateManifest(contractName);
-                    const contractAddress = abi[getContractKeyInAbiFile(contractName) + "_address"] as string;
+                    // const contractAddress = abi[getContractKeyInAbiFile(contractName) + "_address"] as string;
+                    const contractAddress = abi["Mock"] as string;
                     const contract = contractFactory.attach(contractAddress) as AccessControlUpgradeable;
                     console.log(chalk.blue(`Grant access to ${contractName}`));
                     await (await contract.grantRole(await contract.DEFAULT_ADMIN_ROLE(), safe)).wait();
@@ -135,10 +138,11 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         const contractFactory = await getContractFactoryAndUpdateManifest(contract);
         let _contract = contract;
         if (contract === "BountyV2") {
-            if (!abi[getContractKeyInAbiFile(contract) + "_address"])
+            if (!abi[/*getContractKeyInAbiFile(contract) + */"_address"])
             _contract = "Bounty";
+            console.log(_contract);
         }
-        const proxyAddress = abi[getContractKeyInAbiFile(_contract) + "_address"] as string;
+        const proxyAddress = abi[/*getContractKeyInAbiFile(_contract) + */ "_address"] as string;
 
         console.log(`Prepare upgrade of ${contract}`);
         const newImplementationAddress = await upgrades.prepareUpgrade(
@@ -172,7 +176,7 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
             proxyAdmin.address,
             0,
             proxyAdmin.interface.encodeFunctionData("upgrade", [contract.proxyAddress, contract.implementationAddress])));
-        abi[getContractKeyInAbiFile(contract.name) + "_abi"] = contract.abi;
+        abi[/*getContractKeyInAbiFile(contract.name) + */ "_abi"] = contract.abi;
     }
 
     await initialize(safeTransactions, abi, contractManager);

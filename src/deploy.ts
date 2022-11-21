@@ -1,7 +1,7 @@
 import { Manifest, hashBytecode } from "@openzeppelin/upgrades-core";
 import { ethers, artifacts } from "hardhat";
 import { promises as fs } from 'fs';
-import { SkaleManifestData } from "./types";
+import { SkaleManifestData } from "./types/SkaleManifestData";
 import { Artifact } from "hardhat/types";
 
 async function _deployLibrary(libraryName: string) {
