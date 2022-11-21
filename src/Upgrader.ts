@@ -1,19 +1,19 @@
 import hre from "hardhat";
 import chalk from "chalk";
-import { ProxyAdmin } from "../../typechain-types";
+import { ProxyAdmin } from "../typechain-types";
 import { artifacts, ethers, network, upgrades } from "hardhat";
 import { getManifestAdmin } from "@openzeppelin/hardhat-upgrades/dist/admin";
-import { getVersion } from "../version";
+import { getVersion } from "./version";
 import { promises as fs } from "fs";
-import { deployLibraries, getLinkedContractFactory, getManifestFile } from "../deploy";
+import { deployLibraries, getLinkedContractFactory, getManifestFile } from "./deploy";
 import { UnsignedTransaction } from "ethers";
-import { SkaleABIFile } from "../types/SkaleABIFile";
+import { SkaleABIFile } from "./types/SkaleABIFile";
 import { getImplementationAddress, hashBytecode } from "@openzeppelin/upgrades-core";
-import { getAbi } from "../abi";
-import { verify } from "../verification";
-import { Submitter } from "../submitters/Submitter";
-import { SkaleManifestData } from "../types/SkaleManifestData";
-import { AutoSubmitter } from "../submitters/AutoSubmitter";
+import { getAbi } from "./abi";
+import { verify } from "./verification";
+import { Submitter } from "./submitters/Submitter";
+import { SkaleManifestData } from "./types/SkaleManifestData";
+import { AutoSubmitter } from "./submitters/AutoSubmitter";
 
 export abstract class Upgrader {
     abi: SkaleABIFile;

@@ -135,22 +135,16 @@ const URLS = {
 // public functions
 
 export function getSafeTransactionUrl(chainId: number) {
-    if (chainId === Network.MAINNET) {
-        return URLS.safe_transaction[chainId];
-    } else if (chainId === Network.RINKEBY) {
-        return URLS.safe_transaction[chainId];
-    } else if (chainId === Network.GOERLI) {
-        return URLS.safe_transaction[chainId];
+    if (Object.keys(URLS.safe_transaction).includes(chainId.toString())) {
+        return URLS.safe_transaction[chainId as keyof typeof URLS.safe_transaction];
     } else {
         throw Error(`Can't get safe-transaction url at network with chainId = ${chainId}`);
     }
 }
 
 export function getSafeRelayUrl(chainId: number) {
-    if (chainId === 1) {
-        return URLS.safe_relay[chainId];
-    } else if (chainId === 4) {
-        return URLS.safe_relay[chainId];
+    if (Object.keys(URLS.safe_relay).includes(chainId.toString())) {
+        return URLS.safe_relay[chainId as keyof typeof URLS.safe_relay];
     } else {
         throw Error(`Can't get safe-relay url at network with chainId = ${chainId}`);
     }
@@ -181,7 +175,7 @@ export async function createMultiSendTransaction(ethers: Ethers, safeAddress: st
     let nonceValue = 0;
     if (nonce === undefined) {
         try {
-            if (process.env.NONCE) {    
+            if (process.env.NONCE) {
                 // NONCE variable is set
                 if (isNaN(Number.parseInt(process.env.NONCE))) {
                     // NONCE variable is not a number
@@ -287,14 +281,10 @@ export async function sendSafeTransaction(safe: string, chainId: number, safeTx:
 // private functions
 
 function getMultiSendAddress(chainId: number) {
-    if (chainId === Network.MAINNET) {
-        return ADDRESSES.multiSend[chainId];
-    } else if (chainId === Network.RINKEBY) {
-        return ADDRESSES.multiSend[chainId];
-    } else if (chainId === Network.GOERLI) {
-        return ADDRESSES.multiSend[chainId];
-    } else if ([Network.GANACHE, Network.HARDHAT].includes(chainId)) {
+    if ([Network.GANACHE, Network.HARDHAT].includes(chainId)) {
         return ethers.constants.AddressZero;
+    } else if (Object.keys(ADDRESSES.multiSend).includes(chainId.toString())) {
+        return ADDRESSES.multiSend[chainId as keyof typeof ADDRESSES.multiSend];
     } else {
         throw Error(`Can't get multiSend contract at network with chainId = ${chainId}`);
     }
