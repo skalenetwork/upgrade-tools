@@ -39,9 +39,12 @@ export abstract class Upgrader {
     // abstract
 
     abstract getDeployedVersion: () => Promise<string | undefined>
-    abstract deployNewContracts: () => Promise<void>
-    abstract initialize: () => Promise<void>
     abstract setVersion: (newVersion: string) => Promise<void>
+
+    // protected
+
+    deployNewContracts = () => { return Promise.resolve() };
+    initialize = () => { return Promise.resolve() };
 
     // public
 
