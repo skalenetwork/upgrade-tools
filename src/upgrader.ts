@@ -11,9 +11,9 @@ import { SkaleABIFile } from "./types/SkaleABIFile";
 import { getImplementationAddress, hashBytecode } from "@openzeppelin/upgrades-core";
 import { getAbi } from "./abi";
 import { verify } from "./verification";
-import { Submitter } from "./submitters/Submitter";
+import { Submitter } from "./submitters/submitter";
 import { SkaleManifestData } from "./types/SkaleManifestData";
-import { AutoSubmitter } from "./submitters/AutoSubmitter";
+import { AutoSubmitter } from "./submitters/auto-submitter";
 
 export abstract class Upgrader {
     abi: SkaleABIFile;

@@ -2,7 +2,7 @@ import { BigNumber, UnsignedTransaction } from "ethers";
 import { ethers, network } from "hardhat";
 import { createMultiSendTransaction, sendSafeTransaction } from "../gnosis-safe";
 import { encodeTransaction } from "../multiSend";
-import { Submitter } from "./Submitter";
+import { Submitter } from "./submitter";
 
 export class SafeSubmitter implements Submitter {
     safeAddress: string;

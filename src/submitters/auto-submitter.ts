@@ -1,10 +1,10 @@
 import { getManifestAdmin } from "@openzeppelin/hardhat-upgrades/dist/admin";
 import { UnsignedTransaction } from "ethers";
 import { ProxyAdmin } from "../../typechain-types";
-import { Submitter } from "./Submitter";
+import { Submitter } from "./submitter";
 import hre from "hardhat";
-import { EoaSubmitter } from "./EoaSubmitter";
-import { SafeSubmitter } from "./SafeSubmitter";
+import { EoaSubmitter } from "./eoa-submitter";
+import { SafeSubmitter } from "./safe-submitter";
 
 export class AutoSubmitter implements Submitter {
 
