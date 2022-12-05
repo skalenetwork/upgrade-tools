@@ -3,6 +3,7 @@ delegatable
 delegators
 docowners
 githooks
+ima
 schain
 schains
 skale
