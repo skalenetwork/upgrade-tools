@@ -6,7 +6,7 @@ import hre from "hardhat";
 import { EoaSubmitter } from "./eoa-submitter";
 import { SafeSubmitter } from "./safe-submitter";
 
-export class AutoSubmitter implements Submitter {
+export class AutoSubmitter extends Submitter {
 
     async submit(transactions: UnsignedTransaction[]) {
         let submitter: Submitter;

@@ -4,11 +4,12 @@ import { createMultiSendTransaction, sendSafeTransaction } from "../gnosis-safe"
 import { encodeTransaction } from "../multiSend";
 import { Submitter } from "./submitter";
 
-export class SafeSubmitter implements Submitter {
+export class SafeSubmitter extends Submitter {
     safeAddress: string;
     chainId: number | undefined;
 
     constructor(safeAddress: string, chainId?: number) {
+        super();
         this.safeAddress = safeAddress;
         this.chainId = chainId;
     }
