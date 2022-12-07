@@ -150,8 +150,7 @@ export function getSafeRelayUrl(chainId: number) {
     }
 }
 
-export async function createMultiSendTransaction(ethers: Ethers, safeAddress: string, privateKey: string, transactions: string[], nonce?: number) {
-    const chainId = (await ethers.provider.getNetwork()).chainId;
+export async function createMultiSendTransaction(ethers: Ethers, safeAddress: string, privateKey: string, transactions: string[], chainId: number, nonce?: number) {
     const multiSendAddress = getMultiSendAddress(chainId);
     const multiSendAbi = [{"constant":false,"inputs":[{"internalType":"bytes","name":"transactions","type":"bytes"}],"name":"multiSend","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}];
     const multiSend = new ethers.Contract(multiSendAddress, new ethers.utils.Interface(multiSendAbi), ethers.provider);

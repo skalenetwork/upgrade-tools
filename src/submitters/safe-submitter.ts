@@ -32,11 +32,11 @@ export class SafeSubmitter extends Submitter {
             privateKey = ethers.Wallet.createRandom().privateKey;
         }
 
-        const safeTx = await createMultiSendTransaction(ethers, this.safeAddress, privateKey, safeTransactions);
-
         if (!this.chainId) {
             this.chainId = (await ethers.provider.getNetwork()).chainId;
         }
+
+        const safeTx = await createMultiSendTransaction(ethers, this.safeAddress, privateKey, safeTransactions, this.chainId);
         await sendSafeTransaction(this.safeAddress, this.chainId, safeTx);
     }
 }

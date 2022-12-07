@@ -193,7 +193,13 @@ export async function upgrade<ContractManagerType extends OwnableUpgradeable>(
         privateKey = ethers.Wallet.createRandom().privateKey;
     }
 
-    const safeTx = await createMultiSendTransaction(ethers, safe, privateKey, safeTransactions, safeMock !== undefined ? 0 : undefined);
+    const safeTx = await createMultiSendTransaction(
+        ethers,
+        safe,
+        privateKey,
+        safeTransactions,
+        (await ethers.provider.getNetwork()).chainId,
+        safeMock !== undefined ? 0 : undefined);
     let transactionsBatches: string[][] | undefined;
     if (afterUpgrade !== undefined) {
         transactionsBatches = await afterUpgrade(abi, contractManager);
