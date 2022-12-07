@@ -46,7 +46,8 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
         for (const transaction of transactions) {
             transactionsToMarionette.push({
                 to: this.marionette.address,
-                data: await this.marionette.functions["encodeFunctionCall"].call(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                data: await this.marionette.encodeFunctionCall(
                     transaction.to ? transaction.to : ethers.constants.AddressZero,
                     transaction.value ? transaction.value : 0,
                     transaction.data ? transaction.data : "0x") as BytesLike
