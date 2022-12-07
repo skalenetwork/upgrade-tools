@@ -11,7 +11,8 @@ export class SafeToImaSubmitter extends SafeSubmitter {
         super(safeAddress, chainId);
         this.messageProxyForMainnet = new ethers.Contract(
             imaAbi["message_proxy_mainnet_address"] as string,
-            new ethers.utils.Interface(imaAbi["message_proxy_mainnet_abi"]));
+            new ethers.utils.Interface(imaAbi["message_proxy_mainnet_abi"]),
+            ethers.provider);
         this.targetSchainHash = targetSchainHash;
     }
 

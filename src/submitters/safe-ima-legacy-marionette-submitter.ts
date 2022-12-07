@@ -35,7 +35,8 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
                 "stateMutability": "pure",
                 "type": "function"
             }
-        ]));
+        ]),
+        ethers.provider);
 
     async submit(transactions: UnsignedTransaction[]): Promise<void> {
         if (transactions.length > 1) {
