@@ -30,7 +30,7 @@
     "@typechain/hardhat": "^4.0.0",
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",
-    "cspell": "^5.20.0",
+    "cspell": "^6.17.0",
     "eslint": "^8.15.0",
     "install-peers-cli": "^2.2.0",
     "solhint": "^3.3.7",
