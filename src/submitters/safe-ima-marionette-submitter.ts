@@ -1,24 +1,12 @@
-import { BigNumberish, BytesLike, UnsignedTransaction } from "ethers";
+import { UnsignedTransaction } from "ethers";
 import { ethers } from "hardhat";
-import { ethers as RawEthers } from "ethers"
 import { SafeToImaSubmitter } from "./safe-to-ima-submitter";
-
-type FunctionCallStruct = {
-    receiver: string;
-    value: BigNumberish;
-    data: BytesLike;
-  };
-
-interface Marionette extends RawEthers.Contract {
-    encodeFunctionCalls(
-        functionCalls: FunctionCallStruct[]
-      ): Promise<BytesLike>
-}
+import { Marionette, MARIONETTE_ADDRESS } from "./types/marionette";
 
 export class SafeImaMarionetteSubmitter extends SafeToImaSubmitter {
 
     marionette = new ethers.Contract(
-        "0xD2c0DeFACe000000000000000000000000000000",
+        MARIONETTE_ADDRESS,
         new ethers.utils.Interface([
             {
                 "inputs": [

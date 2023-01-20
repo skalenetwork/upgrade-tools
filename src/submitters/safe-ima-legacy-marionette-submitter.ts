@@ -1,10 +1,11 @@
 import { BytesLike, UnsignedTransaction } from "ethers";
 import { ethers } from "hardhat";
 import { SafeToImaSubmitter } from "./safe-to-ima-submitter";
+import { MARIONETTE_ADDRESS } from "./types/marionette";
 
 export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
     marionette = new ethers.Contract(
-        "0xD2c0DeFACe000000000000000000000000000000",
+        MARIONETTE_ADDRESS,
         new ethers.utils.Interface([
             {
                 "inputs": [

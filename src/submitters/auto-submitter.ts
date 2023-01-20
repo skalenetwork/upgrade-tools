@@ -9,6 +9,8 @@ import chalk from "chalk";
 import { SafeImaLegacyMarionetteSubmitter } from "./safe-ima-legacy-marionette-submitter";
 import { SkaleABIFile } from "../types/SkaleABIFile";
 import { promises as fs } from 'fs';
+import { Marionette, MARIONETTE_ADDRESS } from "./types/marionette";
+import { SafeImaMarionetteSubmitter } from "./safe-ima-marionette-submitter";
 
 export class AutoSubmitter extends Submitter {
 
@@ -22,7 +24,7 @@ export class AutoSubmitter extends Submitter {
         } else {
             console.log("Owner is a contract");
 
-            if (ethers.utils.getAddress(owner) == ethers.utils.getAddress("0xD2c0DeFACe000000000000000000000000000000")) {
+            if (ethers.utils.getAddress(owner) == ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
                 console.log("Marionette owner is detected");
 
                 const imaAbi = await this._getImaAbi();
@@ -30,12 +32,23 @@ export class AutoSubmitter extends Submitter {
                 const schainHash = this._getSchainHash();
                 const mainnetChainId = this._getMainnetChainId();
 
-                submitter = new SafeImaLegacyMarionetteSubmitter(
-                    safeAddress,
-                    imaAbi,
-                    schainHash,
-                    mainnetChainId
-                )
+                if (await this._versionFunctionExists()) {
+                    console.log("version() function was found. Use normal Marionette")
+                    submitter = new SafeImaMarionetteSubmitter(
+                        safeAddress,
+                        imaAbi,
+                        schainHash,
+                        mainnetChainId
+                    )
+                } else {
+                    console.log("No version() function was found. Use legacy Marionette")
+                    submitter = new SafeImaLegacyMarionetteSubmitter(
+                        safeAddress,
+                        imaAbi,
+                        schainHash,
+                        mainnetChainId
+                    )
+                }
 
             } else {
                 // assuming owner is a Gnosis Safe
@@ -87,6 +100,44 @@ export class AutoSubmitter extends Submitter {
             process.exit(1);
         } else {
             return Number.parseInt(process.env.MAINNET_CHAIN_ID);
+        }
+    }
+
+    async _versionFunctionExists() {
+        const bytecode = await hre.ethers.provider.getCode(MARIONETTE_ADDRESS);
+
+        // If the bytecode doesn't include the function selector version()
+        // is definitely not present
+        if (!bytecode.includes(ethers.utils.id("version()").slice(2, 10))) {
+            return false;
+        }
+
+        const marionette = new ethers.Contract(
+            MARIONETTE_ADDRESS,
+            [{
+                "inputs": [],
+                "name": "version",
+                "outputs": [
+                  {
+                    "internalType": "string",
+                    "name": "",
+                    "type": "string"
+                  }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }],
+            hre.ethers.provider) as Marionette;
+
+        // If gas estimation doesn't revert then an execution is possible
+        // given the provided function selector
+        try {
+            await marionette.estimateGas.version();
+            return true;
+        } catch {
+            // Otherwise (revert) we assume that there is no entry in the jump table
+            // meaning that the contract doesn't include version()
+            return false;
         }
     }
 }
