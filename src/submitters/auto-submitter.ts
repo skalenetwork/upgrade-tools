@@ -10,7 +10,6 @@ import { SafeImaLegacyMarionetteSubmitter } from "./safe-ima-legacy-marionette-s
 import { SkaleABIFile } from "../types/SkaleABIFile";
 import { promises as fs } from 'fs';
 import { Marionette, MARIONETTE_ADDRESS } from "./types/marionette";
-import { SafeImaMarionetteSubmitter } from "./safe-ima-marionette-submitter";
 
 export class AutoSubmitter extends Submitter {
 
@@ -32,23 +31,34 @@ export class AutoSubmitter extends Submitter {
                 const schainHash = this._getSchainHash();
                 const mainnetChainId = this._getMainnetChainId();
 
-                if (await this._versionFunctionExists()) {
-                    console.log("version() function was found. Use normal Marionette")
-                    submitter = new SafeImaMarionetteSubmitter(
-                        safeAddress,
-                        imaAbi,
-                        schainHash,
-                        mainnetChainId
-                    )
-                } else {
-                    console.log("No version() function was found. Use legacy Marionette")
-                    submitter = new SafeImaLegacyMarionetteSubmitter(
-                        safeAddress,
-                        imaAbi,
-                        schainHash,
-                        mainnetChainId
-                    )
-                }
+                // TODO: after marionette has multiSend functionality
+                // query version and properly select a submitter
+                // based on it
+                //
+                // if (await this._versionFunctionExists()) {
+                //     console.log("version() function was found. Use normal Marionette")
+                //     submitter = new SafeImaMarionetteSubmitter(
+                //         safeAddress,
+                //         imaAbi,
+                //         schainHash,
+                //         mainnetChainId
+                //     )
+                // } else {
+                //     console.log("No version() function was found. Use legacy Marionette")
+                //     submitter = new SafeImaLegacyMarionetteSubmitter(
+                //         safeAddress,
+                //         imaAbi,
+                //         schainHash,
+                //         mainnetChainId
+                //     )
+                // }
+
+                submitter = new SafeImaLegacyMarionetteSubmitter(
+                    safeAddress,
+                    imaAbi,
+                    schainHash,
+                    mainnetChainId
+                )
 
             } else {
                 // assuming owner is a Gnosis Safe
