@@ -5,5 +5,4 @@ export * from "./multiSend";
 export * from "./submitters";
 export * from "./verification";
 export * from "./version";
-export * from "./upgrade";
 export * from "./upgrader";
