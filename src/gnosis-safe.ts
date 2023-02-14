@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as ethUtil from 'ethereumjs-util';
 import chalk from "chalk";
-import { ethers } from "ethers";
+import { BigNumberish, BytesLike, ethers } from "ethers";
 import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
 
 // types
@@ -150,27 +150,10 @@ export function getSafeRelayUrl(chainId: number) {
     }
 }
 
-export async function createMultiSendTransaction(ethers: Ethers, safeAddress: string, privateKey: string, transactions: string[], nonce?: number) {
-    const chainId = (await ethers.provider.getNetwork()).chainId;
+export async function createMultiSendTransaction(ethers: Ethers, safeAddress: string, privateKey: string, transactions: string[], chainId: number, nonce?: number) {
     const multiSendAddress = getMultiSendAddress(chainId);
     const multiSendAbi = [{"constant":false,"inputs":[{"internalType":"bytes","name":"transactions","type":"bytes"}],"name":"multiSend","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}];
     const multiSend = new ethers.Contract(multiSendAddress, new ethers.utils.Interface(multiSendAbi), ethers.provider);
-    const safeAbi = [{"constant":true,"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"},{"internalType":"enum Enum.Operation","name":"operation","type":"uint8"},{"internalType":"uint256","name":"safeTxGas","type":"uint256"},{"internalType":"uint256","name":"baseGas","type":"uint256"},{"internalType":"uint256","name":"gasPrice","type":"uint256"},{"internalType":"address","name":"gasToken","type":"address"},{"internalType":"address","name":"refundReceiver","type":"address"},{"internalType":"uint256","name":"_nonce","type":"uint256"}],"name":"getTransactionHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"}];
-    interface Safe extends ethers.Contract {
-        getTransactionHash: (
-            to: string,
-            value: number,
-            data: string,
-            operation: number,
-            safeTxGas: number,
-            baseGas: number,
-            gasPrice: number,
-            gasToken: string,
-            refundReceiver: string,
-            nonce: number
-        ) => Promise<string>
-    }
-    const safe = new ethers.Contract(safeAddress, new ethers.utils.Interface(safeAbi), ethers.provider) as Safe;
 
     let nonceValue = 0;
     if (nonce === undefined) {
@@ -217,7 +200,7 @@ export async function createMultiSendTransaction(ethers: Ethers, safeAddress: st
         "nonce": nonceValue,  // Nonce of the Safe, transaction cannot be executed until Safe's nonce is not equal to this nonce
     }
 
-    const digestHex = await safe.getTransactionHash(
+    const digestHex = getTransactionHash(
         tx.to,
         tx.value,
         tx.data,
@@ -227,8 +210,10 @@ export async function createMultiSendTransaction(ethers: Ethers, safeAddress: st
         tx.gasPrice,
         tx.gasToken,
         tx.refundReceiver,
-        tx.nonce
-    );
+        tx.nonce,
+        safeAddress,
+        chainId
+    )
 
     const privateKeyBuffer = ethUtil.toBuffer(privateKey);
     const { r, s, v } = ethUtil.ecsign(ethUtil.toBuffer(digestHex), privateKeyBuffer);
@@ -281,10 +266,10 @@ export async function sendSafeTransaction(safe: string, chainId: number, safeTx:
 // private functions
 
 function getMultiSendAddress(chainId: number) {
-    if (Object.keys(ADDRESSES.multiSend).includes(chainId.toString())) {
-        return ADDRESSES.multiSend[chainId as keyof typeof ADDRESSES.multiSend];
-    } else if ([Network.GANACHE, Network.HARDHAT].includes(chainId)) {
+    if ([Network.GANACHE, Network.HARDHAT].includes(chainId)) {
         return ethers.constants.AddressZero;
+    } else if (Object.keys(ADDRESSES.multiSend).includes(chainId.toString())) {
+        return ADDRESSES.multiSend[chainId as keyof typeof ADDRESSES.multiSend];
     } else {
         throw Error(`Can't get multiSend contract at network with chainId = ${chainId}`);
     }
@@ -312,4 +297,82 @@ async function getSafeNonceWithPending(chainId: number, safeAddress: string) {
     } else {
         return 0;
     }
+}
+
+function getDomainSeparator(safeAddress: string, chainId: BigNumberish) {
+    const DOMAIN_SEPARATOR_TYPEHASH = "0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218";
+    return ethers.utils.solidityKeccak256(["bytes"], [
+        ethers.utils.defaultAbiCoder.encode(
+            ["bytes32", "uint256", "address"],
+            [DOMAIN_SEPARATOR_TYPEHASH, chainId, safeAddress])
+    ]);
+}
+
+function encodeTransactionData(
+    to: string,
+    value: BigNumberish,
+    data: BytesLike,
+    operation: number,
+    safeTxGas: BigNumberish,
+    baseGas: BigNumberish,
+    gasPrice: BigNumberish,
+    gasToken: string,
+    refundReceiver: string,
+    _nonce: BigNumberish,
+    safeAddress: string,
+    chainId: BigNumberish
+) {
+    const dataHash = ethers.utils.solidityKeccak256(["bytes"], [data]);
+    const SAFE_TX_TYPEHASH = "0xbb8310d486368db6bd6f849402fdd73ad53d316b5a4b2644ad6efe0f941286d8";
+    const encoded = ethers.utils.defaultAbiCoder.encode(
+        [
+            "bytes32",
+            "address",
+            "uint256",
+            "bytes32",
+            "uint256",
+            "uint256",
+            "uint256",
+            "uint256",
+            "address",
+            "address",
+            "uint256"
+        ],
+        [
+            SAFE_TX_TYPEHASH,
+            to,
+            value,
+            dataHash,
+            operation,
+            safeTxGas,
+            baseGas,
+            gasPrice,
+            gasToken,
+            refundReceiver,
+            _nonce
+        ]
+    );
+    const encodedHash = ethers.utils.solidityKeccak256(["bytes"], [encoded]);
+    return ethers.utils.solidityPack(
+        ["bytes1", "bytes1", "bytes32", "bytes32"],
+        ["0x19", "0x01", getDomainSeparator(safeAddress, chainId), encodedHash]);
+}
+
+function getTransactionHash(
+    to: string,
+    value: BigNumberish,
+    data: BytesLike,
+    operation: number,
+    safeTxGas: BigNumberish,
+    baseGas: BigNumberish,
+    gasPrice: BigNumberish,
+    gasToken: string,
+    refundReceiver: string,
+    _nonce: BigNumberish,
+    safeAddress: string,
+    chainId: BigNumberish
+) {
+    return ethers.utils.solidityKeccak256(["bytes"], [
+        encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce, safeAddress, chainId)
+    ]);
 }
