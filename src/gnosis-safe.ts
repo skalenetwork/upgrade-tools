@@ -95,8 +95,6 @@ async function proposeTransaction(safeAddress: string, safeTransaction: SafeTran
 
 async function getEthAdapter(): Promise<EthersAdapter> {
     const [safeOwner] = await ethers.getSigners();
-    console.log("SafeOwner address: ", safeOwner.address);
-
     const ethAdapter = new EthersAdapter({
         ethers,
         signerOrProvider: safeOwner
@@ -108,7 +106,6 @@ async function getEthAdapter(): Promise<EthersAdapter> {
 async function getSafeService() {
     const chainId = (await ethers.provider.getNetwork()).chainId;
     const ethAdapter: EthersAdapter = await getEthAdapter();
-    console.log("SafeTransactionUurl", getSafeTransactionUrl(chainId));
     const safeService = new SafeServiceClient({
         txServiceUrl: getSafeTransactionUrl(chainId),
         ethAdapter
