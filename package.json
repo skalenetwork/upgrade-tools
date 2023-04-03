@@ -25,6 +25,10 @@
     "cspell": "npx cspell \"**/*\""
   },
   "devDependencies": {
+    "@safe-global/safe-core-sdk": "^3.3.2",
+    "@safe-global/safe-core-sdk-types": "^1.9.0",
+    "@safe-global/safe-ethers-lib": "^1.9.2",
+    "@safe-global/safe-service-client": "^2.0.0",
     "@tsconfig/recommended": "^1.0.1",
     "@typechain/ethers-v5": "^9.0.0",
     "@typechain/hardhat": "^4.0.0",
@@ -48,7 +52,7 @@
     "@openzeppelin/hardhat-upgrades": "^1.14.0",
     "@openzeppelin/upgrades-core": "^1.12.0",
     "@types/mocha": "^9.1.0",
-    "ethers": "^5.5.4",
+    "ethers": "^5.7.2",
     "hardhat": "^2.8.3"
   }
 }
