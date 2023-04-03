@@ -1,10 +1,10 @@
 import chalk from "chalk";
 import { ethers } from "hardhat";
+import { UnsignedTransaction } from "ethers";
 import EthersAdapter from '@safe-global/safe-ethers-lib'
 import SafeServiceClient from '@safe-global/safe-service-client'
 import { SafeTransactionDataPartial, SafeTransaction } from '@safe-global/safe-core-sdk-types'
 import Safe, { SafeTransactionOptionalProps } from '@safe-global/safe-core-sdk'
-import { UnsignedTransaction } from "ethers";
 import { MetaTransactionData } from '@safe-global/safe-core-sdk-types'
 
 enum Network {
@@ -38,6 +38,7 @@ export async function createMultiSendTransaction(safeAddress: string, transactio
 
     const safeService = await getSafeService();
     const nonce = await safeService.getNextNonce(safeAddress);
+    console.log("Will send tx to Gnosis with nonce", nonce);
 
     const options: SafeTransactionOptionalProps = {
         safeTxGas: 0, // Max gas to use in the transaction
@@ -73,8 +74,8 @@ async function estimateSafeTransaction(safeAddress: string, safeTransactionData:
             }
         );
         console.log(chalk.cyan(`Recommend to set gas limit to ${parseInt(estimateResponse.safeTxGas, 10)}`));
-        console.log(chalk.green("Send transaction to gnosis safe"));
     }
+    console.log(chalk.green("Send transaction to gnosis safe"));
 }
 
 async function proposeTransaction(safeAddress: string, safeTransaction: SafeTransaction) {
