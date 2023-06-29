@@ -12,7 +12,7 @@ on:
       - beta
       - develop
 env:
-  NODE_VERSION: 16
+  NODE_VERSION: 18
 
 jobs:
   build:
@@ -31,7 +31,7 @@ jobs:
         key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
         restore-keys: |
           ${{ runner.os }}-yarn-
-    
+
     - name: Set up Node
       uses: actions/setup-node@v2
       with:
@@ -42,7 +42,7 @@ jobs:
       run: |
         yarn
         yarn install-peers
-    
+
     - name: Compile typescript
       run: yarn compile
 
@@ -62,7 +62,7 @@ jobs:
       env:
         BRANCH: ${{ env.BRANCH }}
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -72,13 +72,13 @@ jobs:
         tag_name: ${{ env.VERSION }}
         release_name: ${{ env.VERSION }}
         prerelease: ${{ env.PRERELEASE }}
-  
+
   clean:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged
     steps:
     - uses: actions/checkout@v2
-    
+
     - name: Set up Node
       uses: actions/setup-node@v2
       with:

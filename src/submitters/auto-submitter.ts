@@ -1,5 +1,5 @@
 import { getManifestAdmin } from "@openzeppelin/hardhat-upgrades/dist/admin";
-import { UnsignedTransaction } from "ethers";
+import { Transaction } from "ethers";
 import { ProxyAdmin } from "../../typechain-types";
 import { Submitter } from "./submitter";
 import hre, { ethers } from "hardhat";
@@ -7,15 +7,15 @@ import { EoaSubmitter } from "./eoa-submitter";
 import { SafeSubmitter } from "./safe-submitter";
 import chalk from "chalk";
 import { SafeImaLegacyMarionetteSubmitter } from "./safe-ima-legacy-marionette-submitter";
-import { SkaleABIFile } from "../types/SkaleABIFile";
-import { promises as fs } from 'fs';
-import { Marionette, MARIONETTE_ADDRESS } from "./types/marionette";
+import { MARIONETTE_ADDRESS } from "./types/marionette";
+import { skaleContracts } from "@skalenetwork/skale-contracts";
 
 export class AutoSubmitter extends Submitter {
 
-    async submit(transactions: UnsignedTransaction[]) {
+    async submit(transactions: Transaction[]) {
         let submitter: Submitter;
-        const proxyAdmin = await getManifestAdmin(hre) as ProxyAdmin;
+        // TODO: remove unknown when move everything to ethers 6
+        const proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin;
         const owner = await proxyAdmin.owner();
         if (await hre.ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
@@ -26,7 +26,7 @@ export class AutoSubmitter extends Submitter {
             if (ethers.utils.getAddress(owner) == ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
                 console.log("Marionette owner is detected");
 
-                const imaAbi = await this._getImaAbi();
+                const imaInstance = await this._getImaInstance();
                 const safeAddress = this._getSafeAddress();
                 const schainHash = this._getSchainHash();
                 const mainnetChainId = this._getMainnetChainId();
@@ -55,7 +55,7 @@ export class AutoSubmitter extends Submitter {
 
                 submitter = new SafeImaLegacyMarionetteSubmitter(
                     safeAddress,
-                    imaAbi,
+                    imaInstance,
                     schainHash,
                     mainnetChainId
                 )
@@ -72,12 +72,14 @@ export class AutoSubmitter extends Submitter {
 
     // private
 
-    async _getImaAbi() {
-        if (!process.env.IMA_ABI) {
-            console.log(chalk.red("Set path to ima abi to IMA_ABI environment variable"));
+    async _getImaInstance() {
+        if (!process.env.IMA) {
+            console.log(chalk.red("Set target IMA alias to IMA environment variable"));
             process.exit(1);
         }
-        return JSON.parse(await fs.readFile(process.env.IMA_ABI, "utf-8")) as SkaleABIFile;
+        const network = await skaleContracts.getNetworkByChainId((await ethers.provider.getNetwork()).chainId);
+        const ima = await network.getProject("ima");
+        return await ima.getInstance(process.env.IMA);
     }
 
     _getSafeAddress() {
@@ -137,7 +139,7 @@ export class AutoSubmitter extends Submitter {
                 "stateMutability": "view",
                 "type": "function"
             }],
-            hre.ethers.provider) as Marionette;
+            hre.ethers.provider);
 
         // If gas estimation doesn't revert then an execution is possible
         // given the provided function selector
