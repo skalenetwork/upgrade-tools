@@ -701,10 +701,10 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.7.0.tgz#6437261286879d353f6de7bf3ac8216bef8a486d"
   integrity sha512-wO3PyoAaAV/rA77cK8H4c3SbO98QylTjfiFxyvURUZKTFLV180rnAvna1x7/Nxvt0Gqv+jt1sXKC7ygxsq8iCw==
 
-"@skalenetwork/skale-contracts@^0.0.1-main.16":
-  version "0.0.1-main.16"
-  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts/-/skale-contracts-0.0.1-main.16.tgz#e789baa1f72826d688bbc0870fb7c1ab4fb9f98d"
-  integrity sha512-vURGIkbT0FhW0wUDI6tM+QvESDr/N5zAbJiRUPGgUb+GIZP3wMtN6xIZGGlhbLcdcGohwi3lqG1hiVyjdbenPg==
+"@skalenetwork/skale-contracts@^0.0.1-main.18":
+  version "0.0.1-main.18"
+  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts/-/skale-contracts-0.0.1-main.18.tgz#b90c7a0e93bb2fa9f3029b6b5ff2cc265410a9a9"
+  integrity sha512-DvX0+qY1m/+DT7ZaxbLHw/fEhT3T5SchcUN4yYtE+UmRJ2KNWpLPWUILyj8zhqySN+a4CyH6nocgfasjwmTrcw==
   dependencies:
     axios "^1.4.0"
     ethers "^5.7.2"
