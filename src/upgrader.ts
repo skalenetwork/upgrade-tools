@@ -50,9 +50,12 @@ export abstract class Upgrader {
     async upgrade() {
         const proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin;
 
-        const deployedVersion = await this.getDeployedVersion();
+        let deployedVersion = await this.getDeployedVersion();
         const version = await getVersion();
         if (deployedVersion) {
+            if (!deployedVersion.includes('-')) {
+                deployedVersion = deployedVersion + '-stable.0';
+            }
             if (deployedVersion !== this.targetVersion) {
                 console.log(chalk.red(`This script can't upgrade version ${deployedVersion} to ${version}`));
                 process.exit(1);
