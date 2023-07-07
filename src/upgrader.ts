@@ -28,6 +28,9 @@ export abstract class Upgrader {
                 contractNamesToUpgrade: string[],
                 submitter: Submitter = new AutoSubmitter()) {
         this.targetVersion = targetVersion;
+        if (!targetVersion.includes('-')) {
+            this.targetVersion = targetVersion + '-stable.0';
+        }
         this.instance = instance;
         this.contractNamesToUpgrade = contractNamesToUpgrade;
         this.projectName = projectName;
