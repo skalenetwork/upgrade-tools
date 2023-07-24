@@ -8,7 +8,3 @@ export interface SkaleManifestData extends ManifestData {
         }
     }
 }
-
-export interface SkaleABIFile {
-    [key: string]: string | []
-}

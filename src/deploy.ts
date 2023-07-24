@@ -1,7 +1,7 @@
 import { Manifest, hashBytecode } from "@openzeppelin/upgrades-core";
 import { ethers, artifacts } from "hardhat";
 import { promises as fs } from 'fs';
-import { SkaleManifestData } from "./types";
+import { SkaleManifestData } from "./types/SkaleManifestData";
 import { Artifact } from "hardhat/types";
 
 async function _deployLibrary(libraryName: string) {
@@ -45,10 +45,6 @@ export async function getLinkedContractFactory(contractName: string, libraries: 
     return ContractFactory;
 }
 
-export function getContractKeyInAbiFile(contract: string) {
-    return contract.replace(/([a-zA-Z])(?=[A-Z])/g, '$1_').toLowerCase();
-}
-
 export async function getManifestFile(): Promise<string> {
     return (await Manifest.forNetwork(ethers.provider)).file;
 }
@@ -75,7 +71,9 @@ export async function getContractFactory(contract: string) {
         manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
         Object.assign(libraryArtifacts, manifest.libraries);
     } finally {
-        Object.assign(manifest, {libraries: libraryArtifacts});
+        if (manifest !== undefined) {
+            Object.assign(manifest, {libraries: libraryArtifacts});
+        }
         await fs.writeFile(await getManifestFile(), JSON.stringify(manifest, null, 4));
     }
     return await getLinkedContractFactory(contract, libraries);
