@@ -3,9 +3,8 @@ import { ethers } from "hardhat";
 import { UnsignedTransaction } from "ethers";
 import EthersAdapter from '@safe-global/safe-ethers-lib'
 import SafeServiceClient from '@safe-global/safe-service-client'
-import { SafeTransactionDataPartial, SafeTransaction } from '@safe-global/safe-core-sdk-types'
+import { MetaTransactionData, SafeTransactionDataPartial, SafeTransaction } from '@safe-global/safe-core-sdk-types'
 import Safe, { SafeTransactionOptionalProps } from '@safe-global/safe-core-sdk'
-import { MetaTransactionData } from '@safe-global/safe-core-sdk-types'
 
 enum Network {
     MAINNET = 1,
