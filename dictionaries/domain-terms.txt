@@ -11,4 +11,5 @@ precompiled
 premined
 reentrancy
 secp256k1
+typehash
 untrusted

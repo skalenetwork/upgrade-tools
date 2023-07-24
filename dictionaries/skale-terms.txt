@@ -3,6 +3,7 @@ delegatable
 delegators
 docowners
 githooks
+ima
 schain
 schains
 skale
@@ -12,4 +13,5 @@ thirdparty
 undelegate
 undelegation
 unwithdrawn
+upgrader
 workdir

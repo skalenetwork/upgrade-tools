@@ -18,7 +18,7 @@ const config: HardhatUserConfig = {
         ]
     },
     typechain: {
-        externalArtifacts: ['node_modules/@openzeppelin/upgrades-core/artifacts/*.json']
+        externalArtifacts: ['node_modules/@openzeppelin/upgrades-core/artifacts/[!b]*.json']
     }
 };
 
