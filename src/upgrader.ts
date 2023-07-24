@@ -4,7 +4,7 @@ import { ProxyAdmin } from "../typechain-types";
 import { artifacts, ethers, network, upgrades } from "hardhat";
 import { getManifestAdmin } from "@openzeppelin/hardhat-upgrades/dist/admin";
 import { getVersion } from "./version";
-import { promises as fs } from "fs";
+import { promises as fs, existsSync } from "fs";
 import { deployLibraries, getLinkedContractFactory, getManifestFile } from "./deploy";
 import { UnsignedTransaction } from "ethers";
 import { SkaleABIFile } from "./types/SkaleABIFile";
@@ -49,6 +49,21 @@ export abstract class Upgrader {
     // public
 
     async upgrade() {
+        const MAINNET_CHAIN_ID = 1;
+        const GOERLI_CHAIN_ID = 5;
+        const mainChainIds = [MAINNET_CHAIN_ID, GOERLI_CHAIN_ID];
+        const { chainId } = await hre.ethers.provider.getNetwork();
+
+        if (!mainChainIds.includes(chainId)) {
+            const originManifestFileName = __dirname + "/../.openzeppelin/predeployed.json";
+            const targetManifestFileName = __dirname + `/../.openzeppelin/unknown-${chainId}.json`;
+            
+            if (!existsSync(targetManifestFileName)) {
+                console.log("Create a manifest file based on predeployed template");
+                await fs.copyFile(originManifestFileName, targetManifestFileName);
+            }
+        }
+
         const proxyAdmin = await getManifestAdmin(hre) as ProxyAdmin;
 
         const deployedVersion = await this.getDeployedVersion();
