@@ -44,7 +44,7 @@
     "@safe-global/safe-ethers-lib": "^1.9.2",
     "@safe-global/safe-service-client": "^2.0.0",
     "@openzeppelin/contracts-upgradeable": "^4.4.2",
-    "axios": "^0.27.2",
+    "axios": "^1.4.0",
     "ethereumjs-util": "^7.1.4"
   },
   "peerDependencies": {
