@@ -799,32 +799,32 @@
     web3-core "^1.8.1"
     web3-utils "^1.8.1"
 
-"@safe-global/safe-core-sdk-utils@^1.7.2":
-  version "1.7.2"
-  resolved "https://registry.yarnpkg.com/@safe-global/safe-core-sdk-utils/-/safe-core-sdk-utils-1.7.2.tgz#37df64d90060b986a54426a065473eb793c97dd7"
-  integrity sha512-nlS9/vtd6rj+2IK0tgt4xq6vqdGOAa+6MwAeiYCoP1ihcqFD38k6LBn7ZdXWjRF9VBvMXTgclkjvzp+PkLKtAw==
+"@safe-global/safe-core-sdk-utils@^1.7.2", "@safe-global/safe-core-sdk-utils@^1.7.4":
+  version "1.7.4"
+  resolved "https://registry.yarnpkg.com/@safe-global/safe-core-sdk-utils/-/safe-core-sdk-utils-1.7.4.tgz#810d36cf9629129a28eb1b9c6e690b163834b572"
+  integrity sha512-ITocwSWlFUA1K9VMP/eJiMfgbP/I9qDxAaFz7ukj5N5NZD3ihVQZkmqML6hjse5UhrfjCnfIEcLkNZhtB2XC2Q==
   dependencies:
-    "@safe-global/safe-core-sdk-types" "^1.9.0"
+    "@safe-global/safe-core-sdk-types" "^1.9.2"
     semver "^7.3.8"
     web3-utils "^1.8.1"
 
 "@safe-global/safe-core-sdk@^3.3.2":
-  version "3.3.2"
-  resolved "https://registry.yarnpkg.com/@safe-global/safe-core-sdk/-/safe-core-sdk-3.3.2.tgz#571e38eec152668bf2c04771f62f1b123161ec7c"
-  integrity sha512-IhAxGyYnnG+Zl2zWe1520l00l+FT1QTeMDQlTtnhKCeISs2krXZSEKuolj/sHltXzrswuntaGElAYJyruWEG/A==
+  version "3.3.4"
+  resolved "https://registry.yarnpkg.com/@safe-global/safe-core-sdk/-/safe-core-sdk-3.3.4.tgz#d404287f9b910feab3e692243aaf62494ff2d2a9"
+  integrity sha512-tgcK7VWo66Z8632xaYDzUHQ8InPOaI10ELk1wCrO/C3QjPwxjIozbMGOMzF4RZPCSJX2YAHowAvOgmEukgSkxA==
   dependencies:
     "@ethersproject/solidity" "^5.7.0"
-    "@safe-global/safe-core-sdk-types" "^1.9.0"
-    "@safe-global/safe-core-sdk-utils" "^1.7.2"
-    "@safe-global/safe-deployments" "^1.20.2"
+    "@safe-global/safe-core-sdk-types" "^1.9.2"
+    "@safe-global/safe-core-sdk-utils" "^1.7.4"
+    "@safe-global/safe-deployments" "^1.25.0"
     ethereumjs-util "^7.1.5"
     semver "^7.3.8"
     web3-utils "^1.8.1"
 
-"@safe-global/safe-deployments@^1.20.2":
-  version "1.21.1"
-  resolved "https://registry.yarnpkg.com/@safe-global/safe-deployments/-/safe-deployments-1.21.1.tgz#28849ab9441855eb10c50f3ae835f34ec69dede4"
-  integrity sha512-W5+EGdidRupGvMCHBaV3iNvcfqwzjOZcYWlMndCTo/JSHfe1az79AqOyKVSKK5AyEDt5iUlH8tTjmk8vTuQDwA==
+"@safe-global/safe-deployments@^1.20.2", "@safe-global/safe-deployments@^1.25.0":
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/@safe-global/safe-deployments/-/safe-deployments-1.26.0.tgz#b83615b3b5a66e736e08f8ecf2801ed988e9e007"
+  integrity sha512-Tw89O4/paT19ieMoiWQbqRApb0Bef/DxweS9rxodXAM5EQModkbyFXGZca+YxXE67sLvWjLr2jJUOxwze8mhGw==
   dependencies:
     semver "^7.3.7"
 
