@@ -1,10 +1,10 @@
 import chalk from "chalk";
 import { ethers } from "hardhat";
 import { UnsignedTransaction } from "ethers";
-import EthersAdapter from '@safe-global/safe-ethers-lib'
-import SafeServiceClient from '@safe-global/safe-service-client'
+import SafeApiKit from '@safe-global/api-kit'
+import Safe, { EthersAdapter } from '@safe-global/protocol-kit'
 import { MetaTransactionData, SafeTransactionDataPartial, SafeTransaction } from '@safe-global/safe-core-sdk-types'
-import Safe, { SafeTransactionOptionalProps } from '@safe-global/safe-core-sdk'
+
 
 enum Network {
     MAINNET = 1,
@@ -39,10 +39,10 @@ export async function createMultiSendTransaction(safeAddress: string, transactio
     const nonce = await safeService.getNextNonce(safeAddress);
     console.log("Will send tx to Gnosis with nonce", nonce);
 
-    const options: SafeTransactionOptionalProps = {
-        safeTxGas: 0, // Max gas to use in the transaction
-        baseGas: 0, // Gas costs not related to the transaction execution (signature check, refund payment...)
-        gasPrice: 0, // Gas price used for the refund calculation
+    const options = {
+        safeTxGas: "0", // Max gas to use in the transaction
+        baseGas: "0", // Gas costs not related to the transaction execution (signature check, refund payment...)
+        gasPrice: "0", // Gas price used for the refund calculation
         gasToken: ethers.constants.AddressZero, // Token address (hold by the Safe) to be used as a refund to the sender, if `null` is Ether
         refundReceiver: ethers.constants.AddressZero, // Address of receiver of gas payment (or `null` if tx.origin)
         nonce: nonce // Nonce of the Safe, transaction cannot be executed until Safe's nonce is not equal to this nonce
@@ -61,7 +61,7 @@ export async function createMultiSendTransaction(safeAddress: string, transactio
 
 async function estimateSafeTransaction(safeAddress: string, safeTransactionData: SafeTransactionDataPartial | MetaTransactionData[]) {
     console.log("Estimate gas");
-    const safeService: SafeServiceClient = await getSafeService();
+    const safeService = await getSafeService();
     for (const transaction of safeTransactionData as MetaTransactionData[]) {
         const estimateResponse = await safeService.estimateSafeTransaction(
             safeAddress,
@@ -83,7 +83,7 @@ async function proposeTransaction(safeAddress: string, safeTransaction: SafeTran
     const safeSdk = await Safe.create({ ethAdapter, safeAddress })
     const safeTxHash = await safeSdk.getTransactionHash(safeTransaction);
     const senderSignature = await safeSdk.signTransactionHash(safeTxHash);
-    const safeService: SafeServiceClient = await getSafeService();
+    const safeService = await getSafeService();
     await safeService.proposeTransaction({
         safeAddress,
         safeTransactionData: safeTransaction.data,
@@ -106,7 +106,7 @@ async function getEthAdapter(): Promise<EthersAdapter> {
 async function getSafeService() {
     const chainId = (await ethers.provider.getNetwork()).chainId;
     const ethAdapter: EthersAdapter = await getEthAdapter();
-    const safeService = new SafeServiceClient({
+    const safeService = new SafeApiKit({
         txServiceUrl: getSafeTransactionUrl(chainId),
         ethAdapter
     });
