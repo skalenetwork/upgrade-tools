@@ -4,7 +4,6 @@ import { SafeToImaSubmitter } from "./safe-to-ima-submitter";
 import { Marionette, MARIONETTE_ADDRESS } from "./types/marionette";
 
 export class SafeImaMarionetteSubmitter extends SafeToImaSubmitter {
-
     marionette = new ethers.Contract(
         MARIONETTE_ADDRESS,
         new ethers.utils.Interface([

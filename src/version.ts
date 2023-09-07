@@ -1,9 +1,11 @@
-import { promises as fs } from 'fs';
 import { exec as asyncExec } from "child_process";
-import util from 'util';
+import { promises as fs } from "fs";
+import util from "util";
+
+
 const exec = util.promisify(asyncExec);
 
-export async function getVersion() {
+export const getVersion = async () => {
     if (process.env.VERSION) {
         return process.env.VERSION;
     }
@@ -11,6 +13,9 @@ export async function getVersion() {
         const tag = (await exec("git describe --tags")).stdout.trim();
         return tag;
     } catch {
-        return (await fs.readFile("VERSION", "utf-8")).trim();
+        return (await fs.readFile(
+            "VERSION",
+            "utf-8"
+        )).trim();
     }
-}
+};

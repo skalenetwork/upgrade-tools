@@ -12,7 +12,7 @@ import { verify } from "./verification";
 import { Submitter } from "./submitters/submitter";
 import { SkaleManifestData } from "./types/SkaleManifestData";
 import { AutoSubmitter } from "./submitters/auto-submitter";
-import { Instance } from "@skalenetwork/skale-contracts/lib/instance";
+import { Instance } from "@skalenetwork/skale-contracts-ethers-v5";
 
 export abstract class Upgrader {
     instance: Instance;
@@ -74,19 +74,21 @@ export abstract class Upgrader {
         // Deploy new implementations
         const contractsToUpgrade: {proxyAddress: string, implementationAddress: string, name: string}[] = [];
         for (const contract of this.contractNamesToUpgrade) {
-            const contractFactory = await this._getContractFactoryAndUpdateManifest(contract);
-            const proxyAddress = (await this.instance.getContract(contract)).address;
+            const
+                contractFactory = await this._getContractFactoryAndUpdateManifest(contract),
+                proxyAddress = (await this.instance.getContract(contract)).address;
 
             console.log(`Prepare upgrade of ${contract}`);
-            const newImplementationAddress = await upgrades.prepareUpgrade(
-                proxyAddress,
-                contractFactory,
-                {
-                    unsafeAllowLinkedLibraries: true,
-                    unsafeAllowRenames: true
-                }
-            ) as string;
-            const currentImplementationAddress = await getImplementationAddress(network.provider, proxyAddress);
+            const
+                currentImplementationAddress = await getImplementationAddress(network.provider, proxyAddress),
+                newImplementationAddress = await upgrades.prepareUpgrade(
+                    proxyAddress,
+                    contractFactory,
+                    {
+                        unsafeAllowLinkedLibraries: true,
+                        unsafeAllowRenames: true
+                    }
+                ) as string;
             if (newImplementationAddress !== currentImplementationAddress)
             {
                 contractsToUpgrade.push({
@@ -124,20 +126,23 @@ export abstract class Upgrader {
     // private
 
     async _getContractFactoryAndUpdateManifest(contract: string) {
-        const manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
+        const
+            { linkReferences } = await artifacts.readArtifact(contract),
+            manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
 
-        const { linkReferences } = await artifacts.readArtifact(contract);
         if (!Object.keys(linkReferences).length)
             return await ethers.getContractFactory(contract);
 
-        const librariesToUpgrade = [];
-        const oldLibraries: {[k: string]: string} = {};
+        const
+            librariesToUpgrade = [],
+            oldLibraries: {[k: string]: string} = {};
         if (manifest.libraries === undefined) {
-            Object.assign(manifest, {libraries: {}});
+            Object.assign(manifest, { libraries: {} });
         }
         for (const key of Object.keys(linkReferences)) {
-            const libraryName = Object.keys(linkReferences[key])[0];
-            const { bytecode } = await artifacts.readArtifact(libraryName);
+            const
+                libraryName = Object.keys(linkReferences[key])[0],
+                { bytecode } = await artifacts.readArtifact(libraryName);
             if (manifest.libraries[libraryName] === undefined) {
                 librariesToUpgrade.push(libraryName);
                 continue;
@@ -152,7 +157,7 @@ export abstract class Upgrader {
         const libraries = await deployLibraries(librariesToUpgrade);
         for (const [libraryName, libraryAddress] of libraries.entries()) {
             const { bytecode } = await artifacts.readArtifact(libraryName);
-            manifest.libraries[libraryName] = {"address": libraryAddress, "bytecodeHash": hashBytecode(bytecode)};
+            manifest.libraries[libraryName] = { "address": libraryAddress, "bytecodeHash": hashBytecode(bytecode) };
         }
         Object.assign(libraries, oldLibraries);
         await fs.writeFile(await getManifestFile(), JSON.stringify(manifest, null, 4));

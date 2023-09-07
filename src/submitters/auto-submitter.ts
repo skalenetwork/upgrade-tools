@@ -8,15 +8,15 @@ import { SafeSubmitter } from "./safe-submitter";
 import chalk from "chalk";
 import { SafeImaLegacyMarionetteSubmitter } from "./safe-ima-legacy-marionette-submitter";
 import { MARIONETTE_ADDRESS } from "./types/marionette";
-import { skaleContracts } from "@skalenetwork/skale-contracts";
+import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v5";
 
 export class AutoSubmitter extends Submitter {
-
     async submit(transactions: Transaction[]) {
         let submitter: Submitter;
         // TODO: remove unknown when move everything to ethers 6
-        const proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin;
-        const owner = await proxyAdmin.owner();
+        const
+            proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin,
+            owner = await proxyAdmin.owner();
         if (await hre.ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
             submitter = new EoaSubmitter();
@@ -26,10 +26,11 @@ export class AutoSubmitter extends Submitter {
             if (ethers.utils.getAddress(owner) == ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
                 console.log("Marionette owner is detected");
 
-                const imaInstance = await this._getImaInstance();
-                const safeAddress = this._getSafeAddress();
-                const schainHash = this._getSchainHash();
-                const mainnetChainId = this._getMainnetChainId();
+                const
+                    imaInstance = await this._getImaInstance(),
+                    mainnetChainId = this._getMainnetChainId(),
+                    safeAddress = this._getSafeAddress(),
+                    schainHash = this._getSchainHash();
 
                 // TODO: after marionette has multiSend functionality
                 // query version and properly select a submitter
@@ -59,7 +60,6 @@ export class AutoSubmitter extends Submitter {
                     schainHash,
                     mainnetChainId
                 )
-
             } else {
                 // assuming owner is a Gnosis Safe
                 console.log("Using Gnosis Safe");
@@ -77,8 +77,9 @@ export class AutoSubmitter extends Submitter {
             console.log(chalk.red("Set target IMA alias to IMA environment variable"));
             process.exit(1);
         }
-        const network = await skaleContracts.getNetworkByChainId((await ethers.provider.getNetwork()).chainId);
-        const ima = await network.getProject("ima");
+        const
+            network = await skaleContracts.getNetworkByProvider(ethers.provider),
+            ima = await network.getProject("ima");
         return await ima.getInstance(process.env.IMA);
     }
 

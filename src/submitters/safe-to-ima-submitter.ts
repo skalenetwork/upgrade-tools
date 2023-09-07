@@ -1,6 +1,6 @@
 import { BytesLike, Contract, UnsignedTransaction } from "ethers";
 import { SafeSubmitter } from "./safe-submitter";
-import { Instance } from "@skalenetwork/skale-contracts";
+import { Instance } from "@skalenetwork/skale-contracts-ethers-v5";
 
 export class SafeToImaSubmitter extends SafeSubmitter {
     imaInstance: Instance;
@@ -17,15 +17,16 @@ export class SafeToImaSubmitter extends SafeSubmitter {
         if (transactions.length > 1) {
             this._atomicityWarning();
         }
-        const messageProxyForMainnet = await this._getMessageProxyForMainnet();
-        const transactionsToIma = transactions.map((transaction) => {
-            return {
-                to: messageProxyForMainnet.address,
-                data: messageProxyForMainnet.interface.encodeFunctionData(
-                    "postOutgoingMessage",
-                    [this.targetSchainHash, transaction.to, transaction.data])
-                }
-        });
+        const
+            messageProxyForMainnet = await this._getMessageProxyForMainnet(),
+            transactionsToIma = transactions.map((transaction) => {
+                return {
+                    to: messageProxyForMainnet.address,
+                    data: messageProxyForMainnet.interface.encodeFunctionData(
+                        "postOutgoingMessage",
+                        [this.targetSchainHash, transaction.to, transaction.data])
+                    }
+            });
         await super.submit(transactionsToIma);
     }
 

@@ -7,7 +7,7 @@ export function getAbi(contractInterface: Interface) {
         if (obj.type === "function") {
             const func = obj as {name: string, type: string, inputs: object[], outputs: object[]};
             func.inputs.concat(func.outputs).forEach((output: object) => {
-                Object.assign(output, Object.assign({name: ""}, output));
+                Object.assign(output, Object.assign({ name: "" }, output));
             })
         }
     });
