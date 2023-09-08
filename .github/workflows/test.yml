@@ -44,12 +44,6 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install slither
-      run: pip3 install -r scripts/requirements.txt
-
-    - name: Show slither version
-      run: slither --version
-
     - name: Install project
       run: yarn install
 
