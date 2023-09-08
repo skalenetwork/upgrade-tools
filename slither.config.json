@@ -1,4 +1,0 @@
-{
-    "detectors_to_exclude": "assembly,solc-version",
-    "filter_paths": "@openzeppelin/contracts/|@openzeppelin/contracts-upgradeable/"
-}
