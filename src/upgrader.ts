@@ -90,7 +90,6 @@ export abstract class Upgrader {
                     name: contract,
                     abi: getAbi(contractFactory.interface)
                 });
-                await verify(contract, newImplementationAddress, []);
             } else {
                 console.log(chalk.gray(`Contract ${contract} is up to date`));
             }
@@ -116,6 +115,15 @@ export abstract class Upgrader {
         await this.submitter.submit(this.transactions);
 
         await fs.writeFile(`data/${this.projectName}-${version}-${network.name}-abi.json`, JSON.stringify(this.abi, null, 4));
+
+        if (process.env.NO_VERIFY) {
+            console.log("Skip verification");
+        } else {
+            console.log("Start verification");
+            for (const contract of contractsToUpgrade) {
+                await verify(contract.name, contract.implementationAddress, []);
+            }
+        }
 
         console.log("Done");
     }

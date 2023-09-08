@@ -47,6 +47,7 @@
     "ethereumjs-util": "^7.1.4"
   },
   "peerDependencies": {
+    "@nomicfoundation/hardhat-verify": "^1.1.1",
     "@nomiclabs/hardhat-ethers": "^2.0.4",
     "@openzeppelin/hardhat-upgrades": "^1.14.0",
     "@openzeppelin/upgrades-core": "^1.12.0",
