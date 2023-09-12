@@ -9,6 +9,7 @@ feldman
 jbaylina
 jordi
 kavoon
+nomicfoundation
 payvin
 payvint
 stebaiev

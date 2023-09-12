@@ -12,7 +12,7 @@ on:
       - beta
       - develop
 env:
-  NODE_VERSION: 16
+  NODE_VERSION: 18
 
 jobs:
   build:
