@@ -96,7 +96,6 @@ export abstract class Upgrader {
                     implementationAddress: newImplementationAddress,
                     name: contract
                 });
-                await verify(contract, newImplementationAddress, []);
             } else {
                 console.log(chalk.gray(`Contract ${contract} is up to date`));
             }
@@ -119,6 +118,15 @@ export abstract class Upgrader {
         await fs.writeFile(`data/transactions-${version}-${network.name}.json`, JSON.stringify(this.transactions, null, 4));
 
         await this.submitter.submit(this.transactions);
+
+        if (process.env.NO_VERIFY) {
+            console.log("Skip verification");
+        } else {
+            console.log("Start verification");
+            for (const contract of contractsToUpgrade) {
+                await verify(contract.name, contract.implementationAddress, []);
+            }
+        }
 
         console.log("Done");
     }
