@@ -1,7 +1,7 @@
 /* eslint-env node */
 module.exports = {
     "extends": [
-        // "eslint:all",
+        "eslint:all",
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended"
     ],
@@ -21,6 +21,39 @@ module.exports = {
         "padded-blocks": [
             "error",
             "never"
-        ]
+        ],
+
+        "class-methods-use-this": "warn",
+        "consistent-return": "warn",
+        "eqeqeq": "warn",
+        "func-style": "warn",
+        "id-length": "warn",
+        "init-declarations": "warn",
+        "line-comment-position": "warn",
+        "lines-around-comment": "warn",
+        "max-depth": "warn",
+        "max-len": "warn",
+        "max-lines-per-function": "warn",
+        "max-params": "warn",
+        "max-statements": "warn",
+        "multiline-comment-style": "warn",
+        "no-await-in-loop": "warn",
+        "no-console": "warn",
+        "no-continue": "warn",
+        "no-duplicate-imports": "warn",
+        "no-inline-comments": "warn",
+        "no-magic-numbers": "warn",
+        "no-mixed-operators": "warn",
+        "no-negated-condition": "warn",
+        "no-shadow": "warn",
+        "no-ternary": "warn",
+        "no-undefined": "warn",
+        "no-underscore-dangle": "warn",
+        "no-use-before-define": "warn",
+        "no-warning-comments": "warn",
+        "prefer-destructuring": "warn",
+        "radix": "warn",
+        "sort-imports": "warn",
+        "sort-keys": "warn"
     }
 };

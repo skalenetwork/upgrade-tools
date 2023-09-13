@@ -37,21 +37,29 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
                 "type": "function"
             }
         ]),
-        ethers.provider);
+        ethers.provider
+    );
 
-    async submit(transactions: UnsignedTransaction[]): Promise<void> {
+    async submit (transactions: UnsignedTransaction[]): Promise<void> {
         if (transactions.length > 1) {
             this._atomicityWarning();
         }
-        const transactionsToMarionette = []
+        const transactionsToMarionette = [];
         for (const transaction of transactions) {
             transactionsToMarionette.push({
-                to: this.marionette.address,
+                "to": this.marionette.address,
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                data: await this.marionette.encodeFunctionCall(
-                    transaction.to ? transaction.to : ethers.constants.AddressZero,
-                    transaction.value ? transaction.value : 0,
-                    transaction.data ? transaction.data : "0x") as BytesLike
+                "data": await this.marionette.encodeFunctionCall(
+                    transaction.to
+                        ? transaction.to
+                        : ethers.constants.AddressZero,
+                    transaction.value
+                        ? transaction.value
+                        : 0,
+                    transaction.data
+                        ? transaction.data
+                        : "0x"
+                ) as BytesLike
             });
         }
         await super.submit(transactionsToMarionette);

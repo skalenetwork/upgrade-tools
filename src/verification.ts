@@ -1,17 +1,20 @@
-import {ethers, run, network} from "hardhat";
+import {ethers, network, run} from "hardhat";
 import {builtinChains} from "@nomicfoundation/hardhat-verify/internal/chain-config";
 import chalk from "chalk";
 import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 
-export async function verify(contractName: string, contractAddress: string, constructorArguments: object) {
-    const chainId = (await ethers.provider.getNetwork()).chainId;
-    if (builtinChains.find(chain => chain.chainId === chainId) !== undefined) {
-        for (let retry = 0; retry <= 5; ++retry) {
+export async function verify (contractName: string, contractAddress: string, constructorArguments: object) {
+    const {chainId} = await ethers.provider.getNetwork();
+    if (builtinChains.find((chain) => chain.chainId === chainId) !== undefined) {
+        for (let retry = 0; retry <= 5; retry += 1) {
             try {
-                await run("verify:verify", {
-                    address: contractAddress,
-                    constructorArguments
-                });
+                await run(
+                    "verify:verify",
+                    {
+                        "address": contractAddress,
+                        constructorArguments
+                    }
+                );
                 break;
             } catch (e) {
                 if (e instanceof Error) {
@@ -22,13 +25,23 @@ export async function verify(contractName: string, contractAddress: string, cons
                     console.log(chalk.red(`Contract ${contractName} was not verified on etherscan`));
                     console.log(e.toString());
                 } else {
-                    console.log("Unknown exception type:", e)
+                    console.log(
+                        "Unknown exception type:",
+                        e
+                    );
                 }
             }
         }
     }
 }
 
-export async function verifyProxy(contractName: string, proxyAddress: string, constructorArguments: object) {
-    await verify(contractName, await getImplementationAddress(network.provider, proxyAddress), constructorArguments);
+export async function verifyProxy (contractName: string, proxyAddress: string, constructorArguments: object) {
+    await verify(
+        contractName,
+        await getImplementationAddress(
+            network.provider,
+            proxyAddress
+        ),
+        constructorArguments
+    );
 }

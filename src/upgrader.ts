@@ -16,20 +16,27 @@ import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
 
 export abstract class Upgrader {
     instance: Instance;
+
     targetVersion: string;
+
     contractNamesToUpgrade: string[];
+
     projectName: string;
+
     transactions: UnsignedTransaction[];
+
     submitter: Submitter;
 
-    constructor(projectName: string,
-                targetVersion: string,
-                instance: Instance,
-                contractNamesToUpgrade: string[],
-                submitter: Submitter = new AutoSubmitter()) {
+    constructor (
+        projectName: string,
+        targetVersion: string,
+        instance: Instance,
+        contractNamesToUpgrade: string[],
+        submitter: Submitter = new AutoSubmitter()
+    ) {
         this.targetVersion = targetVersion;
-        if (!targetVersion.includes('-')) {
-            this.targetVersion = targetVersion + '-stable.0';
+        if (!targetVersion.includes("-")) {
+            this.targetVersion = `${targetVersion}-stable.0`;
         }
         this.instance = instance;
         this.contractNamesToUpgrade = contractNamesToUpgrade;
@@ -38,26 +45,28 @@ export abstract class Upgrader {
         this.submitter = submitter;
     }
 
-    // abstract
+    // Abstract
 
     abstract getDeployedVersion: () => Promise<string | undefined>
+
     abstract setVersion: (newVersion: string) => Promise<void>
 
-    // protected
+    // Protected
 
-    deployNewContracts = () => { return Promise.resolve() };
-    initialize = () => { return Promise.resolve() };
+    deployNewContracts = () => Promise.resolve();
 
-    // public
+    initialize = () => Promise.resolve();
 
-    async upgrade() {
+    // Public
+
+    async upgrade () {
         const proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin;
 
         let deployedVersion = await this.getDeployedVersion();
         const version = await getVersion();
         if (deployedVersion) {
-            if (!deployedVersion.includes('-')) {
-                deployedVersion = deployedVersion + '-stable.0';
+            if (!deployedVersion.includes("-")) {
+                deployedVersion += "-stable.0";
             }
             if (deployedVersion !== this.targetVersion) {
                 console.log(chalk.red(`This script can't upgrade version ${deployedVersion} to ${version}`));
@@ -76,25 +85,27 @@ export abstract class Upgrader {
         for (const contract of this.contractNamesToUpgrade) {
             const
                 contractFactory = await this._getContractFactoryAndUpdateManifest(contract);
-                const proxyAddress = (await this.instance.getContract(contract)).address;
+            const proxyAddress = (await this.instance.getContract(contract)).address;
 
             console.log(`Prepare upgrade of ${contract}`);
             const
-                currentImplementationAddress = await getImplementationAddress(network.provider, proxyAddress);
-                const newImplementationAddress = await upgrades.prepareUpgrade(
-                    proxyAddress,
-                    contractFactory,
-                    {
-                        unsafeAllowLinkedLibraries: true,
-                        unsafeAllowRenames: true
-                    }
-                ) as string;
-            if (newImplementationAddress !== currentImplementationAddress)
-            {
+                currentImplementationAddress = await getImplementationAddress(
+                    network.provider,
+                    proxyAddress
+                );
+            const newImplementationAddress = await upgrades.prepareUpgrade(
+                proxyAddress,
+                contractFactory,
+                {
+                    "unsafeAllowLinkedLibraries": true,
+                    "unsafeAllowRenames": true
+                }
+            ) as string;
+            if (newImplementationAddress !== currentImplementationAddress) {
                 contractsToUpgrade.push({
                     proxyAddress,
-                    implementationAddress: newImplementationAddress,
-                    name: contract
+                    "implementationAddress": newImplementationAddress,
+                    "name": contract
                 });
             } else {
                 console.log(chalk.gray(`Contract ${contract} is up to date`));
@@ -105,17 +116,30 @@ export abstract class Upgrader {
         for (const contract of contractsToUpgrade) {
             console.log(chalk.yellowBright(`Prepare transaction to upgrade ${contract.name} at ${contract.proxyAddress} to ${contract.implementationAddress}`));
             this.transactions.push({
-                to: proxyAdmin.address,
-                data: proxyAdmin.interface.encodeFunctionData("upgrade", [contract.proxyAddress, contract.implementationAddress])
+                "to": proxyAdmin.address,
+                "data": proxyAdmin.interface.encodeFunctionData(
+                    "upgrade",
+                    [
+                        contract.proxyAddress,
+                        contract.implementationAddress
+                    ]
+                )
             });
         }
 
         await this.initialize();
 
-        // write version
+        // Write version
         await this.setVersion(version);
 
-        await fs.writeFile(`data/transactions-${version}-${network.name}.json`, JSON.stringify(this.transactions, null, 4));
+        await fs.writeFile(
+            `data/transactions-${version}-${network.name}.json`,
+            JSON.stringify(
+                this.transactions,
+                null,
+                4
+            )
+        );
 
         await this.submitter.submit(this.transactions);
 
@@ -124,27 +148,38 @@ export abstract class Upgrader {
         } else {
             console.log("Start verification");
             for (const contract of contractsToUpgrade) {
-                await verify(contract.name, contract.implementationAddress, []);
+                await verify(
+                    contract.name,
+                    contract.implementationAddress,
+                    []
+                );
             }
         }
 
         console.log("Done");
     }
 
-    // private
+    // Private
 
-    async _getContractFactoryAndUpdateManifest(contract: string) {
+    async _getContractFactoryAndUpdateManifest (contract: string) {
         const {linkReferences} = await artifacts.readArtifact(contract);
-        const manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
+        const manifest = JSON.parse(await fs.readFile(
+            await getManifestFile(),
+            "utf-8"
+        )) as SkaleManifestData;
 
-        if (!Object.keys(linkReferences).length)
+        if (!Object.keys(linkReferences).length) {
             return await ethers.getContractFactory(contract);
+        }
 
         const
             librariesToUpgrade = [];
-            const oldLibraries: {[k: string]: string} = {};
+        const oldLibraries: {[k: string]: string} = {};
         if (manifest.libraries === undefined) {
-            Object.assign(manifest, {libraries: {}});
+            Object.assign(
+                manifest,
+                {"libraries": {}}
+            );
         }
         for (const key of Object.keys(linkReferences)) {
             const libraryName = Object.keys(linkReferences[key])[0];
@@ -161,12 +196,29 @@ export abstract class Upgrader {
             }
         }
         const libraries = await deployLibraries(librariesToUpgrade);
-        for (const [libraryName, libraryAddress] of libraries.entries()) {
+        for (const [
+            libraryName,
+            libraryAddress
+        ] of libraries.entries()) {
             const {bytecode} = await artifacts.readArtifact(libraryName);
-            manifest.libraries[libraryName] = {"address": libraryAddress, "bytecodeHash": hashBytecode(bytecode)};
+            manifest.libraries[libraryName] = {"address": libraryAddress,
+                "bytecodeHash": hashBytecode(bytecode)};
         }
-        Object.assign(libraries, oldLibraries);
-        await fs.writeFile(await getManifestFile(), JSON.stringify(manifest, null, 4));
-        return await getLinkedContractFactory(contract, libraries);
+        Object.assign(
+            libraries,
+            oldLibraries
+        );
+        await fs.writeFile(
+            await getManifestFile(),
+            JSON.stringify(
+                manifest,
+                null,
+                4
+            )
+        );
+        return await getLinkedContractFactory(
+            contract,
+            libraries
+        );
     }
 }
