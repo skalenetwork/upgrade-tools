@@ -176,14 +176,10 @@ export abstract class Upgrader {
             return await ethers.getContractFactory(contract);
         }
 
-        const
-            librariesToUpgrade = [];
+        const librariesToUpgrade = [];
         const oldLibraries: {[k: string]: string} = {};
         if (manifest.libraries === undefined) {
-            Object.assign(
-                manifest,
-                {"libraries": {}}
-            );
+            manifest.libraries = {};
         }
         for (const key of Object.keys(linkReferences)) {
             const libraryName = Object.keys(linkReferences[key])[0];

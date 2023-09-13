@@ -15,65 +15,67 @@ export class AutoSubmitter extends Submitter {
 
     async submit (transactions: Transaction[]) {
         console.log(`Submit via ${this.name}`);
-        let submitter: Submitter;
+        const submitter = await AutoSubmitter.getSubmitter();
+        await submitter.submit(transactions);
+    }
+
+    // Private
+
+    private static async getSubmitter () {
         // TODO: remove unknown when move everything to ethers 6
         const proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin;
         const owner = await proxyAdmin.owner();
         if (await hre.ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
-            submitter = new EoaSubmitter();
-        } else {
-            console.log("Owner is a contract");
-
-            if (ethers.utils.getAddress(owner) === ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
-                console.log("Marionette owner is detected");
-
-                const imaInstance = await AutoSubmitter._getImaInstance();
-                const mainnetChainId = AutoSubmitter._getMainnetChainId();
-                const safeAddress = AutoSubmitter._getSafeAddress();
-                const schainHash = AutoSubmitter._getSchainHash();
-
-                /*
-                 * TODO: after marionette has multiSend functionality
-                 * query version and properly select a submitter
-                 * based on it
-                 *
-                 * if (await this._versionFunctionExists()) {
-                 *     console.log("version() function was found. Use normal Marionette")
-                 *     submitter = new SafeImaMarionetteSubmitter(
-                 *         safeAddress,
-                 *         imaAbi,
-                 *         schainHash,
-                 *         mainnetChainId
-                 *     )
-                 * } else {
-                 *     console.log("No version() function was found. Use legacy Marionette")
-                 *     submitter = new SafeImaLegacyMarionetteSubmitter(
-                 *         safeAddress,
-                 *         imaAbi,
-                 *         schainHash,
-                 *         mainnetChainId
-                 *     )
-                 * }
-                 */
-
-                submitter = new SafeImaLegacyMarionetteSubmitter(
-                    safeAddress,
-                    imaInstance,
-                    schainHash,
-                    mainnetChainId
-                );
-            } else {
-                // Assuming owner is a Gnosis Safe
-                console.log("Using Gnosis Safe");
-
-                submitter = new SafeSubmitter(owner);
-            }
+            return new EoaSubmitter();
         }
-        await submitter.submit(transactions);
-    }
 
-    // Private
+        console.log("Owner is a contract");
+        if (ethers.utils.getAddress(owner) === ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
+            console.log("Marionette owner is detected");
+
+            const imaInstance = await AutoSubmitter._getImaInstance();
+            const mainnetChainId = AutoSubmitter._getMainnetChainId();
+            const safeAddress = AutoSubmitter._getSafeAddress();
+            const schainHash = AutoSubmitter._getSchainHash();
+
+            /*
+            * TODO: after marionette has multiSend functionality
+            * query version and properly select a submitter
+            * based on it
+            *
+            * if (await this._versionFunctionExists()) {
+            *     console.log("version() function was found. Use normal Marionette")
+            *     submitter = new SafeImaMarionetteSubmitter(
+            *         safeAddress,
+            *         imaAbi,
+            *         schainHash,
+            *         mainnetChainId
+            *     )
+            * } else {
+            *     console.log("No version() function was found. Use legacy Marionette")
+            *     submitter = new SafeImaLegacyMarionetteSubmitter(
+            *         safeAddress,
+            *         imaAbi,
+            *         schainHash,
+            *         mainnetChainId
+            *     )
+            * }
+            */
+
+            return new SafeImaLegacyMarionetteSubmitter(
+                safeAddress,
+                imaInstance,
+                schainHash,
+                mainnetChainId
+            );
+        }
+
+        // Assuming owner is a Gnosis Safe
+        console.log("Using Gnosis Safe");
+
+        return new SafeSubmitter(owner);
+    }
 
     private static async _getImaInstance () {
         if (!process.env.IMA) {

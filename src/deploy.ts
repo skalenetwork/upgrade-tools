@@ -76,8 +76,7 @@ export const getContractFactory = async (contract: string) => {
         libraryNames.push(libraryName);
     }
 
-    const
-        libraries = await deployLibraries(libraryNames);
+    const libraries = await deployLibraries(libraryNames);
     const libraryArtifacts: { [key: string]: unknown } = {};
     for (const [
         libraryName,
@@ -89,32 +88,31 @@ export const getContractFactory = async (contract: string) => {
             "bytecodeHash": hashBytecode(bytecode)
         };
     }
-    let manifest;
-    try {
-        manifest = JSON.parse(await fs.readFile(
-            await getManifestFile(),
-            "utf-8"
-        )) as SkaleManifestData;
+
+    const manifest = JSON.parse(await fs.readFile(
+        await getManifestFile(),
+        "utf-8"
+    )) as SkaleManifestData;
+    if (manifest.libraries === undefined) {
+        Object.assign(
+            manifest,
+            {"libraries": libraryArtifacts}
+        );
+    } else {
         Object.assign(
             libraryArtifacts,
             manifest.libraries
         );
-    } finally {
-        if (manifest !== undefined) {
-            Object.assign(
-                manifest,
-                {"libraries": libraryArtifacts}
-            );
-        }
-        await fs.writeFile(
-            await getManifestFile(),
-            JSON.stringify(
-                manifest,
-                null,
-                4
-            )
-        );
     }
+    await fs.writeFile(
+        await getManifestFile(),
+        JSON.stringify(
+            manifest,
+            null,
+            4
+        )
+    );
+
     return await getLinkedContractFactory(
         contract,
         libraries

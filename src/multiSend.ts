@@ -9,7 +9,7 @@ export const encodeTransaction = (operation: 0 | 1, to: string, value: BigNumber
     // / data length as a uint256 (=> 32 bytes),
     // / data as bytes.
 
-    let _operation;
+    let _operation = "";
     if (operation === 0) {
         _operation = "00";
     } else if (operation === 1) {
