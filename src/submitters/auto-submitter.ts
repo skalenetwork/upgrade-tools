@@ -100,7 +100,7 @@ export class AutoSubmitter extends Submitter {
             if (!process.env.SCHAIN_NAME) {
                 console.log(chalk.red("Set schain name to SCHAIN_NAME environment variable"));
                 console.log(chalk.red("or schain hash to SCHAIN_HASH environment variable"));
-                process.exit(1);
+                throw Error("Schain is not set");
             } else {
                 return ethers.utils.solidityKeccak256(
                     ["string"],
@@ -116,7 +116,7 @@ export class AutoSubmitter extends Submitter {
         if (!process.env.MAINNET_CHAIN_ID) {
             console.log(chalk.red("Set chainId of mainnet to MAINNET_CHAIN_ID environment variable"));
             console.log(chalk.red("Use 1 for Ethereum mainnet or 5 for Goerli"));
-            process.exit(1);
+            throw Error("Mainnet chainId is not set");
         } else {
             return Number.parseInt(process.env.MAINNET_CHAIN_ID);
         }
