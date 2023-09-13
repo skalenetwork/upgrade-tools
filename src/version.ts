@@ -1,23 +1,30 @@
 import { exec as asyncExec } from "child_process";
-import { dirname } from "path";
 import { promises as fs, existsSync } from "fs";
 import util from "util";
 
 
 const exec = util.promisify(asyncExec);
 
+class VersionNotFound extends Error {}
+
 async function getVersionFilename(folder?: string) {
     if (folder === undefined) {
-        return getVersionFilename(process.cwd());
+        return getVersionFilename(
+            (await exec("git rev-parse --show-toplevel")).stdout.trim()
+        );
     }
-    const path = `${folder}/VERSION`;
+    const
+        VERSION_FILENAME = 'VERSION',
+        path = `${folder}/${VERSION_FILENAME}`;
     if (existsSync(path)) {
         return path;
     }
-    if (folder === '/') {
-        throw Error("Can't find version file");
+    for (const entry of await fs.readdir(folder, { withFileTypes: true, recursive: true })) {
+        if (entry.isFile() && entry.name === VERSION_FILENAME ) {
+            return `${entry.path}/${entry.name}`;
+        }
     }
-    return getVersionFilename(dirname(folder));
+    throw new VersionNotFound("Can't find version file");
 }
 
 export const getVersion = async () => {
