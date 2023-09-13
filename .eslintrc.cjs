@@ -23,7 +23,6 @@ module.exports = {
             "never"
         ],
 
-        "eqeqeq": "warn",
         "func-style": "warn",
         "id-length": "warn",
         "init-declarations": "warn",

@@ -25,7 +25,7 @@ export class AutoSubmitter extends Submitter {
         } else {
             console.log("Owner is a contract");
 
-            if (ethers.utils.getAddress(owner) == ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
+            if (ethers.utils.getAddress(owner) === ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
                 console.log("Marionette owner is detected");
 
                 const imaInstance = await AutoSubmitter._getImaInstance();
