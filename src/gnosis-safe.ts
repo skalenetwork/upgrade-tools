@@ -49,15 +49,25 @@ export const createMultiSendTransaction = async (safeAddress: string, transactio
         nonce
     );
 
-    const
-        options = {
-            "safeTxGas": "0", // Max gas to use in the transaction
-            "baseGas": "0", // Gas costs not related to the transaction execution (signature check, refund payment...)
-            "gasPrice": "0", // Gas price used for the refund calculation
-            "gasToken": ethers.constants.AddressZero, // Token address (hold by the Safe) to be used as a refund to the sender, if `null` is Ether
-            "refundReceiver": ethers.constants.AddressZero, // Address of receiver of gas payment (or `null` if tx.origin)
-            nonce // Nonce of the Safe, transaction cannot be executed until Safe's nonce is not equal to this nonce
-        };
+    const options = {
+        // Max gas to use in the transaction
+        "safeTxGas": "0",
+
+        // Gas costs not related to the transaction execution (signature check, refund payment...)
+        "baseGas": "0",
+
+        // Gas price used for the refund calculation
+        "gasPrice": "0",
+
+        // Token address (hold by the Safe) to be used as a refund to the sender, if `null` is Ether
+        "gasToken": ethers.constants.AddressZero,
+
+        // Address of receiver of gas payment (or `null` if tx.origin)
+        "refundReceiver": ethers.constants.AddressZero,
+
+        // Nonce of the Safe, transaction cannot be executed until Safe's nonce is not equal to this nonce
+        nonce
+    };
     const ethAdapter = await getEthAdapter();
     const safeSdk = await Safe.create({ethAdapter,
         safeAddress});
