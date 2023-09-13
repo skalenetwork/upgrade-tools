@@ -16,18 +16,18 @@ export const verify = async (contractName: string, contractAddress: string, cons
                     }
                 );
                 break;
-            } catch (e) {
-                if (e instanceof Error) {
-                    if (e.toString().includes("Contract source code already verified")) {
+            } catch (error) {
+                if (error instanceof Error) {
+                    if (error.toString().includes("Contract source code already verified")) {
                         console.log(chalk.grey(`${contractName} is already verified`));
                         return;
                     }
                     console.log(chalk.red(`Contract ${contractName} was not verified on etherscan`));
-                    console.log(e.toString());
+                    console.log(error.toString());
                 } else {
                     console.log(
                         "Unknown exception type:",
-                        e
+                        error
                     );
                 }
             }
