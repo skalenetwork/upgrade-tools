@@ -5,9 +5,16 @@ import {artifacts, ethers, network, upgrades} from "hardhat";
 import {getManifestAdmin} from "@openzeppelin/hardhat-upgrades/dist/admin";
 import {getVersion} from "./version";
 import {promises as fs} from "fs";
-import {deployLibraries, getLinkedContractFactory, getManifestFile} from "./deploy";
+import {
+    deployLibraries,
+    getLinkedContractFactory,
+    getManifestFile
+} from "./deploy";
 import {UnsignedTransaction} from "ethers";
-import {getImplementationAddress, hashBytecode} from "@openzeppelin/upgrades-core";
+import {
+    getImplementationAddress,
+    hashBytecode
+} from "@openzeppelin/upgrades-core";
 import {verify} from "./verification";
 import {Submitter} from "./submitters/submitter";
 import {SkaleManifestData} from "./types/SkaleManifestData";
@@ -69,11 +76,16 @@ export abstract class Upgrader {
                 deployedVersion += "-stable.0";
             }
             if (deployedVersion !== this.targetVersion) {
-                console.log(chalk.red(`This script can't upgrade version ${deployedVersion} to ${version}`));
+                const cannotUpgradeMessage =
+                    `This script can't upgrade version ${deployedVersion}` +
+                    ` to ${version}`;
+                console.log(chalk.red(cannotUpgradeMessage));
                 process.exit(1);
             }
         } else {
-            console.log(chalk.yellow(`Can't check currently deployed version of ${this.projectName}`));
+            const cannotCheckMessage =
+                `Can't check currently deployed version of ${this.projectName}`;
+            console.log(chalk.yellow(cannotCheckMessage));
         }
         console.log(`Will mark updated version as ${version}`);
 
@@ -83,11 +95,16 @@ export abstract class Upgrader {
         }
 
         // Deploy new implementations
-        const contractsToUpgrade: {proxyAddress: string, implementationAddress: string, name: string}[] = [];
+        const contractsToUpgrade: {
+            proxyAddress: string,
+            implementationAddress: string,
+            name: string
+        }[] = [];
         for (const contract of this.contractNamesToUpgrade) {
-            const
-                contractFactory = await Upgrader._getContractFactoryAndUpdateManifest(contract);
-            const proxyAddress = (await this.instance.getContract(contract)).address;
+            const contractFactory =
+                await Upgrader.getContractFactoryAndUpdateManifest(contract);
+            const proxyAddress =
+                (await this.instance.getContract(contract)).address;
 
             console.log(`Prepare upgrade of ${contract}`);
             const
@@ -116,7 +133,11 @@ export abstract class Upgrader {
 
         // Switch proxies to new implementations
         for (const contract of contractsToUpgrade) {
-            console.log(chalk.yellowBright(`Prepare transaction to upgrade ${contract.name} at ${contract.proxyAddress} to ${contract.implementationAddress}`));
+            const infoMessage =
+                `Prepare transaction to upgrade ${contract.name}` +
+                ` at ${contract.proxyAddress}` +
+                ` to ${contract.implementationAddress}`;
+            console.log(chalk.yellowBright(infoMessage));
             this.transactions.push({
                 "to": proxyAdmin.address,
                 "data": proxyAdmin.interface.encodeFunctionData(
@@ -165,7 +186,8 @@ export abstract class Upgrader {
 
     // Private
 
-    private static async _getContractFactoryAndUpdateManifest (contract: string) {
+    private static async getContractFactoryAndUpdateManifest (contract:
+        string) {
         const {linkReferences} = await artifacts.readArtifact(contract);
         const manifest = JSON.parse(await fs.readFile(
             await getManifestFile(),
@@ -188,11 +210,13 @@ export abstract class Upgrader {
                 librariesToUpgrade.push(libraryName);
                 continue;
             }
-            const libraryBytecodeHash = manifest.libraries[libraryName].bytecodeHash;
+            const libraryBytecodeHash =
+                manifest.libraries[libraryName].bytecodeHash;
             if (hashBytecode(bytecode) !== libraryBytecodeHash) {
                 librariesToUpgrade.push(libraryName);
             } else {
-                oldLibraries[libraryName] = manifest.libraries[libraryName].address;
+                oldLibraries[libraryName] =
+                    manifest.libraries[libraryName].address;
             }
         }
         const libraries = await deployLibraries(librariesToUpgrade);

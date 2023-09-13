@@ -9,7 +9,9 @@ class VersionNotFound extends Error {}
 
 const getVersionFilename = async (folder?: string): Promise<string> => {
     if (folder === undefined) {
-        return getVersionFilename((await exec("git rev-parse --show-toplevel")).stdout.trim());
+        return getVersionFilename((
+            await exec("git rev-parse --show-toplevel")
+        ).stdout.trim());
     }
     const VERSION_FILENAME = "VERSION";
     const path = `${folder}/${VERSION_FILENAME}`;

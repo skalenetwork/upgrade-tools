@@ -6,7 +6,9 @@ import hre, {ethers} from "hardhat";
 import {EoaSubmitter} from "./eoa-submitter";
 import {SafeSubmitter} from "./safe-submitter";
 import chalk from "chalk";
-import {SafeImaLegacyMarionetteSubmitter} from "./safe-ima-legacy-marionette-submitter";
+import {
+    SafeImaLegacyMarionetteSubmitter
+} from "./safe-ima-legacy-marionette-submitter";
 import {MARIONETTE_ADDRESS} from "./types/marionette";
 import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v5";
 
@@ -31,7 +33,8 @@ export class AutoSubmitter extends Submitter {
         }
 
         console.log("Owner is a contract");
-        if (ethers.utils.getAddress(owner) === ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
+        if (ethers.utils.getAddress(owner) ===
+            ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
             console.log("Marionette owner is detected");
 
             const imaInstance = await AutoSubmitter._getImaInstance();
@@ -45,7 +48,8 @@ export class AutoSubmitter extends Submitter {
             * based on it
             *
             * if (await this._versionFunctionExists()) {
-            *     console.log("version() function was found. Use normal Marionette")
+            *     console.log("version() function was found." +
+            *       " Use normal Marionette")
             *     submitter = new SafeImaMarionetteSubmitter(
             *         safeAddress,
             *         imaAbi,
@@ -53,7 +57,8 @@ export class AutoSubmitter extends Submitter {
             *         mainnetChainId
             *     )
             * } else {
-            *     console.log("No version() function was found. Use legacy Marionette")
+            *     console.log("No version() function was found." +
+            *       " Use legacy Marionette")
             *     submitter = new SafeImaLegacyMarionetteSubmitter(
             *         safeAddress,
             *         imaAbi,
@@ -79,18 +84,20 @@ export class AutoSubmitter extends Submitter {
 
     private static async _getImaInstance () {
         if (!process.env.IMA) {
-            console.log(chalk.red("Set target IMA alias to IMA environment variable"));
+            console.log(chalk.red("Set target IMA alias" +
+                " to IMA environment variable"));
             process.exit(1);
         }
-        const
-            network = await skaleContracts.getNetworkByProvider(ethers.provider);
+        const network =
+            await skaleContracts.getNetworkByProvider(ethers.provider);
         const ima = await network.getProject("ima");
         return await ima.getInstance(process.env.IMA);
     }
 
     private static _getSafeAddress () {
         if (!process.env.SAFE_ADDRESS) {
-            console.log(chalk.red("Set Gnosis Safe owner address to SAFE_ADDRESS environment variable"));
+            console.log(chalk.red("Set Gnosis Safe owner address" +
+                " to SAFE_ADDRESS environment variable"));
             process.exit(1);
         }
         return process.env.SAFE_ADDRESS;
@@ -100,8 +107,10 @@ export class AutoSubmitter extends Submitter {
         // Query Context to get schain hash
         if (!process.env.SCHAIN_HASH) {
             if (!process.env.SCHAIN_NAME) {
-                console.log(chalk.red("Set schain name to SCHAIN_NAME environment variable"));
-                console.log(chalk.red("or schain hash to SCHAIN_HASH environment variable"));
+                console.log(chalk.red("Set schain name" +
+                    " to SCHAIN_NAME environment variable"));
+                console.log(chalk.red("or schain hash" +
+                    " to SCHAIN_HASH environment variable"));
                 throw Error("Schain is not set");
             } else {
                 return ethers.utils.solidityKeccak256(
@@ -116,8 +125,10 @@ export class AutoSubmitter extends Submitter {
 
     private static _getMainnetChainId () {
         if (!process.env.MAINNET_CHAIN_ID) {
-            console.log(chalk.red("Set chainId of mainnet to MAINNET_CHAIN_ID environment variable"));
-            console.log(chalk.red("Use 1 for Ethereum mainnet or 5 for Goerli"));
+            console.log(chalk.red("Set chainId of mainnet" +
+                " to MAINNET_CHAIN_ID environment variable"));
+            console.log(chalk.red("Use 1 for Ethereum mainnet" +
+                " or 5 for Goerli"));
             throw Error("Mainnet chainId is not set");
         } else {
             return Number.parseInt(process.env.MAINNET_CHAIN_ID);
@@ -167,7 +178,8 @@ export class AutoSubmitter extends Submitter {
             return true;
         } catch {
             /*
-             * Otherwise (revert) we assume that there is no entry in the jump table
+             * Otherwise (revert) we assume
+             * that there is no entry in the jump table
              * meaning that the contract doesn't include version()
              */
             return false;

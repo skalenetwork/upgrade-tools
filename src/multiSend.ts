@@ -1,14 +1,25 @@
 import {BigNumber} from "ethers";
 
-const padWithZeros = (value: string, targetLength: number) => ("0".repeat(targetLength) + value).slice(-targetLength);
+const padWithZeros = (
+    value: string,
+    targetLength: number
+) => ("0".repeat(targetLength) + value).slice(-targetLength);
 
-export const encodeTransaction = (operation: 0 | 1, to: string, value: BigNumber | number, data: string) => {
-    // / operation as a uint8 with 0 for a call or 1 for a delegatecall (=> 1 byte),
-    // / to as a address (=> 20 bytes),
-    // / value as a uint256 (=> 32 bytes),
-    // / data length as a uint256 (=> 32 bytes),
-    // / data as bytes.
+export const encodeTransaction = (
+    /* Operation as a uint8 with 0 for a call
+     * or 1 for a delegatecall (=> 1 byte)
+     */
+    operation: 0 | 1,
 
+    // To as a address (=> 20 bytes)
+    to: string,
+
+    // Value as a uint256 (=> 32 bytes)
+    value: BigNumber | number,
+
+    // Data as bytes.
+    data: string
+) => {
     let _operation = "";
     if (operation === 0) {
         _operation = "00";

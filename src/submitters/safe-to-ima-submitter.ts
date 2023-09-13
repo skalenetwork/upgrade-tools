@@ -9,7 +9,12 @@ export class SafeToImaSubmitter extends SafeSubmitter {
 
     private _messageProxyForMainnet: Contract | undefined;
 
-    constructor (safeAddress: string, imaInstance: Instance, targetSchainHash: BytesLike, chainId?: number) {
+    constructor (
+        safeAddress: string,
+        imaInstance: Instance,
+        targetSchainHash: BytesLike,
+        chainId?: number
+    ) {
         super(
             safeAddress,
             chainId
@@ -39,7 +44,8 @@ export class SafeToImaSubmitter extends SafeSubmitter {
 
     private async _getMessageProxyForMainnet () {
         if (this._messageProxyForMainnet === undefined) {
-            this._messageProxyForMainnet = await this.imaInstance.getContract("MessageProxyForMainnet");
+            this._messageProxyForMainnet =
+                await this.imaInstance.getContract("MessageProxyForMainnet");
         }
         return this._messageProxyForMainnet;
     }

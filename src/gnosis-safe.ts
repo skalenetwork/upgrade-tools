@@ -3,7 +3,11 @@ import {ethers} from "hardhat";
 import {UnsignedTransaction} from "ethers";
 import SafeApiKit from "@safe-global/api-kit";
 import Safe, {EthersAdapter} from "@safe-global/protocol-kit";
-import {MetaTransactionData, SafeTransaction, SafeTransactionDataPartial} from "@safe-global/safe-core-sdk-types";
+import {
+    MetaTransactionData,
+    SafeTransaction,
+    SafeTransactionDataPartial
+} from "@safe-global/safe-core-sdk-types";
 
 
 enum Network {
@@ -24,7 +28,10 @@ const URLS = {
 
 // Public functions
 
-export const createMultiSendTransaction = async (safeAddress: string, transactions: UnsignedTransaction[]) => {
+export const createMultiSendTransaction = async (
+    safeAddress: string,
+    transactions: UnsignedTransaction[]
+) => {
     const safeTransactionData: MetaTransactionData[] = [];
     for (const transaction of transactions) {
         safeTransactionData.push({
@@ -53,26 +60,34 @@ export const createMultiSendTransaction = async (safeAddress: string, transactio
         // Max gas to use in the transaction
         "safeTxGas": "0",
 
-        // Gas costs not related to the transaction execution (signature check, refund payment...)
+        // Gas costs not related to the transaction execution
+        // (signature check, refund payment...)
         "baseGas": "0",
 
         // Gas price used for the refund calculation
         "gasPrice": "0",
 
-        // Token address (hold by the Safe) to be used as a refund to the sender, if `null` is Ether
+        /* Token address (hold by the Safe)
+         * to be used as a refund to the sender,
+         * if `null` is Ether
+         */
         "gasToken": ethers.constants.AddressZero,
 
         // Address of receiver of gas payment (or `null` if tx.origin)
         "refundReceiver": ethers.constants.AddressZero,
 
-        // Nonce of the Safe, transaction cannot be executed until Safe's nonce is not equal to this nonce
+        // Nonce of the Safe,
+        // Transaction cannot be executed until
+        // Safe's nonce is not equal to this nonce
         nonce
     };
     const ethAdapter = await getEthAdapter();
     const safeSdk = await Safe.create({ethAdapter,
         safeAddress});
-    const safeTransaction = await safeSdk.createTransaction({safeTransactionData,
-        options});
+    const safeTransaction = await safeSdk.createTransaction({
+        safeTransactionData,
+        options
+    });
 
     await estimateSafeTransaction(
         safeAddress,
@@ -87,7 +102,10 @@ export const createMultiSendTransaction = async (safeAddress: string, transactio
 
 // Private functions
 
-const estimateSafeTransaction = async (safeAddress: string, safeTransactionData: SafeTransactionDataPartial | MetaTransactionData[]) => {
+const estimateSafeTransaction = async (
+    safeAddress: string,
+    safeTransactionData: SafeTransactionDataPartial | MetaTransactionData[]
+) => {
     console.log("Estimate gas");
     const safeService = await getSafeService();
     for (const transaction of safeTransactionData as MetaTransactionData[]) {
@@ -108,7 +126,10 @@ const estimateSafeTransaction = async (safeAddress: string, safeTransactionData:
     console.log(chalk.green("Send transaction to gnosis safe"));
 };
 
-const proposeTransaction = async (safeAddress: string, safeTransaction: SafeTransaction) => {
+const proposeTransaction = async (
+    safeAddress: string,
+    safeTransaction: SafeTransaction
+) => {
     const
         [safeOwner] = await ethers.getSigners();
     const ethAdapter = await getEthAdapter();
@@ -149,7 +170,10 @@ const getSafeService = async () => {
 
 const getSafeTransactionUrl = (chainId: number) => {
     if (Object.keys(URLS.safe_transaction).includes(chainId.toString())) {
-        return URLS.safe_transaction[chainId as keyof typeof URLS.safe_transaction];
+        return URLS.safe_transaction[
+            chainId as keyof typeof URLS.safe_transaction
+        ];
     }
-    throw Error(`Can't get safe-transaction url at network with chainId = ${chainId}`);
+    throw Error("Can't get safe-transaction url" +
+        ` at network with chainId = ${chainId}`);
 };

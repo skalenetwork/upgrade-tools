@@ -48,7 +48,10 @@ const _linkBytecode = (artifact: Artifact, libraries: Map<string, string>) => {
     return bytecode;
 };
 
-export const getLinkedContractFactory = async (contractName: string, libraries: Map<string, string>) => {
+export const getLinkedContractFactory = async (
+    contractName: string,
+    libraries: Map<string, string>
+) => {
     const
         cArtifact = await artifacts.readArtifact(contractName);
     const linkedBytecode = _linkBytecode(
@@ -62,7 +65,9 @@ export const getLinkedContractFactory = async (contractName: string, libraries: 
     return ContractFactory;
 };
 
-export const getManifestFile = async (): Promise<string> => (await Manifest.forNetwork(ethers.provider)).file;
+export const getManifestFile = async function getManifestFile () {
+    return (await Manifest.forNetwork(ethers.provider)).file;
+};
 
 export const getContractFactory = async (contract: string) => {
     const {linkReferences} = await artifacts.readArtifact(contract);

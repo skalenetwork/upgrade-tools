@@ -15,7 +15,8 @@ export class EoaSubmitter extends Submitter {
                 "value": transaction.value,
                 "data": transaction.data
             });
-            console.log(`Waiting for a transaction with nonce ${response.nonce}`);
+            console.log("Waiting for a transaction" +
+                ` with nonce ${response.nonce}`);
             await response.wait();
             console.log("The transaction was sent");
         }

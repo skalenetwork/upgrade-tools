@@ -5,7 +5,12 @@ export const getAbi = (contractInterface: Interface) => {
 
     abi.forEach((obj: {type: string}) => {
         if (obj.type === "function") {
-            const func = obj as {name: string, type: string, inputs: object[], outputs: object[]};
+            const func = obj as {
+                name: string,
+                type: string,
+                inputs: object[],
+                outputs: object[]
+            };
             func.inputs.concat(func.outputs).forEach((output: object) => {
                 Object.assign(
                     output,
