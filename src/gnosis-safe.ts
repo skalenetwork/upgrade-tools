@@ -1,9 +1,9 @@
 import chalk from "chalk";
-import { ethers } from "hardhat";
-import { UnsignedTransaction } from "ethers";
+import {ethers} from "hardhat";
+import {UnsignedTransaction} from "ethers";
 import SafeApiKit from '@safe-global/api-kit'
-import Safe, { EthersAdapter } from '@safe-global/protocol-kit'
-import { MetaTransactionData, SafeTransactionDataPartial, SafeTransaction } from '@safe-global/safe-core-sdk-types'
+import Safe, {EthersAdapter} from '@safe-global/protocol-kit'
+import {MetaTransactionData, SafeTransactionDataPartial, SafeTransaction} from '@safe-global/safe-core-sdk-types'
 
 
 enum Network {
@@ -36,8 +36,8 @@ export async function createMultiSendTransaction(safeAddress: string, transactio
     }
 
     const
-        safeService = await getSafeService(),
-        nonce = await safeService.getNextNonce(safeAddress);
+        safeService = await getSafeService();
+        const nonce = await safeService.getNextNonce(safeAddress);
     console.log("Will send tx to Gnosis with nonce", nonce);
 
     const
@@ -48,10 +48,10 @@ export async function createMultiSendTransaction(safeAddress: string, transactio
             gasToken: ethers.constants.AddressZero, // Token address (hold by the Safe) to be used as a refund to the sender, if `null` is Ether
             refundReceiver: ethers.constants.AddressZero, // Address of receiver of gas payment (or `null` if tx.origin)
             nonce: nonce // Nonce of the Safe, transaction cannot be executed until Safe's nonce is not equal to this nonce
-        },
-        ethAdapter = await getEthAdapter(),
-        safeSdk = await Safe.create({ ethAdapter, safeAddress }),
-        safeTransaction = await safeSdk.createTransaction({ safeTransactionData, options });
+        };
+        const ethAdapter = await getEthAdapter();
+        const safeSdk = await Safe.create({ethAdapter, safeAddress});
+        const safeTransaction = await safeSdk.createTransaction({safeTransactionData, options});
 
     await estimateSafeTransaction(safeAddress, safeTransactionData);
 
@@ -80,12 +80,12 @@ async function estimateSafeTransaction(safeAddress: string, safeTransactionData:
 
 async function proposeTransaction(safeAddress: string, safeTransaction: SafeTransaction) {
     const
-        [ safeOwner ] = await ethers.getSigners(),
-        ethAdapter = await getEthAdapter(),
-        safeSdk = await Safe.create({ ethAdapter, safeAddress }),
-        safeTxHash = await safeSdk.getTransactionHash(safeTransaction),
-        senderSignature = await safeSdk.signTransactionHash(safeTxHash),
-        safeService = await getSafeService();
+        [ safeOwner ] = await ethers.getSigners();
+        const ethAdapter = await getEthAdapter();
+        const safeSdk = await Safe.create({ethAdapter, safeAddress});
+        const safeTxHash = await safeSdk.getTransactionHash(safeTransaction);
+        const senderSignature = await safeSdk.signTransactionHash(safeTxHash);
+        const safeService = await getSafeService();
     await safeService.proposeTransaction({
         safeAddress,
         safeTransactionData: safeTransaction.data,
@@ -97,8 +97,8 @@ async function proposeTransaction(safeAddress: string, safeTransaction: SafeTran
 
 async function getEthAdapter(): Promise<EthersAdapter> {
     const
-        [safeOwner] = await ethers.getSigners(),
-        ethAdapter = new EthersAdapter({
+        [safeOwner] = await ethers.getSigners();
+        const ethAdapter = new EthersAdapter({
             ethers,
             signerOrProvider: safeOwner
         });
@@ -107,9 +107,9 @@ async function getEthAdapter(): Promise<EthersAdapter> {
 
 async function getSafeService() {
     const
-        chainId = (await ethers.provider.getNetwork()).chainId,
-        ethAdapter: EthersAdapter = await getEthAdapter(),
-        safeService = new SafeApiKit({
+        chainId = (await ethers.provider.getNetwork()).chainId;
+        const ethAdapter: EthersAdapter = await getEthAdapter();
+        const safeService = new SafeApiKit({
             txServiceUrl: getSafeTransactionUrl(chainId),
             ethAdapter
         });

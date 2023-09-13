@@ -1,18 +1,18 @@
 import hre from "hardhat";
 import chalk from "chalk";
-import { ProxyAdmin } from "../typechain-types";
-import { artifacts, ethers, network, upgrades } from "hardhat";
-import { getManifestAdmin } from "@openzeppelin/hardhat-upgrades/dist/admin";
-import { getVersion } from "./version";
-import { promises as fs } from "fs";
-import { deployLibraries, getLinkedContractFactory, getManifestFile } from "./deploy";
-import { UnsignedTransaction } from "ethers";
-import { getImplementationAddress, hashBytecode } from "@openzeppelin/upgrades-core";
-import { verify } from "./verification";
-import { Submitter } from "./submitters/submitter";
-import { SkaleManifestData } from "./types/SkaleManifestData";
-import { AutoSubmitter } from "./submitters/auto-submitter";
-import { Instance } from "@skalenetwork/skale-contracts-ethers-v5";
+import {ProxyAdmin} from "../typechain-types";
+import {artifacts, ethers, network, upgrades} from "hardhat";
+import {getManifestAdmin} from "@openzeppelin/hardhat-upgrades/dist/admin";
+import {getVersion} from "./version";
+import {promises as fs} from "fs";
+import {deployLibraries, getLinkedContractFactory, getManifestFile} from "./deploy";
+import {UnsignedTransaction} from "ethers";
+import {getImplementationAddress, hashBytecode} from "@openzeppelin/upgrades-core";
+import {verify} from "./verification";
+import {Submitter} from "./submitters/submitter";
+import {SkaleManifestData} from "./types/SkaleManifestData";
+import {AutoSubmitter} from "./submitters/auto-submitter";
+import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
 
 export abstract class Upgrader {
     instance: Instance;
@@ -75,13 +75,13 @@ export abstract class Upgrader {
         const contractsToUpgrade: {proxyAddress: string, implementationAddress: string, name: string}[] = [];
         for (const contract of this.contractNamesToUpgrade) {
             const
-                contractFactory = await this._getContractFactoryAndUpdateManifest(contract),
-                proxyAddress = (await this.instance.getContract(contract)).address;
+                contractFactory = await this._getContractFactoryAndUpdateManifest(contract);
+                const proxyAddress = (await this.instance.getContract(contract)).address;
 
             console.log(`Prepare upgrade of ${contract}`);
             const
-                currentImplementationAddress = await getImplementationAddress(network.provider, proxyAddress),
-                newImplementationAddress = await upgrades.prepareUpgrade(
+                currentImplementationAddress = await getImplementationAddress(network.provider, proxyAddress);
+                const newImplementationAddress = await upgrades.prepareUpgrade(
                     proxyAddress,
                     contractFactory,
                     {
@@ -134,23 +134,21 @@ export abstract class Upgrader {
     // private
 
     async _getContractFactoryAndUpdateManifest(contract: string) {
-        const
-            { linkReferences } = await artifacts.readArtifact(contract),
-            manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
+        const {linkReferences} = await artifacts.readArtifact(contract);
+        const manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
 
         if (!Object.keys(linkReferences).length)
             return await ethers.getContractFactory(contract);
 
         const
-            librariesToUpgrade = [],
-            oldLibraries: {[k: string]: string} = {};
+            librariesToUpgrade = [];
+            const oldLibraries: {[k: string]: string} = {};
         if (manifest.libraries === undefined) {
-            Object.assign(manifest, { libraries: {} });
+            Object.assign(manifest, {libraries: {}});
         }
         for (const key of Object.keys(linkReferences)) {
-            const
-                libraryName = Object.keys(linkReferences[key])[0],
-                { bytecode } = await artifacts.readArtifact(libraryName);
+            const libraryName = Object.keys(linkReferences[key])[0];
+            const {bytecode} = await artifacts.readArtifact(libraryName);
             if (manifest.libraries[libraryName] === undefined) {
                 librariesToUpgrade.push(libraryName);
                 continue;
@@ -164,8 +162,8 @@ export abstract class Upgrader {
         }
         const libraries = await deployLibraries(librariesToUpgrade);
         for (const [libraryName, libraryAddress] of libraries.entries()) {
-            const { bytecode } = await artifacts.readArtifact(libraryName);
-            manifest.libraries[libraryName] = { "address": libraryAddress, "bytecodeHash": hashBytecode(bytecode) };
+            const {bytecode} = await artifacts.readArtifact(libraryName);
+            manifest.libraries[libraryName] = {"address": libraryAddress, "bytecodeHash": hashBytecode(bytecode)};
         }
         Object.assign(libraries, oldLibraries);
         await fs.writeFile(await getManifestFile(), JSON.stringify(manifest, null, 4));

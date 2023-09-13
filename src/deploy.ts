@@ -1,13 +1,13 @@
-import { Manifest, hashBytecode } from "@openzeppelin/upgrades-core";
-import { ethers, artifacts } from "hardhat";
-import { promises as fs } from 'fs';
-import { SkaleManifestData } from "./types/SkaleManifestData";
-import { Artifact } from "hardhat/types";
+import {Manifest, hashBytecode} from "@openzeppelin/upgrades-core";
+import {ethers, artifacts} from "hardhat";
+import {promises as fs} from 'fs';
+import {SkaleManifestData} from "./types/SkaleManifestData";
+import {Artifact} from "hardhat/types";
 
 async function _deployLibrary(libraryName: string) {
     const
-        Library = await ethers.getContractFactory(libraryName),
-        library = await Library.deploy();
+        Library = await ethers.getContractFactory(libraryName);
+        const library = await Library.deploy();
     await library.deployed();
     return library.address;
 }
@@ -41,9 +41,9 @@ function _linkBytecode(artifact: Artifact, libraries: Map<string, string>) {
 
 export async function getLinkedContractFactory(contractName: string, libraries: Map<string, string>) {
     const
-        cArtifact = await artifacts.readArtifact(contractName),
-        linkedBytecode = _linkBytecode(cArtifact, libraries),
-        ContractFactory = await ethers.getContractFactory(cArtifact.abi, linkedBytecode);
+        cArtifact = await artifacts.readArtifact(contractName);
+        const linkedBytecode = _linkBytecode(cArtifact, libraries);
+        const ContractFactory = await ethers.getContractFactory(cArtifact.abi, linkedBytecode);
     return ContractFactory;
 }
 
@@ -52,7 +52,7 @@ export async function getManifestFile(): Promise<string> {
 }
 
 export async function getContractFactory(contract: string) {
-    const { linkReferences } = await artifacts.readArtifact(contract);
+    const {linkReferences} = await artifacts.readArtifact(contract);
     if (!Object.keys(linkReferences).length)
         return await ethers.getContractFactory(contract);
 
@@ -63,10 +63,10 @@ export async function getContractFactory(contract: string) {
     }
 
     const
-        libraries = await deployLibraries(libraryNames),
-        libraryArtifacts: { [key: string]: unknown } = {};
+        libraries = await deployLibraries(libraryNames);
+        const libraryArtifacts: { [key: string]: unknown } = {};
     for (const [libraryName, libraryAddress] of libraries.entries()) {
-        const { bytecode } = await artifacts.readArtifact(libraryName);
+        const {bytecode} = await artifacts.readArtifact(libraryName);
         libraryArtifacts[libraryName] = {
             "address": libraryAddress,
             "bytecodeHash": hashBytecode(bytecode)
@@ -78,7 +78,7 @@ export async function getContractFactory(contract: string) {
         Object.assign(libraryArtifacts, manifest.libraries);
     } finally {
         if (manifest !== undefined) {
-            Object.assign(manifest, { libraries: libraryArtifacts });
+            Object.assign(manifest, {libraries: libraryArtifacts});
         }
         await fs.writeFile(await getManifestFile(), JSON.stringify(manifest, null, 4));
     }

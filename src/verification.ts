@@ -1,7 +1,7 @@
-import { ethers, run, network } from "hardhat";
-import { builtinChains } from "@nomicfoundation/hardhat-verify/internal/chain-config";
+import {ethers, run, network} from "hardhat";
+import {builtinChains} from "@nomicfoundation/hardhat-verify/internal/chain-config";
 import chalk from "chalk";
-import { getImplementationAddress } from "@openzeppelin/upgrades-core";
+import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 
 export async function verify(contractName: string, contractAddress: string, constructorArguments: object) {
     const chainId = (await ethers.provider.getNetwork()).chainId;

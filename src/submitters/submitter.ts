@@ -1,4 +1,4 @@
-import { UnsignedTransaction } from "ethers";
+import {UnsignedTransaction} from "ethers";
 import chalk from "chalk";
 
 export abstract class Submitter {

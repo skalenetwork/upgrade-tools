@@ -1,4 +1,4 @@
-import { HardhatUserConfig } from "hardhat/config";
+import {HardhatUserConfig} from "hardhat/config";
 import '@typechain/hardhat'
 import "@nomiclabs/hardhat-ethers";
 import "@openzeppelin/hardhat-upgrades";

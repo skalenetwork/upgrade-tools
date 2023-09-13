@@ -1,5 +1,5 @@
-import { BigNumberish, BytesLike } from "ethers";
-import { ethers as RawEthers } from "ethers"
+import {BigNumberish, BytesLike} from "ethers";
+import {ethers as RawEthers} from "ethers"
 
 export const MARIONETTE_ADDRESS = "0xD2c0DeFACe000000000000000000000000000000";
 

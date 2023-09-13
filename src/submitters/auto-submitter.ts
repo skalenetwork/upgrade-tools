@@ -1,22 +1,22 @@
-import { getManifestAdmin } from "@openzeppelin/hardhat-upgrades/dist/admin";
-import { Transaction } from "ethers";
-import { ProxyAdmin } from "../../typechain-types";
-import { Submitter } from "./submitter";
-import hre, { ethers } from "hardhat";
-import { EoaSubmitter } from "./eoa-submitter";
-import { SafeSubmitter } from "./safe-submitter";
+import {getManifestAdmin} from "@openzeppelin/hardhat-upgrades/dist/admin";
+import {Transaction} from "ethers";
+import {ProxyAdmin} from "../../typechain-types";
+import {Submitter} from "./submitter";
+import hre, {ethers} from "hardhat";
+import {EoaSubmitter} from "./eoa-submitter";
+import {SafeSubmitter} from "./safe-submitter";
 import chalk from "chalk";
-import { SafeImaLegacyMarionetteSubmitter } from "./safe-ima-legacy-marionette-submitter";
-import { MARIONETTE_ADDRESS } from "./types/marionette";
-import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v5";
+import {SafeImaLegacyMarionetteSubmitter} from "./safe-ima-legacy-marionette-submitter";
+import {MARIONETTE_ADDRESS} from "./types/marionette";
+import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v5";
 
 export class AutoSubmitter extends Submitter {
     async submit(transactions: Transaction[]) {
         let submitter: Submitter;
         // TODO: remove unknown when move everything to ethers 6
         const
-            proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin,
-            owner = await proxyAdmin.owner();
+            proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin;
+            const owner = await proxyAdmin.owner();
         if (await hre.ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
             submitter = new EoaSubmitter();
@@ -27,10 +27,10 @@ export class AutoSubmitter extends Submitter {
                 console.log("Marionette owner is detected");
 
                 const
-                    imaInstance = await this._getImaInstance(),
-                    mainnetChainId = this._getMainnetChainId(),
-                    safeAddress = this._getSafeAddress(),
-                    schainHash = this._getSchainHash();
+                    imaInstance = await this._getImaInstance();
+                    const mainnetChainId = this._getMainnetChainId();
+                    const safeAddress = this._getSafeAddress();
+                    const schainHash = this._getSchainHash();
 
                 // TODO: after marionette has multiSend functionality
                 // query version and properly select a submitter
@@ -78,8 +78,8 @@ export class AutoSubmitter extends Submitter {
             process.exit(1);
         }
         const
-            network = await skaleContracts.getNetworkByProvider(ethers.provider),
-            ima = await network.getProject("ima");
+            network = await skaleContracts.getNetworkByProvider(ethers.provider);
+            const ima = await network.getProject("ima");
         return await ima.getInstance(process.env.IMA);
     }
 

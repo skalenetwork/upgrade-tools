@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import {BigNumber} from "ethers";
 
 function padWithZeros(value: string, targetLength: number) {
     return ("0".repeat(targetLength) + value).slice(-targetLength);

@@ -1,7 +1,7 @@
-import { UnsignedTransaction } from "ethers";
-import { ethers } from "hardhat";
-import { createMultiSendTransaction } from "../gnosis-safe";
-import { Submitter } from "./submitter";
+import {UnsignedTransaction} from "ethers";
+import {ethers} from "hardhat";
+import {createMultiSendTransaction} from "../gnosis-safe";
+import {Submitter} from "./submitter";
 
 export class SafeSubmitter extends Submitter {
     safeAddress: string;

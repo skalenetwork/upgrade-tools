@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { UnsignedTransaction } from "ethers";
-import { Submitter } from "./submitter";
+import {ethers} from "hardhat";
+import {UnsignedTransaction} from "ethers";
+import {Submitter} from "./submitter";
 
 export class EoaSubmitter extends Submitter {
     async submit(transactions: UnsignedTransaction[]) {

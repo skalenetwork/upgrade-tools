@@ -1,5 +1,5 @@
-import { exec as asyncExec } from "child_process";
-import { promises as fs, existsSync } from "fs";
+import {exec as asyncExec} from "child_process";
+import {promises as fs, existsSync} from "fs";
 import util from "util";
 
 
@@ -13,13 +13,12 @@ async function getVersionFilename(folder?: string) {
             (await exec("git rev-parse --show-toplevel")).stdout.trim()
         );
     }
-    const
-        VERSION_FILENAME = 'VERSION',
-        path = `${folder}/${VERSION_FILENAME}`;
+    const VERSION_FILENAME = 'VERSION';
+    const path = `${folder}/${VERSION_FILENAME}`;
     if (existsSync(path)) {
         return path;
     }
-    for (const entry of await fs.readdir(folder, { withFileTypes: true, recursive: true })) {
+    for (const entry of await fs.readdir(folder, {withFileTypes: true, recursive: true})) {
         if (entry.isFile() && entry.name === VERSION_FILENAME ) {
             return `${entry.path}/${entry.name}`;
         }

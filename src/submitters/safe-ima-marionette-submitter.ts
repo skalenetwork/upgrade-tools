@@ -1,7 +1,7 @@
-import { UnsignedTransaction } from "ethers";
-import { ethers } from "hardhat";
-import { SafeToImaSubmitter } from "./safe-to-ima-submitter";
-import { Marionette, MARIONETTE_ADDRESS } from "./types/marionette";
+import {UnsignedTransaction} from "ethers";
+import {ethers} from "hardhat";
+import {SafeToImaSubmitter} from "./safe-to-ima-submitter";
+import {Marionette, MARIONETTE_ADDRESS} from "./types/marionette";
 
 export class SafeImaMarionetteSubmitter extends SafeToImaSubmitter {
     marionette = new ethers.Contract(
