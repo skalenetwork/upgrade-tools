@@ -13,6 +13,10 @@ module.exports = {
     "plugins": ["@typescript-eslint"],
     "root": true,
     "rules": {
+        "lines-around-comment": [
+            "error",
+            {"allowBlockStart": true}
+        ],
         "object-curly-spacing": "error",
         "one-var": [
             "error",
@@ -23,7 +27,6 @@ module.exports = {
             "never"
         ],
 
-        "lines-around-comment": "warn",
         "max-depth": "warn",
         "max-len": "warn",
         "max-lines-per-function": "warn",
