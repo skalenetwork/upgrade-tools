@@ -1,10 +1,8 @@
 import {BigNumber} from "ethers";
 
-function padWithZeros (value: string, targetLength: number) {
-    return ("0".repeat(targetLength) + value).slice(-targetLength);
-}
+const padWithZeros = (value: string, targetLength: number) => ("0".repeat(targetLength) + value).slice(-targetLength);
 
-export function encodeTransaction (operation: 0 | 1, to: string, value: BigNumber | number, data: string) {
+export const encodeTransaction = (operation: 0 | 1, to: string, value: BigNumber | number, data: string) => {
     // / operation as a uint8 with 0 for a call or 1 for a delegatecall (=> 1 byte),
     // / to as a address (=> 20 bytes),
     // / value as a uint256 (=> 32 bytes),
@@ -55,4 +53,4 @@ export function encodeTransaction (operation: 0 | 1, to: string, value: BigNumbe
         _dataLength,
         _data
     ].join("")}`;
-}
+};

@@ -1,6 +1,6 @@
 import {Interface} from "ethers/lib/utils";
 
-export function getAbi (contractInterface: Interface) {
+export const getAbi = (contractInterface: Interface) => {
     const abi = JSON.parse(contractInterface.format("json") as string) as [];
 
     abi.forEach((obj: {type: string}) => {
@@ -19,4 +19,4 @@ export function getAbi (contractInterface: Interface) {
     });
 
     return abi;
-}
+};

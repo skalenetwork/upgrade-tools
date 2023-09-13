@@ -7,7 +7,7 @@ const exec = util.promisify(asyncExec);
 
 class VersionNotFound extends Error {}
 
-async function getVersionFilename (folder?: string) {
+const getVersionFilename = async (folder?: string): Promise<string> => {
     if (folder === undefined) {
         return getVersionFilename((await exec("git rev-parse --show-toplevel")).stdout.trim());
     }
@@ -18,15 +18,17 @@ async function getVersionFilename (folder?: string) {
     }
     for (const entry of await fs.readdir(
         folder,
-        {"withFileTypes": true,
-            "recursive": true}
+        {
+            "withFileTypes": true,
+            "recursive": true
+        }
     )) {
         if (entry.isFile() && entry.name === VERSION_FILENAME) {
             return `${entry.path}/${entry.name}`;
         }
     }
     throw new VersionNotFound("Can't find version file");
-}
+};
 
 export const getVersion = async () => {
     if (process.env.VERSION) {

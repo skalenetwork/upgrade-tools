@@ -23,7 +23,6 @@ module.exports = {
             "never"
         ],
 
-        "func-style": "warn",
         "id-length": "warn",
         "init-declarations": "warn",
         "line-comment-position": "warn",

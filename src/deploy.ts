@@ -4,15 +4,15 @@ import {promises as fs} from "fs";
 import {SkaleManifestData} from "./types/SkaleManifestData";
 import {Artifact} from "hardhat/types";
 
-async function _deployLibrary (libraryName: string) {
+const _deployLibrary = async (libraryName: string) => {
     const
         Library = await ethers.getContractFactory(libraryName);
     const library = await Library.deploy();
     await library.deployed();
     return library.address;
-}
+};
 
-export async function deployLibraries (libraryNames: string[]) {
+export const deployLibraries = async (libraryNames: string[]) => {
     const libraries = new Map<string, string>();
     for (const libraryName of libraryNames) {
         libraries.set(
@@ -21,9 +21,9 @@ export async function deployLibraries (libraryNames: string[]) {
         );
     }
     return libraries;
-}
+};
 
-function _linkBytecode (artifact: Artifact, libraries: Map<string, string>) {
+const _linkBytecode = (artifact: Artifact, libraries: Map<string, string>) => {
     let {bytecode} = artifact;
     for (const [, fileReferences] of Object.entries(artifact.linkReferences)) {
         for (const [
@@ -46,9 +46,9 @@ function _linkBytecode (artifact: Artifact, libraries: Map<string, string>) {
         }
     }
     return bytecode;
-}
+};
 
-export async function getLinkedContractFactory (contractName: string, libraries: Map<string, string>) {
+export const getLinkedContractFactory = async (contractName: string, libraries: Map<string, string>) => {
     const
         cArtifact = await artifacts.readArtifact(contractName);
     const linkedBytecode = _linkBytecode(
@@ -60,13 +60,11 @@ export async function getLinkedContractFactory (contractName: string, libraries:
         linkedBytecode
     );
     return ContractFactory;
-}
+};
 
-export async function getManifestFile (): Promise<string> {
-    return (await Manifest.forNetwork(ethers.provider)).file;
-}
+export const getManifestFile = async (): Promise<string> => (await Manifest.forNetwork(ethers.provider)).file;
 
-export async function getContractFactory (contract: string) {
+export const getContractFactory = async (contract: string) => {
     const {linkReferences} = await artifacts.readArtifact(contract);
     if (!Object.keys(linkReferences).length) {
         return await ethers.getContractFactory(contract);
@@ -121,4 +119,4 @@ export async function getContractFactory (contract: string) {
         contract,
         libraries
     );
-}
+};

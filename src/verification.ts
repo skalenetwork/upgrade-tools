@@ -3,7 +3,7 @@ import {builtinChains} from "@nomicfoundation/hardhat-verify/internal/chain-conf
 import chalk from "chalk";
 import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 
-export async function verify (contractName: string, contractAddress: string, constructorArguments: object) {
+export const verify = async (contractName: string, contractAddress: string, constructorArguments: object) => {
     const {chainId} = await ethers.provider.getNetwork();
     if (builtinChains.find((chain) => chain.chainId === chainId) !== undefined) {
         for (let retry = 0; retry <= 5; retry += 1) {
@@ -33,9 +33,9 @@ export async function verify (contractName: string, contractAddress: string, con
             }
         }
     }
-}
+};
 
-export async function verifyProxy (contractName: string, proxyAddress: string, constructorArguments: object) {
+export const verifyProxy = async (contractName: string, proxyAddress: string, constructorArguments: object) => {
     await verify(
         contractName,
         await getImplementationAddress(
@@ -44,4 +44,4 @@ export async function verifyProxy (contractName: string, proxyAddress: string, c
         ),
         constructorArguments
     );
-}
+};
