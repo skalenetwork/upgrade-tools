@@ -23,7 +23,6 @@ module.exports = {
             "never"
         ],
 
-        "class-methods-use-this": "warn",
         "consistent-return": "warn",
         "eqeqeq": "warn",
         "func-style": "warn",

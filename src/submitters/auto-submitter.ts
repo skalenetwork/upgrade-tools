@@ -11,11 +11,13 @@ import {MARIONETTE_ADDRESS} from "./types/marionette";
 import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v5";
 
 export class AutoSubmitter extends Submitter {
+    name = "Auto Submitter";
+
     async submit (transactions: Transaction[]) {
+        console.log(`Submit via ${this.name}`);
         let submitter: Submitter;
         // TODO: remove unknown when move everything to ethers 6
-        const
-            proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin;
+        const proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin;
         const owner = await proxyAdmin.owner();
         if (await hre.ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
@@ -26,11 +28,10 @@ export class AutoSubmitter extends Submitter {
             if (ethers.utils.getAddress(owner) == ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
                 console.log("Marionette owner is detected");
 
-                const
-                    imaInstance = await this._getImaInstance();
-                const mainnetChainId = this._getMainnetChainId();
-                const safeAddress = this._getSafeAddress();
-                const schainHash = this._getSchainHash();
+                const imaInstance = await AutoSubmitter._getImaInstance();
+                const mainnetChainId = AutoSubmitter._getMainnetChainId();
+                const safeAddress = AutoSubmitter._getSafeAddress();
+                const schainHash = AutoSubmitter._getSchainHash();
 
                 /*
                  * TODO: after marionette has multiSend functionality
@@ -74,7 +75,7 @@ export class AutoSubmitter extends Submitter {
 
     // Private
 
-    async _getImaInstance () {
+    private static async _getImaInstance () {
         if (!process.env.IMA) {
             console.log(chalk.red("Set target IMA alias to IMA environment variable"));
             process.exit(1);
@@ -85,7 +86,7 @@ export class AutoSubmitter extends Submitter {
         return await ima.getInstance(process.env.IMA);
     }
 
-    _getSafeAddress () {
+    private static _getSafeAddress () {
         if (!process.env.SAFE_ADDRESS) {
             console.log(chalk.red("Set Gnosis Safe owner address to SAFE_ADDRESS environment variable"));
             process.exit(1);
@@ -93,7 +94,7 @@ export class AutoSubmitter extends Submitter {
         return process.env.SAFE_ADDRESS;
     }
 
-    _getSchainHash () {
+    private static _getSchainHash () {
         // Query Context to get schain hash
         if (!process.env.SCHAIN_HASH) {
             if (!process.env.SCHAIN_NAME) {
@@ -111,7 +112,7 @@ export class AutoSubmitter extends Submitter {
         }
     }
 
-    _getMainnetChainId () {
+    private static _getMainnetChainId () {
         if (!process.env.MAINNET_CHAIN_ID) {
             console.log(chalk.red("Set chainId of mainnet to MAINNET_CHAIN_ID environment variable"));
             console.log(chalk.red("Use 1 for Ethereum mainnet or 5 for Goerli"));
@@ -121,7 +122,7 @@ export class AutoSubmitter extends Submitter {
         }
     }
 
-    async _versionFunctionExists () {
+    private static async _versionFunctionExists () {
         const bytecode = await hre.ethers.provider.getCode(MARIONETTE_ADDRESS);
 
         /*

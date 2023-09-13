@@ -53,9 +53,9 @@ export abstract class Upgrader {
 
     // Protected
 
-    deployNewContracts = () => Promise.resolve();
+    deployNewContracts?: () => Promise<void>;
 
-    initialize = () => Promise.resolve();
+    initialize?: () => Promise<void>;
 
     // Public
 
@@ -77,14 +77,16 @@ export abstract class Upgrader {
         }
         console.log(`Will mark updated version as ${version}`);
 
-        // Deploy new contracts
-        await this.deployNewContracts();
+        if (this.deployNewContracts !== undefined) {
+            // Deploy new contracts
+            await this.deployNewContracts();
+        }
 
         // Deploy new implementations
         const contractsToUpgrade: {proxyAddress: string, implementationAddress: string, name: string}[] = [];
         for (const contract of this.contractNamesToUpgrade) {
             const
-                contractFactory = await this._getContractFactoryAndUpdateManifest(contract);
+                contractFactory = await Upgrader._getContractFactoryAndUpdateManifest(contract);
             const proxyAddress = (await this.instance.getContract(contract)).address;
 
             console.log(`Prepare upgrade of ${contract}`);
@@ -127,7 +129,9 @@ export abstract class Upgrader {
             });
         }
 
-        await this.initialize();
+        if (this.initialize !== undefined) {
+            await this.initialize();
+        }
 
         // Write version
         await this.setVersion(version);
@@ -161,7 +165,7 @@ export abstract class Upgrader {
 
     // Private
 
-    async _getContractFactoryAndUpdateManifest (contract: string) {
+    private static async _getContractFactoryAndUpdateManifest (contract: string) {
         const {linkReferences} = await artifacts.readArtifact(contract);
         const manifest = JSON.parse(await fs.readFile(
             await getManifestFile(),
