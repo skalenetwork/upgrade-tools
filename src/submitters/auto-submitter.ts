@@ -47,30 +47,30 @@ export class AutoSubmitter extends Submitter {
             const schainHash = AutoSubmitter._getSchainHash();
 
             /*
-            * TODO: after marionette has multiSend functionality
-            * query version and properly select a submitter
-            * based on it
-            *
-            * if (await this._versionFunctionExists()) {
-            *     console.log("version() function was found." +
-            *       " Use normal Marionette")
-            *     submitter = new SafeImaMarionetteSubmitter(
-            *         safeAddress,
-            *         imaAbi,
-            *         schainHash,
-            *         mainnetChainId
-            *     )
-            * } else {
-            *     console.log("No version() function was found." +
-            *       " Use legacy Marionette")
-            *     submitter = new SafeImaLegacyMarionetteSubmitter(
-            *         safeAddress,
-            *         imaAbi,
-            *         schainHash,
-            *         mainnetChainId
-            *     )
-            * }
-            */
+             * TODO: after marionette has multiSend functionality
+             * query version and properly select a submitter
+             * based on it
+             *
+             * if (await this._versionFunctionExists()) {
+             *     console.log("version() function was found." +
+             *       " Use normal Marionette")
+             *     submitter = new SafeImaMarionetteSubmitter(
+             *         safeAddress,
+             *         imaAbi,
+             *         schainHash,
+             *         mainnetChainId
+             *     )
+             * } else {
+             *     console.log("No version() function was found." +
+             *       " Use legacy Marionette")
+             *     submitter = new SafeImaLegacyMarionetteSubmitter(
+             *         safeAddress,
+             *         imaAbi,
+             *         schainHash,
+             *         mainnetChainId
+             *     )
+             * }
+             */
             return new SafeImaLegacyMarionetteSubmitter(
                 safeAddress,
                 imaInstance,

@@ -30,14 +30,17 @@ const defaultOptions = {
     // Max gas to use in the transaction
     "safeTxGas": "0",
 
-    // Gas costs not related to the transaction execution
-    // (signature check, refund payment...)
+    /*
+     * Gas costs not related to the transaction execution
+     * (signature check, refund payment...)
+     */
     "baseGas": "0",
 
     // Gas price used for the refund calculation
     "gasPrice": "0",
 
-    /* Token address (hold by the Safe)
+    /*
+     * Token address (hold by the Safe)
      * to be used as a refund to the sender,
      * if `null` is Ether
      */
@@ -64,9 +67,12 @@ export const createMultiSendTransaction = async (
     const options = {
         ...defaultOptions,
         ...{
-            // Nonce of the Safe,
-            // Transaction cannot be executed until
-            // Safe's nonce is not equal to this nonce
+
+            /*
+             * Nonce of the Safe,
+             * Transaction cannot be executed until
+             * Safe's nonce is not equal to this nonce
+             */
             nonce
         }
     };

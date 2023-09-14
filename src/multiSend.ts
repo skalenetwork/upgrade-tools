@@ -28,7 +28,8 @@ const getToBytes = (to: string) => {
 
 interface Transaction {
 
-    /* Operation as a uint8 with 0 for a call
+    /*
+     * Operation as a uint8 with 0 for a call
      * or 1 for a delegatecall (=> 1 byte)
      */
     operation: 0 | 1,

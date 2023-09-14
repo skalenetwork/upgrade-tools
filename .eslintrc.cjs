@@ -27,7 +27,6 @@ module.exports = {
             "never"
         ],
 
-        "multiline-comment-style": "warn",
         "no-await-in-loop": "warn",
         "no-console": "warn",
         "no-continue": "warn",
