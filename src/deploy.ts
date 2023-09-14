@@ -2,7 +2,7 @@ import {Manifest, hashBytecode} from "@openzeppelin/upgrades-core";
 import {artifacts, ethers} from "hardhat";
 import {promises as fs} from "fs";
 import {SkaleManifestData} from "./types/SkaleManifestData";
-import {Artifact} from "hardhat/types";
+import {Artifact, LinkReferences} from "hardhat/types";
 
 interface LibraryArtifacts {
     [key: string]: unknown
@@ -99,19 +99,7 @@ const updateManifest = async (libraryArtifacts: LibraryArtifacts) => {
     );
 };
 
-export const getContractFactory = async (contract: string) => {
-    const {linkReferences} = await artifacts.readArtifact(contract);
-    if (!Object.keys(linkReferences).length) {
-        return await ethers.getContractFactory(contract);
-    }
-
-    const libraryNames = [];
-    for (const key of Object.keys(linkReferences)) {
-        const libraryName = Object.keys(linkReferences[key])[0];
-        libraryNames.push(libraryName);
-    }
-
-    const libraries = await deployLibraries(libraryNames);
+const getLibraryArtifacts = async (libraries: Map<string, string>) => {
     const libraryArtifacts: LibraryArtifacts = {};
     for (const [
         libraryName,
@@ -123,6 +111,27 @@ export const getContractFactory = async (contract: string) => {
             "bytecodeHash": hashBytecode(bytecode)
         };
     }
+    return libraryArtifacts;
+};
+
+const getLibraryNames = (linkReferences: LinkReferences) => {
+    const libraryNames = [];
+    for (const key of Object.keys(linkReferences)) {
+        const libraryName = Object.keys(linkReferences[key])[0];
+        libraryNames.push(libraryName);
+    }
+    return libraryNames;
+};
+
+export const getContractFactory = async (contract: string) => {
+    const {linkReferences} = await artifacts.readArtifact(contract);
+    if (!Object.keys(linkReferences).length) {
+        return await ethers.getContractFactory(contract);
+    }
+
+    const libraryNames = getLibraryNames(linkReferences);
+    const libraries = await deployLibraries(libraryNames);
+    const libraryArtifacts = await getLibraryArtifacts(libraries);
 
     await updateManifest(libraryArtifacts);
 

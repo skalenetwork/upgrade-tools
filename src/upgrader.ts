@@ -74,39 +74,23 @@ export abstract class Upgrader {
     // Public
 
     async upgrade () {
-        const proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin;
+        const version = await this.prepareVersion();
 
-        const version = await getVersion();
-        await this.checkVersion(version);
-        console.log(`Will mark updated version as ${version}`);
-
-        if (this.deployNewContracts !== undefined) {
-            // Deploy new contracts
-            await this.deployNewContracts();
-        }
+        await this.callDeployNewContracts();
 
         const contractsToUpgrade = await this.deployNewImplementations();
 
         this.switchToNewImplementations(
             contractsToUpgrade,
-            proxyAdmin
+            await getManifestAdmin(hre) as unknown as ProxyAdmin
         );
 
-        if (this.initialize !== undefined) {
-            await this.initialize();
-        }
+        await this.callInitialize();
 
         // Write version
         await this.setVersion(version);
 
-        await fs.writeFile(
-            `data/transactions-${version}-${network.name}.json`,
-            JSON.stringify(
-                this.transactions,
-                null,
-                4
-            )
-        );
+        await this.writeTransactions(version);
 
         await this.submitter.submit(this.transactions);
 
@@ -116,6 +100,37 @@ export abstract class Upgrader {
     }
 
     // Private
+
+    private async callInitialize () {
+        if (this.initialize !== undefined) {
+            await this.initialize();
+        }
+    }
+
+    private async callDeployNewContracts () {
+        if (this.deployNewContracts !== undefined) {
+            // Deploy new contracts
+            await this.deployNewContracts();
+        }
+    }
+
+    private async prepareVersion () {
+        const version = await getVersion();
+        await this.checkVersion(version);
+        console.log(`Will mark updated version as ${version}`);
+        return version;
+    }
+
+    private async writeTransactions (version: string) {
+        await fs.writeFile(
+            `data/transactions-${version}-${network.name}.json`,
+            JSON.stringify(
+                this.transactions,
+                null,
+                4
+            )
+        );
+    }
 
     private static async verify (contractsToUpgrade: ContractToUpgrade[]) {
         if (process.env.NO_VERIFY) {
@@ -158,36 +173,44 @@ export abstract class Upgrader {
     private async deployNewImplementations () {
         const contractsToUpgrade: ContractToUpgrade[] = [];
         for (const contract of this.contractNamesToUpgrade) {
-            const contractFactory =
-                await getContractFactoryAndUpdateManifest(contract);
-            const proxyAddress =
-                (await this.instance.getContract(contract)).address;
-
-            console.log(`Prepare upgrade of ${contract}`);
-            const
-                currentImplementationAddress = await getImplementationAddress(
-                    network.provider,
-                    proxyAddress
-                );
-            const newImplementationAddress = await upgrades.prepareUpgrade(
-                proxyAddress,
-                contractFactory,
-                {
-                    "unsafeAllowLinkedLibraries": true,
-                    "unsafeAllowRenames": true
-                }
-            ) as string;
-            if (newImplementationAddress !== currentImplementationAddress) {
-                contractsToUpgrade.push({
-                    proxyAddress,
-                    "implementationAddress": newImplementationAddress,
-                    "name": contract
-                });
-            } else {
-                console.log(chalk.gray(`Contract ${contract} is up to date`));
+            const updatedContract =
+                await this.deployNewImplementation(contract);
+            if (updatedContract !== undefined) {
+                contractsToUpgrade.push(updatedContract);
             }
         }
         return contractsToUpgrade;
+    }
+
+    private async deployNewImplementation (contract: string) {
+        const contractFactory =
+                await getContractFactoryAndUpdateManifest(contract);
+        const proxyAddress =
+                (await this.instance.getContract(contract)).address;
+
+        console.log(`Prepare upgrade of ${contract}`);
+        const
+            currentImplementationAddress = await getImplementationAddress(
+                network.provider,
+                proxyAddress
+            );
+        const newImplementationAddress = await upgrades.prepareUpgrade(
+            proxyAddress,
+            contractFactory,
+            {
+                "unsafeAllowLinkedLibraries": true,
+                "unsafeAllowRenames": true
+            }
+        ) as string;
+        if (newImplementationAddress !== currentImplementationAddress) {
+            return {
+                proxyAddress,
+                "implementationAddress": newImplementationAddress,
+                "name": contract
+            };
+        }
+        console.log(chalk.gray(`Contract ${contract} is up to date`));
+        return undefined;
     }
 
     private async getNormalizedDeployedVersion () {
