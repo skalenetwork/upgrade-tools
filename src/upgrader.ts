@@ -1,28 +1,34 @@
 import hre from "hardhat";
 import chalk from "chalk";
 import {ProxyAdmin} from "../typechain-types";
-import {artifacts, ethers, network, upgrades} from "hardhat";
+import {network, upgrades} from "hardhat";
 import {getManifestAdmin} from "@openzeppelin/hardhat-upgrades/dist/admin";
 import {getVersion} from "./version";
 import {promises as fs} from "fs";
-import {
-    deployLibraries,
-    getLinkedContractFactory,
-    getManifestFile
-} from "./deploy";
 import {UnsignedTransaction} from "ethers";
-import {
-    getImplementationAddress,
-    hashBytecode
-} from "@openzeppelin/upgrades-core";
+import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 import {verify} from "./verification";
 import {Submitter} from "./submitters/submitter";
-import {SkaleManifestData} from "./types/SkaleManifestData";
 import {AutoSubmitter} from "./submitters/auto-submitter";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
-import {LinkReferences} from "hardhat/types";
-import {ContractToUpgrade} from "./types/ContractToUpgrade";
+import {getContractFactoryAndUpdateManifest} from "./contractFactory";
 
+
+interface ContractToUpgrade {
+    proxyAddress: string,
+    implementationAddress: string,
+    name: string
+}
+
+interface Project {
+    name: string;
+    instance: Instance;
+}
+
+interface Target {
+    version: string;
+    contractNamesToUpgrade: string[]
+}
 
 export abstract class Upgrader {
     instance: Instance;
@@ -38,19 +44,17 @@ export abstract class Upgrader {
     submitter: Submitter;
 
     constructor (
-        projectName: string,
-        targetVersion: string,
-        instance: Instance,
-        contractNamesToUpgrade: string[],
+        project: Project,
+        target: Target,
         submitter: Submitter = new AutoSubmitter()
     ) {
-        this.targetVersion = targetVersion;
-        if (!targetVersion.includes("-")) {
-            this.targetVersion = `${targetVersion}-stable.0`;
+        this.targetVersion = target.version;
+        if (!target.version.includes("-")) {
+            this.targetVersion = `${target.version}-stable.0`;
         }
-        this.instance = instance;
-        this.contractNamesToUpgrade = contractNamesToUpgrade;
-        this.projectName = projectName;
+        this.instance = project.instance;
+        this.contractNamesToUpgrade = target.contractNamesToUpgrade;
+        this.projectName = project.name;
         this.transactions = [];
         this.submitter = submitter;
     }
@@ -155,7 +159,7 @@ export abstract class Upgrader {
         const contractsToUpgrade: ContractToUpgrade[] = [];
         for (const contract of this.contractNamesToUpgrade) {
             const contractFactory =
-                await Upgrader.getContractFactoryAndUpdateManifest(contract);
+                await getContractFactoryAndUpdateManifest(contract);
             const proxyAddress =
                 (await this.instance.getContract(contract)).address;
 
@@ -212,87 +216,5 @@ export abstract class Upgrader {
                 `Can't check currently deployed version of ${this.projectName}`;
             console.log(chalk.yellow(cannotCheckMessage));
         }
-    }
-
-    private static async getContractFactoryAndUpdateManifest (contract:
-        string) {
-        const {linkReferences} = await artifacts.readArtifact(contract);
-        const manifest = JSON.parse(await fs.readFile(
-            await getManifestFile(),
-            "utf-8"
-        )) as SkaleManifestData;
-        if (manifest.libraries === undefined) {
-            manifest.libraries = {};
-        }
-
-        if (!Object.keys(linkReferences).length) {
-            return await ethers.getContractFactory(contract);
-        }
-
-        const {
-            librariesToUpgrade,
-            oldLibraries
-        } = await Upgrader.getLibrariesToUpgrade(
-            manifest,
-            linkReferences
-        );
-        const libraries = await deployLibraries(librariesToUpgrade);
-        for (const [
-            libraryName,
-            libraryAddress
-        ] of libraries.entries()) {
-            const {bytecode} = await artifacts.readArtifact(libraryName);
-            manifest.libraries[libraryName] = {
-                "address": libraryAddress,
-                "bytecodeHash": hashBytecode(bytecode)
-            };
-        }
-        Object.assign(
-            libraries,
-            oldLibraries
-        );
-        await fs.writeFile(
-            await getManifestFile(),
-            JSON.stringify(
-                manifest,
-                null,
-                4
-            )
-        );
-        return await getLinkedContractFactory(
-            contract,
-            libraries
-        );
-    }
-
-    private static async getLibrariesToUpgrade (
-        manifest: SkaleManifestData,
-        linkReferences: LinkReferences
-    ) {
-        const librariesToUpgrade = [];
-        const oldLibraries: {[k: string]: string} = {};
-        if (manifest.libraries === undefined) {
-            manifest.libraries = {};
-        }
-        for (const key of Object.keys(linkReferences)) {
-            const libraryName = Object.keys(linkReferences[key])[0];
-            const {bytecode} = await artifacts.readArtifact(libraryName);
-            if (manifest.libraries[libraryName] === undefined) {
-                librariesToUpgrade.push(libraryName);
-                continue;
-            }
-            const libraryBytecodeHash =
-                manifest.libraries[libraryName].bytecodeHash;
-            if (hashBytecode(bytecode) !== libraryBytecodeHash) {
-                librariesToUpgrade.push(libraryName);
-            } else {
-                oldLibraries[libraryName] =
-                    manifest.libraries[libraryName].address;
-            }
-        }
-        return {
-            librariesToUpgrade,
-            oldLibraries
-        };
     }
 }

@@ -71,12 +71,13 @@ export class AutoSubmitter extends Submitter {
             *     )
             * }
             */
-
             return new SafeImaLegacyMarionetteSubmitter(
                 safeAddress,
                 imaInstance,
-                schainHash,
-                mainnetChainId
+                {
+                    mainnetChainId,
+                    "targetSchainHash": schainHash
+                }
             );
         }
 

@@ -26,7 +26,8 @@ const getToBytes = (to: string) => {
     return _to;
 };
 
-export const encodeTransaction = (
+interface Transaction {
+
     /* Operation as a uint8 with 0 for a call
      * or 1 for a delegatecall (=> 1 byte)
      */
@@ -40,19 +41,21 @@ export const encodeTransaction = (
 
     // Data as bytes.
     data: string
-) => {
-    const _operation = getOperationBytes(operation);
+}
 
-    const _to = getToBytes(to);
+export const encodeTransaction = (transaction: Transaction) => {
+    const _operation = getOperationBytes(transaction.operation);
+
+    const _to = getToBytes(transaction.to);
 
     const _value = padWithZeros(
-        BigNumber.from(value).toHexString().
+        BigNumber.from(transaction.value).toHexString().
             slice(2),
         32 * 2
     );
 
-    let _data = data;
-    if (data.startsWith("0x")) {
+    let _data = transaction.data;
+    if (transaction.data.startsWith("0x")) {
         _data = _data.slice(2);
     }
     if (_data.length % 2 !== 0) {

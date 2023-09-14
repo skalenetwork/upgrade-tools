@@ -27,7 +27,6 @@ module.exports = {
             "never"
         ],
 
-        "max-params": "warn",
         "max-statements": "warn",
         "multiline-comment-style": "warn",
         "no-await-in-loop": "warn",

@@ -2,6 +2,11 @@ import {BytesLike, Contract, UnsignedTransaction} from "ethers";
 import {SafeSubmitter} from "./safe-submitter";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
 
+interface Network {
+    targetSchainHash: BytesLike,
+    mainnetChainId?: number
+}
+
 export class SafeToImaSubmitter extends SafeSubmitter {
     imaInstance: Instance;
 
@@ -12,15 +17,14 @@ export class SafeToImaSubmitter extends SafeSubmitter {
     constructor (
         safeAddress: string,
         imaInstance: Instance,
-        targetSchainHash: BytesLike,
-        chainId?: number
+        network: Network
     ) {
         super(
             safeAddress,
-            chainId
+            network.mainnetChainId
         );
         this.imaInstance = imaInstance;
-        this.targetSchainHash = targetSchainHash;
+        this.targetSchainHash = network.targetSchainHash;
     }
 
     async submit (transactions: UnsignedTransaction[]): Promise<void> {
