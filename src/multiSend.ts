@@ -5,6 +5,27 @@ const padWithZeros = (
     targetLength: number
 ) => ("0".repeat(targetLength) + value).slice(-targetLength);
 
+const getOperationBytes = (operation: 0 | 1) => {
+    if (operation === 0) {
+        return "00";
+    } else if (operation === 1) {
+        return "01";
+    }
+    throw Error("Operation has an incorrect value");
+};
+
+const getToBytes = (to: string) => {
+    let _to = to;
+    if (to.startsWith("0x")) {
+        _to = _to.slice(2);
+    }
+    _to = padWithZeros(
+        _to,
+        20 * 2
+    );
+    return _to;
+};
+
 export const encodeTransaction = (
     /* Operation as a uint8 with 0 for a call
      * or 1 for a delegatecall (=> 1 byte)
@@ -20,23 +41,9 @@ export const encodeTransaction = (
     // Data as bytes.
     data: string
 ) => {
-    let _operation = "";
-    if (operation === 0) {
-        _operation = "00";
-    } else if (operation === 1) {
-        _operation = "01";
-    } else {
-        throw Error("Operation has an incorrect value");
-    }
+    const _operation = getOperationBytes(operation);
 
-    let _to = to;
-    if (to.startsWith("0x")) {
-        _to = _to.slice(2);
-    }
-    _to = padWithZeros(
-        _to,
-        20 * 2
-    );
+    const _to = getToBytes(to);
 
     const _value = padWithZeros(
         BigNumber.from(value).toHexString().

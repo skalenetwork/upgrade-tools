@@ -4,6 +4,10 @@ import {promises as fs} from "fs";
 import {SkaleManifestData} from "./types/SkaleManifestData";
 import {Artifact} from "hardhat/types";
 
+interface LibraryArtifacts {
+    [key: string]: unknown
+}
+
 const _deployLibrary = async (libraryName: string) => {
     const
         Library = await ethers.getContractFactory(libraryName);
@@ -69,31 +73,7 @@ export const getManifestFile = async function getManifestFile () {
     return (await Manifest.forNetwork(ethers.provider)).file;
 };
 
-export const getContractFactory = async (contract: string) => {
-    const {linkReferences} = await artifacts.readArtifact(contract);
-    if (!Object.keys(linkReferences).length) {
-        return await ethers.getContractFactory(contract);
-    }
-
-    const libraryNames = [];
-    for (const key of Object.keys(linkReferences)) {
-        const libraryName = Object.keys(linkReferences[key])[0];
-        libraryNames.push(libraryName);
-    }
-
-    const libraries = await deployLibraries(libraryNames);
-    const libraryArtifacts: { [key: string]: unknown } = {};
-    for (const [
-        libraryName,
-        libraryAddress
-    ] of libraries.entries()) {
-        const {bytecode} = await artifacts.readArtifact(libraryName);
-        libraryArtifacts[libraryName] = {
-            "address": libraryAddress,
-            "bytecodeHash": hashBytecode(bytecode)
-        };
-    }
-
+const updateManifest = async (libraryArtifacts: LibraryArtifacts) => {
     const manifest = JSON.parse(await fs.readFile(
         await getManifestFile(),
         "utf-8"
@@ -117,6 +97,34 @@ export const getContractFactory = async (contract: string) => {
             4
         )
     );
+};
+
+export const getContractFactory = async (contract: string) => {
+    const {linkReferences} = await artifacts.readArtifact(contract);
+    if (!Object.keys(linkReferences).length) {
+        return await ethers.getContractFactory(contract);
+    }
+
+    const libraryNames = [];
+    for (const key of Object.keys(linkReferences)) {
+        const libraryName = Object.keys(linkReferences[key])[0];
+        libraryNames.push(libraryName);
+    }
+
+    const libraries = await deployLibraries(libraryNames);
+    const libraryArtifacts: LibraryArtifacts = {};
+    for (const [
+        libraryName,
+        libraryAddress
+    ] of libraries.entries()) {
+        const {bytecode} = await artifacts.readArtifact(libraryName);
+        libraryArtifacts[libraryName] = {
+            "address": libraryAddress,
+            "bytecodeHash": hashBytecode(bytecode)
+        };
+    }
+
+    await updateManifest(libraryArtifacts);
 
     return await getLinkedContractFactory(
         contract,

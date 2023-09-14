@@ -33,6 +33,10 @@ export class AutoSubmitter extends Submitter {
         }
 
         console.log("Owner is a contract");
+        return AutoSubmitter.getSubmitterForContractOwner(owner);
+    }
+
+    private static async getSubmitterForContractOwner (owner: string) {
         if (ethers.utils.getAddress(owner) ===
             ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
             console.log("Marionette owner is detected");

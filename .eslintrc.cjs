@@ -27,7 +27,6 @@ module.exports = {
             "never"
         ],
 
-        "max-lines-per-function": "warn",
         "max-params": "warn",
         "max-statements": "warn",
         "multiline-comment-style": "warn",
