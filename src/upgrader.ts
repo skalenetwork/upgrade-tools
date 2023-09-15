@@ -30,6 +30,10 @@ interface Target {
     contractNamesToUpgrade: string[]
 }
 
+const withoutUndefined = <T>(array: Array<T | undefined>) => array.
+    filter((element) => element !== undefined) as Array<T>;
+
+
 export abstract class Upgrader {
     instance: Instance;
 
@@ -137,13 +141,11 @@ export abstract class Upgrader {
             console.log("Skip verification");
         } else {
             console.log("Start verification");
-            for (const contract of contractsToUpgrade) {
-                await verify(
-                    contract.name,
-                    contract.implementationAddress,
-                    []
-                );
-            }
+            await Promise.all(contractsToUpgrade.map((contract) => verify(
+                contract.name,
+                contract.implementationAddress,
+                []
+            )));
         }
     }
 
@@ -171,15 +173,9 @@ export abstract class Upgrader {
     }
 
     private async deployNewImplementations () {
-        const contractsToUpgrade: ContractToUpgrade[] = [];
-        for (const contract of this.contractNamesToUpgrade) {
-            const updatedContract =
-                await this.deployNewImplementation(contract);
-            if (updatedContract !== undefined) {
-                contractsToUpgrade.push(updatedContract);
-            }
-        }
-        return contractsToUpgrade;
+        const contracts = await Promise.all(this.contractNamesToUpgrade.
+            map(this.deployNewImplementation));
+        return withoutUndefined(contracts);
     }
 
     private async deployNewImplementation (contract: string) {

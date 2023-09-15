@@ -8,22 +8,34 @@ interface LibraryArtifacts {
     [key: string]: unknown
 }
 
-const _deployLibrary = async (libraryName: string) => {
-    const
-        Library = await ethers.getContractFactory(libraryName);
-    const library = await Library.deploy();
+const deployLibrary = async (libraryName: string, nonce: number) => {
+    const Library = await ethers.getContractFactory(libraryName);
+    const library = await Library.deploy({nonce});
     await library.deployed();
     return library.address;
 };
 
 export const deployLibraries = async (libraryNames: string[]) => {
+    const [deployer] = await ethers.getSigners();
+    const nonce = await deployer.getTransactionCount();
     const libraries = new Map<string, string>();
-    for (const libraryName of libraryNames) {
+
+    (await Promise.all(libraryNames.map((libraryName, index) => (async () => [
+        libraryName,
+        await deployLibrary(
+            libraryName,
+            nonce + index
+        )
+    ])()))).forEach(([
+        libraryName,
+        libraryAddress
+    ]) => {
         libraries.set(
             libraryName,
-            await _deployLibrary(libraryName)
+            libraryAddress
         );
-    }
+    });
+
     return libraries;
 };
 
@@ -101,16 +113,33 @@ const updateManifest = async (libraryArtifacts: LibraryArtifacts) => {
 
 const getLibraryArtifacts = async (libraries: Map<string, string>) => {
     const libraryArtifacts: LibraryArtifacts = {};
-    for (const [
-        libraryName,
-        libraryAddress
-    ] of libraries.entries()) {
+
+    const getLibraryArtifact = async (
+        libraryName: string,
+        libraryAddress: string
+    ) => {
         const {bytecode} = await artifacts.readArtifact(libraryName);
-        libraryArtifacts[libraryName] = {
+        return {
             "address": libraryAddress,
-            "bytecodeHash": hashBytecode(bytecode)
+            "bytecodeHash": hashBytecode(bytecode),
+            libraryName
+        };
+    };
+
+    for (const libraryArtifact of await Promise.
+        all(Array.from(libraries.entries()).map(([
+            libraryName,
+            libraryAddress
+        ]) => getLibraryArtifact(
+            libraryName,
+            libraryAddress
+        )))) {
+        libraryArtifacts[libraryArtifact.libraryName] = {
+            "address": libraryArtifact.address,
+            "bytecodeHash": libraryArtifact.bytecodeHash
         };
     }
+
     return libraryArtifacts;
 };
 

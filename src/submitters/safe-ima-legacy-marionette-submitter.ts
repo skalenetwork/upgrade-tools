@@ -44,12 +44,9 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
         if (transactions.length > 1) {
             SafeImaLegacyMarionetteSubmitter._atomicityWarning();
         }
-        const transactionsToMarionette = [];
-        for (const transaction of transactions) {
-            transactionsToMarionette.push({
-                "to": this.marionette.address,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                "data": await this.marionette.encodeFunctionCall(
+        const transactionsToMarionette =
+            (await Promise.all(transactions.
+                map((transaction) => this.marionette.encodeFunctionCall(
                     transaction.to
                         ? transaction.to
                         : ethers.constants.AddressZero,
@@ -59,9 +56,12 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
                     transaction.data
                         ? transaction.data
                         : "0x"
-                ) as BytesLike
-            });
-        }
+                ) as Promise<BytesLike>))
+            ).map((data) => ({
+                data,
+                "to": this.marionette.address
+            }));
+
         await super.submit(transactionsToMarionette);
     }
 }

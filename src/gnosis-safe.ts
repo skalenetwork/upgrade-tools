@@ -124,20 +124,20 @@ const estimateSafeTransaction = async (
 ) => {
     console.log("Estimate gas");
     const safeService = await getSafeService();
-    for (const transaction of safeTransactionData as MetaTransactionData[]) {
-        const estimateResponse = await safeService.estimateSafeTransaction(
-            safeAddress,
-            {
-                "to": transaction.to,
-                "value": transaction.value,
-                "data": transaction.data,
-                "operation": transaction.operation || 0
-            }
-        );
-        console.log(chalk.cyan(`Recommend to set gas limit to ${parseInt(
-            estimateResponse.safeTxGas,
-            10
-        )}`));
+    const gasEstimations = await Promise.
+        all((safeTransactionData as MetaTransactionData[]).
+            map((transaction) => safeService.estimateSafeTransaction(
+                safeAddress,
+                {
+                    "to": transaction.to,
+                    "value": transaction.value,
+                    "data": transaction.data,
+                    "operation": transaction.operation || 0
+                }
+            )));
+    for (const estimateResponse of gasEstimations) {
+        console.log(chalk.cyan("Recommend to set gas limit" +
+            ` to ${estimateResponse.safeTxGas}`));
     }
     console.log(chalk.green("Send transaction to gnosis safe"));
 };

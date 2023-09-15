@@ -27,7 +27,6 @@ module.exports = {
             "never"
         ],
 
-        "no-await-in-loop": "warn",
         "no-console": "warn",
         "no-continue": "warn",
         "no-duplicate-imports": "warn",

@@ -21,19 +21,41 @@ const getSkaleManifest = async () => {
     return manifest as SkaleManifestData;
 };
 
+const loadBytesCodes = async (libraryNames: string[]) => {
+    const byteCodes = new Map<string, string>();
+
+    (await Promise.
+        all(libraryNames.map((libraryName) => (async () => {
+            const {bytecode} = await artifacts.readArtifact(libraryName);
+            return [
+                libraryName,
+                bytecode
+            ];
+        })()))).forEach(([
+        libraryName,
+        bytecode
+    ]) => {
+        byteCodes.set(
+            libraryName,
+            bytecode
+        );
+    });
+    return byteCodes;
+};
+
 const updateManifest = async (
     manifest: SkaleManifestData,
     libraries: Map<string, string>,
     oldLibraries: {[k: string]: string}
 ) => {
+    const byteCodes = await loadBytesCodes(Array.from(libraries.keys()));
     for (const [
         libraryName,
         libraryAddress
     ] of libraries.entries()) {
-        const {bytecode} = await artifacts.readArtifact(libraryName);
         manifest.libraries[libraryName] = {
             "address": libraryAddress,
-            "bytecodeHash": hashBytecode(bytecode)
+            "bytecodeHash": hashBytecode(byteCodes.get(libraryName) as string)
         };
     }
     Object.assign(
@@ -88,13 +110,14 @@ const getLibrariesToUpgrade = async (
 ) => {
     const librariesToUpgrade = [];
     const oldLibraries: {[k: string]: string} = {};
-    for (const libraryName of getLibrariesNames(linkReferences)) {
-        const {bytecode} = await artifacts.readArtifact(libraryName);
+    const librariesNames = getLibrariesNames(linkReferences);
+    const byteCodes = await loadBytesCodes(librariesNames);
+    for (const libraryName of librariesNames) {
         if (manifest.libraries[libraryName] === undefined) {
             librariesToUpgrade.push(libraryName);
         } else if (
-            hashBytecode(bytecode) !== manifest.libraries[libraryName].
-                bytecodeHash
+            hashBytecode(byteCodes.get(libraryName) as string) !==
+                manifest.libraries[libraryName].bytecodeHash
         ) {
             librariesToUpgrade.push(libraryName);
         } else {

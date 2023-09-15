@@ -49,6 +49,30 @@ const verificationAttempt = async (
     return false;
 };
 
+interface VerificationTarget {
+    contractName: string;
+    contractAddress: string;
+    constructorArguments: object;
+}
+
+const verifyWithRetry = async (
+    verificationTarget: VerificationTarget,
+    attempts: number
+) => {
+    if (attempts > 0) {
+        if (!await verificationAttempt(
+            verificationTarget.contractName,
+            verificationTarget.contractAddress,
+            verificationTarget.constructorArguments
+        )) {
+            await verifyWithRetry(
+                verificationTarget,
+                attempts - 1
+            );
+        }
+    }
+};
+
 export const verify = async (
     contractName: string,
     contractAddress: string,
@@ -60,15 +84,14 @@ export const verify = async (
         console.log(chalk.grey(errorMessage));
         return;
     }
-    for (let retry = 0; retry <= 5; retry += 1) {
-        if (await verificationAttempt(
+    await verifyWithRetry(
+        {
             contractName,
             contractAddress,
             constructorArguments
-        )) {
-            break;
-        }
-    }
+        },
+        5
+    );
 };
 
 export const verifyProxy = async (
