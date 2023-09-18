@@ -12,7 +12,7 @@ export class SafeToImaSubmitter extends SafeSubmitter {
 
     targetSchainHash: BytesLike;
 
-    private _messageProxyForMainnet: Contract | undefined;
+    private messageProxyForMainnet: Contract | undefined;
 
     constructor (
         safeAddress: string,
@@ -30,9 +30,9 @@ export class SafeToImaSubmitter extends SafeSubmitter {
     async submit (transactions: UnsignedTransaction[]): Promise<void> {
         const singleTransaction = 1;
         if (transactions.length > singleTransaction) {
-            SafeToImaSubmitter._atomicityWarning();
+            SafeToImaSubmitter.atomicityWarning();
         }
-        const messageProxyForMainnet = await this._getMessageProxyForMainnet();
+        const messageProxyForMainnet = await this.getMessageProxyForMainnet();
         const transactionsToIma = transactions.map((transaction) => ({
             "to": messageProxyForMainnet.address,
             "data": messageProxyForMainnet.interface.encodeFunctionData(
@@ -47,11 +47,11 @@ export class SafeToImaSubmitter extends SafeSubmitter {
         await super.submit(transactionsToIma);
     }
 
-    private async _getMessageProxyForMainnet () {
-        if (typeof this._messageProxyForMainnet === "undefined") {
-            this._messageProxyForMainnet =
+    private async getMessageProxyForMainnet () {
+        if (typeof this.messageProxyForMainnet === "undefined") {
+            this.messageProxyForMainnet =
                 await this.imaInstance.getContract("MessageProxyForMainnet");
         }
-        return this._messageProxyForMainnet;
+        return this.messageProxyForMainnet;
     }
 }

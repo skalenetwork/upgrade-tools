@@ -7,7 +7,7 @@ export abstract class Submitter {
 
     // Protected
 
-    protected static _atomicityWarning () {
+    protected static atomicityWarning () {
         if (process.env.ALLOW_NOT_ATOMIC_UPGRADE) {
             console.log(chalk.yellow("Not atomic upgrade is performing"));
         } else {

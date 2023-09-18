@@ -58,10 +58,10 @@ export class AutoSubmitter extends Submitter {
             ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
             console.log("Marionette owner is detected");
 
-            const imaInstance = await AutoSubmitter._getImaInstance();
-            const mainnetChainId = AutoSubmitter._getMainnetChainId();
-            const safeAddress = AutoSubmitter._getSafeAddress();
-            const schainHash = AutoSubmitter._getSchainHash();
+            const imaInstance = await AutoSubmitter.getImaInstance();
+            const mainnetChainId = AutoSubmitter.getMainnetChainId();
+            const safeAddress = AutoSubmitter.getSafeAddress();
+            const schainHash = AutoSubmitter.getSchainHash();
 
             /*
              * TODO: after marionette has multiSend functionality
@@ -104,7 +104,7 @@ export class AutoSubmitter extends Submitter {
         return new SafeSubmitter(owner);
     }
 
-    private static async _getImaInstance () {
+    private static async getImaInstance () {
         if (!process.env.IMA) {
             console.log(chalk.red("Set target IMA alias" +
                 " to IMA environment variable"));
@@ -116,7 +116,7 @@ export class AutoSubmitter extends Submitter {
         return await ima.getInstance(process.env.IMA);
     }
 
-    private static _getSafeAddress () {
+    private static getSafeAddress () {
         if (!process.env.SAFE_ADDRESS) {
             console.log(chalk.red("Set Gnosis Safe owner address" +
                 " to SAFE_ADDRESS environment variable"));
@@ -125,7 +125,7 @@ export class AutoSubmitter extends Submitter {
         return process.env.SAFE_ADDRESS;
     }
 
-    private static _getSchainHash () {
+    private static getSchainHash () {
         // Query Context to get schain hash
         if (process.env.SCHAIN_HASH) {
             return process.env.SCHAIN_HASH;
@@ -143,7 +143,7 @@ export class AutoSubmitter extends Submitter {
         throw Error("Schain is not set");
     }
 
-    private static _getMainnetChainId () {
+    private static getMainnetChainId () {
         if (process.env.MAINNET_CHAIN_ID) {
             return Number.parseInt(process.env.MAINNET_CHAIN_ID);
         }

@@ -43,7 +43,7 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
     async submit (transactions: UnsignedTransaction[]): Promise<void> {
         const singleTransaction = 1;
         if (transactions.length > singleTransaction) {
-            SafeImaLegacyMarionetteSubmitter._atomicityWarning();
+            SafeImaLegacyMarionetteSubmitter.atomicityWarning();
         }
         const zeroValue = 0;
         const transactionsToMarionette =

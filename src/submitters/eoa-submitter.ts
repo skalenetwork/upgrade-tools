@@ -6,7 +6,7 @@ export class EoaSubmitter extends Submitter {
     name = "EOA Submitter";
 
     async submit (transactions: UnsignedTransaction[]) {
-        EoaSubmitter._atomicityWarning();
+        EoaSubmitter.atomicityWarning();
         const [deployer] = await ethers.getSigners();
         const nonce = await deployer.getTransactionCount();
         console.log(`Send transaction via ${this.name}`);
