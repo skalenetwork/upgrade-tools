@@ -28,7 +28,6 @@ module.exports = {
             "never"
         ],
 
-        "no-mixed-operators": "warn",
         "no-negated-condition": "warn",
         "no-shadow": "warn",
         "no-ternary": "warn",
