@@ -30,8 +30,8 @@ interface Target {
     contractNamesToUpgrade: string[]
 }
 
-const withoutUndefined = <T>(array: Array<T | undefined>) => array.
-    filter((element) => element !== undefined) as Array<T>;
+const withoutNull = <T>(array: Array<T | null>) => array.
+    filter((element) => element !== null) as Array<T>;
 
 
 export abstract class Upgrader {
@@ -106,13 +106,13 @@ export abstract class Upgrader {
     // Private
 
     private async callInitialize () {
-        if (this.initialize !== undefined) {
+        if (typeof this.initialize !== "undefined") {
             await this.initialize();
         }
     }
 
     private async callDeployNewContracts () {
-        if (this.deployNewContracts !== undefined) {
+        if (typeof this.deployNewContracts !== "undefined") {
             // Deploy new contracts
             await this.deployNewContracts();
         }
@@ -176,7 +176,7 @@ export abstract class Upgrader {
     private async deployNewImplementations () {
         const contracts = await Promise.all(this.contractNamesToUpgrade.
             map(this.deployNewImplementation));
-        return withoutUndefined(contracts);
+        return withoutNull(contracts);
     }
 
     private async deployNewImplementation (contract: string) {
@@ -186,11 +186,10 @@ export abstract class Upgrader {
                 (await this.instance.getContract(contract)).address;
 
         console.log(`Prepare upgrade of ${contract}`);
-        const
-            currentImplementationAddress = await getImplementationAddress(
-                network.provider,
-                proxyAddress
-            );
+        const currentImplementationAddress = await getImplementationAddress(
+            network.provider,
+            proxyAddress
+        );
         const newImplementationAddress = await upgrades.prepareUpgrade(
             proxyAddress,
             contractFactory,
@@ -207,7 +206,7 @@ export abstract class Upgrader {
             };
         }
         console.log(chalk.gray(`Contract ${contract} is up to date`));
-        return undefined;
+        return null;
     }
 
     private async getNormalizedDeployedVersion () {

@@ -15,7 +15,7 @@ const getSkaleManifest = async () => {
         await getManifestFile(),
         "utf-8"
     ));
-    if (manifest.libraries === undefined) {
+    if (typeof manifest.libraries === "undefined") {
         manifest.libraries = {};
     }
     return manifest as SkaleManifestData;
@@ -119,7 +119,7 @@ const getLibrariesToUpgrade = async (
     const librariesNames = getLibrariesNames(linkReferences);
     const byteCodes = await loadBytesCodes(librariesNames);
     for (const libraryName of librariesNames) {
-        if (manifest.libraries[libraryName] === undefined) {
+        if (typeof manifest.libraries[libraryName] === "undefined") {
             librariesToUpgrade.push(libraryName);
         } else if (
             hashBytecode(byteCodes.get(libraryName) as string) ===

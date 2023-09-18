@@ -31,7 +31,6 @@ module.exports = {
             "never"
         ],
 
-        "no-undefined": "warn",
         "no-underscore-dangle": "warn",
         "no-use-before-define": "warn",
         "no-warning-comments": "warn",

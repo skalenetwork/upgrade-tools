@@ -48,7 +48,7 @@ export class SafeToImaSubmitter extends SafeSubmitter {
     }
 
     private async _getMessageProxyForMainnet () {
-        if (this._messageProxyForMainnet === undefined) {
+        if (typeof this._messageProxyForMainnet === "undefined") {
             this._messageProxyForMainnet =
                 await this.imaInstance.getContract("MessageProxyForMainnet");
         }

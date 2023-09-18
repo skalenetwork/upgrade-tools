@@ -8,7 +8,7 @@ const exec = util.promisify(asyncExec);
 class VersionNotFound extends Error {}
 
 const getVersionFilename = async (folder?: string): Promise<string> => {
-    if (folder === undefined) {
+    if (typeof folder === "undefined") {
         return getVersionFilename((
             await exec("git rev-parse --show-toplevel")
         ).stdout.trim());

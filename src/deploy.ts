@@ -100,7 +100,7 @@ const updateManifest = async (libraryArtifacts: LibraryArtifacts) => {
         await getManifestFile(),
         "utf-8"
     )) as SkaleManifestData;
-    if (manifest.libraries === undefined) {
+    if (typeof manifest.libraries === "undefined") {
         Object.assign(
             manifest,
             {"libraries": libraryArtifacts}
