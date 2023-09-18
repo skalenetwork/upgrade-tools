@@ -73,34 +73,6 @@ const updateManifest = async (
     );
 };
 
-export const getContractFactoryAndUpdateManifest = async (contract: string) => {
-    const {linkReferences} = await artifacts.readArtifact(contract);
-    if (!Object.keys(linkReferences).length) {
-        return await ethers.getContractFactory(contract);
-    }
-
-    const manifest = await getSkaleManifest();
-
-    const {
-        librariesToUpgrade,
-        oldLibraries
-    } = await getLibrariesToUpgrade(
-        manifest,
-        linkReferences
-    );
-    const libraries = await deployLibraries(librariesToUpgrade);
-    await updateManifest(
-        manifest,
-        libraries,
-        oldLibraries
-    );
-    return await getLinkedContractFactory(
-        contract,
-        libraries
-    );
-};
-
-
 export const getLibrariesNames = (linkReferences: LinkReferences) => {
     const libraryNames = [];
     for (const libraryFile of Object.values(linkReferences)) {
@@ -108,7 +80,6 @@ export const getLibrariesNames = (linkReferences: LinkReferences) => {
     }
     return libraryNames;
 };
-
 
 const getLibrariesToUpgrade = async (
     manifest: SkaleManifestData,
@@ -135,4 +106,31 @@ const getLibrariesToUpgrade = async (
         librariesToUpgrade,
         oldLibraries
     };
+};
+
+export const getContractFactoryAndUpdateManifest = async (contract: string) => {
+    const {linkReferences} = await artifacts.readArtifact(contract);
+    if (!Object.keys(linkReferences).length) {
+        return await ethers.getContractFactory(contract);
+    }
+
+    const manifest = await getSkaleManifest();
+
+    const {
+        librariesToUpgrade,
+        oldLibraries
+    } = await getLibrariesToUpgrade(
+        manifest,
+        linkReferences
+    );
+    const libraries = await deployLibraries(librariesToUpgrade);
+    await updateManifest(
+        manifest,
+        libraries,
+        oldLibraries
+    );
+    return await getLinkedContractFactory(
+        contract,
+        libraries
+    );
 };

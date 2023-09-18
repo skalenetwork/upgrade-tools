@@ -47,53 +47,6 @@ const defaultOptions = {
     "refundReceiver": ethers.constants.AddressZero
 };
 
-// Public functions
-
-export const createMultiSendTransaction = async (
-    safeAddress: string,
-    transactions: UnsignedTransaction[]
-) => {
-    const safeTransactionData = getSafeTransactionData(transactions);
-    const safeService = await getSafeService();
-    const nonce = await safeService.getNextNonce(safeAddress);
-    console.log(
-        "Will send tx to Gnosis with nonce",
-        nonce
-    );
-
-    const options = {
-        ...defaultOptions,
-        ...{
-
-            /*
-             * Nonce of the Safe,
-             * Transaction cannot be executed until
-             * Safe's nonce is not equal to this nonce
-             */
-            nonce
-        }
-    };
-    const ethAdapter = await getEthAdapter();
-    const safeSdk = await Safe.create({
-        ethAdapter,
-        safeAddress
-    });
-    const safeTransaction = await safeSdk.createTransaction({
-        safeTransactionData,
-        options
-    });
-
-    await estimateSafeTransaction(
-        safeAddress,
-        safeTransactionData
-    );
-
-    await proposeTransaction(
-        safeAddress,
-        safeTransaction
-    );
-};
-
 // Private functions
 
 const getSafeTransactionData = (transactions: UnsignedTransaction[]) => {
@@ -107,6 +60,37 @@ const getSafeTransactionData = (transactions: UnsignedTransaction[]) => {
         });
     }
     return safeTransactionData;
+};
+
+const getEthAdapter = async (): Promise<EthersAdapter> => {
+    const
+        [safeOwner] = await ethers.getSigners();
+    const ethAdapter = new EthersAdapter({
+        ethers,
+        "signerOrProvider": safeOwner
+    });
+    return ethAdapter;
+};
+
+const getSafeTransactionUrl = (chainId: number) => {
+    if (Object.keys(URLS.safe_transaction).includes(chainId.toString())) {
+        return URLS.safe_transaction[
+            chainId as keyof typeof URLS.safe_transaction
+        ];
+    }
+    throw Error("Can't get safe-transaction url" +
+        ` at network with chainId = ${chainId}`);
+};
+
+const getSafeService = async () => {
+    const
+        {chainId} = await ethers.provider.getNetwork();
+    const ethAdapter: EthersAdapter = await getEthAdapter();
+    const safeService = new SafeApiKit({
+        "txServiceUrl": getSafeTransactionUrl(chainId),
+        ethAdapter
+    });
+    return safeService;
 };
 
 const estimateSafeTransaction = async (
@@ -154,33 +138,49 @@ const proposeTransaction = async (
     });
 };
 
-const getEthAdapter = async (): Promise<EthersAdapter> => {
-    const
-        [safeOwner] = await ethers.getSigners();
-    const ethAdapter = new EthersAdapter({
-        ethers,
-        "signerOrProvider": safeOwner
-    });
-    return ethAdapter;
-};
+// Public functions
 
-const getSafeService = async () => {
-    const
-        {chainId} = await ethers.provider.getNetwork();
-    const ethAdapter: EthersAdapter = await getEthAdapter();
-    const safeService = new SafeApiKit({
-        "txServiceUrl": getSafeTransactionUrl(chainId),
-        ethAdapter
-    });
-    return safeService;
-};
+export const createMultiSendTransaction = async (
+    safeAddress: string,
+    transactions: UnsignedTransaction[]
+) => {
+    const safeTransactionData = getSafeTransactionData(transactions);
+    const safeService = await getSafeService();
+    const nonce = await safeService.getNextNonce(safeAddress);
+    console.log(
+        "Will send tx to Gnosis with nonce",
+        nonce
+    );
 
-const getSafeTransactionUrl = (chainId: number) => {
-    if (Object.keys(URLS.safe_transaction).includes(chainId.toString())) {
-        return URLS.safe_transaction[
-            chainId as keyof typeof URLS.safe_transaction
-        ];
-    }
-    throw Error("Can't get safe-transaction url" +
-        ` at network with chainId = ${chainId}`);
+    const options = {
+        ...defaultOptions,
+        ...{
+
+            /*
+             * Nonce of the Safe,
+             * Transaction cannot be executed until
+             * Safe's nonce is not equal to this nonce
+             */
+            nonce
+        }
+    };
+    const ethAdapter = await getEthAdapter();
+    const safeSdk = await Safe.create({
+        ethAdapter,
+        safeAddress
+    });
+    const safeTransaction = await safeSdk.createTransaction({
+        safeTransactionData,
+        options
+    });
+
+    await estimateSafeTransaction(
+        safeAddress,
+        safeTransactionData
+    );
+
+    await proposeTransaction(
+        safeAddress,
+        safeTransaction
+    );
 };

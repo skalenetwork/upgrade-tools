@@ -31,7 +31,6 @@ module.exports = {
             "never"
         ],
 
-        "no-use-before-define": "warn",
         "no-warning-comments": "warn",
         "prefer-destructuring": "warn",
         "radix": "warn",
