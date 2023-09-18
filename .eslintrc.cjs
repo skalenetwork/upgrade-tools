@@ -32,7 +32,6 @@ module.exports = {
             "never"
         ],
 
-        "sort-imports": "warn",
         "sort-keys": "warn"
     }
 };

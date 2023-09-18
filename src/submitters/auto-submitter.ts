@@ -1,17 +1,18 @@
-import {getManifestAdmin} from "@openzeppelin/hardhat-upgrades/dist/admin";
-import {Transaction} from "ethers";
-import {ProxyAdmin} from "../../typechain-types";
-import {Submitter} from "./submitter";
 import hre, {ethers} from "hardhat";
+import {EXIT_CODES} from "../exitCodes";
 import {EoaSubmitter} from "./eoa-submitter";
-import {SafeSubmitter} from "./safe-submitter";
-import chalk from "chalk";
+import {MARIONETTE_ADDRESS} from "./types/marionette";
+import {ProxyAdmin} from "../../typechain-types";
 import {
     SafeImaLegacyMarionetteSubmitter
 } from "./safe-ima-legacy-marionette-submitter";
-import {MARIONETTE_ADDRESS} from "./types/marionette";
+import {SafeSubmitter} from "./safe-submitter";
+import {Submitter} from "./submitter";
+import {Transaction} from "ethers";
+import chalk from "chalk";
+import {getManifestAdmin} from "@openzeppelin/hardhat-upgrades/dist/admin";
 import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v5";
-import {EXIT_CODES} from "../exitCodes";
+
 
 export class AutoSubmitter extends Submitter {
     name = "Auto Submitter";

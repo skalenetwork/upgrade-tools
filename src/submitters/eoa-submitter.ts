@@ -1,6 +1,7 @@
-import {ethers} from "hardhat";
-import {UnsignedTransaction} from "ethers";
 import {Submitter} from "./submitter";
+import {UnsignedTransaction} from "ethers";
+import {ethers} from "hardhat";
+
 
 export class EoaSubmitter extends Submitter {
     name = "EOA Submitter";

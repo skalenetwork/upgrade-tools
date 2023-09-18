@@ -1,6 +1,7 @@
 import {BytesLike, Contract, UnsignedTransaction} from "ethers";
-import {SafeSubmitter} from "./safe-submitter";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
+import {SafeSubmitter} from "./safe-submitter";
+
 
 interface Network {
     targetSchainHash: BytesLike,

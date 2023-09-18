@@ -1,14 +1,14 @@
-import chalk from "chalk";
-import {ethers} from "hardhat";
-import {UnsignedTransaction} from "ethers";
-import SafeApiKit from "@safe-global/api-kit";
-import Safe, {EthersAdapter} from "@safe-global/protocol-kit";
 import {
     MetaTransactionData,
     OperationType,
     SafeTransaction,
     SafeTransactionDataPartial
 } from "@safe-global/safe-core-sdk-types";
+import Safe, {EthersAdapter} from "@safe-global/protocol-kit";
+import SafeApiKit from "@safe-global/api-kit";
+import {UnsignedTransaction} from "ethers";
+import chalk from "chalk";
+import {ethers} from "hardhat";
 import {getNetwork} from "@ethersproject/networks";
 
 

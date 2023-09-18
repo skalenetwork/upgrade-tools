@@ -1,13 +1,13 @@
 import {artifacts, ethers} from "hardhat";
-import {promises as fs} from "fs";
-import {hashBytecode} from "@openzeppelin/upgrades-core";
-import {LinkReferences} from "hardhat/types";
-import {SkaleManifestData} from "./types/SkaleManifestData";
 import {
     deployLibraries,
     getLinkedContractFactory,
     getManifestFile
 } from "./deploy";
+import {LinkReferences} from "hardhat/types";
+import {SkaleManifestData} from "./types/SkaleManifestData";
+import {promises as fs} from "fs";
+import {hashBytecode} from "@openzeppelin/upgrades-core";
 
 
 const getSkaleManifest = async () => {

@@ -1,5 +1,5 @@
-import {exec as asyncExec} from "child_process";
 import {existsSync, promises as fs} from "fs";
+import {exec as asyncExec} from "child_process";
 import util from "util";
 
 

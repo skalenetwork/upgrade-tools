@@ -1,10 +1,11 @@
 import {Manifest, hashBytecode} from "@openzeppelin/upgrades-core";
 import {artifacts, ethers} from "hardhat";
-import {promises as fs} from "fs";
-import {SkaleManifestData} from "./types/SkaleManifestData";
+import {hexConcat, hexDataSlice} from "ethers/lib/utils";
 import {Artifact} from "hardhat/types";
-import {hexDataSlice, hexConcat} from "ethers/lib/utils";
+import {SkaleManifestData} from "./types/SkaleManifestData";
+import {promises as fs} from "fs";
 import {getLibrariesNames} from "./contractFactory";
+
 
 interface LibraryArtifacts {
     [key: string]: unknown

@@ -1,4 +1,3 @@
-import {OperationType} from "@safe-global/safe-core-sdk-types";
 import {BigNumberish, BytesLike} from "ethers";
 import {
     hexConcat,
@@ -7,6 +6,8 @@ import {
     hexZeroPad,
     hexlify
 } from "ethers/lib/utils";
+import {OperationType} from "@safe-global/safe-core-sdk-types";
+
 
 interface Transaction {
 

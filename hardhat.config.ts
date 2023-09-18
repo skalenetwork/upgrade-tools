@@ -1,7 +1,8 @@
-import {HardhatUserConfig} from "hardhat/config";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "@openzeppelin/hardhat-upgrades";
+import {HardhatUserConfig} from "hardhat/config";
+
 
 const coreArtifacts =
     "node_modules/@openzeppelin/upgrades-core/artifacts/[!b]*.json";

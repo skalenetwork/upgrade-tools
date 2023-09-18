@@ -1,6 +1,7 @@
+import {EXIT_CODES} from "../exitCodes";
 import {UnsignedTransaction} from "ethers";
 import chalk from "chalk";
-import {EXIT_CODES} from "../exitCodes";
+
 
 export abstract class Submitter {
     abstract submit(transactions: UnsignedTransaction[]): Promise<void>;

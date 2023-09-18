@@ -1,7 +1,8 @@
 import {BytesLike, UnsignedTransaction} from "ethers";
-import {ethers} from "hardhat";
-import {SafeToImaSubmitter} from "./safe-to-ima-submitter";
 import {MARIONETTE_ADDRESS} from "./types/marionette";
+import {SafeToImaSubmitter} from "./safe-to-ima-submitter";
+import {ethers} from "hardhat";
+
 
 export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
     marionette = new ethers.Contract(

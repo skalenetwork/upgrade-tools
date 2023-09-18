@@ -1,17 +1,17 @@
 import hre, {network, upgrades} from "hardhat";
-import chalk from "chalk";
+import {AutoSubmitter} from "./submitters/auto-submitter";
+import {EXIT_CODES} from "./exitCodes";
+import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
 import {ProxyAdmin} from "../typechain-types";
+import {Submitter} from "./submitters/submitter";
+import {UnsignedTransaction} from "ethers";
+import chalk from "chalk";
+import {promises as fs} from "fs";
+import {getContractFactoryAndUpdateManifest} from "./contractFactory";
+import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 import {getManifestAdmin} from "@openzeppelin/hardhat-upgrades/dist/admin";
 import {getVersion} from "./version";
-import {promises as fs} from "fs";
-import {UnsignedTransaction} from "ethers";
-import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 import {verify} from "./verification";
-import {Submitter} from "./submitters/submitter";
-import {AutoSubmitter} from "./submitters/auto-submitter";
-import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
-import {getContractFactoryAndUpdateManifest} from "./contractFactory";
-import {EXIT_CODES} from "./exitCodes";
 
 
 interface ContractToUpgrade {
