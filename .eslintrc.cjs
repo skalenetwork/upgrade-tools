@@ -30,8 +30,6 @@ module.exports = {
         "padded-blocks": [
             "error",
             "never"
-        ],
-
-        "sort-keys": "warn"
+        ]
     }
 };

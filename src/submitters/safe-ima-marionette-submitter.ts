@@ -60,8 +60,9 @@ export class SafeImaMarionetteSubmitter extends SafeToImaSubmitter {
         }
         await super.submit([
             {
-                "to": this.marionette.address,
-                "data": await this.marionette.encodeFunctionCalls(functionCalls)
+                "data": await this.marionette.
+                    encodeFunctionCalls(functionCalls),
+                "to": this.marionette.address
             }
         ]);
     }

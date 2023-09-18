@@ -89,9 +89,9 @@ export const verify = async (
     }
     await verifyWithRetry(
         {
-            contractName,
+            constructorArguments,
             contractAddress,
-            constructorArguments
+            contractName
         },
         RETRIES_AMOUNT
     );

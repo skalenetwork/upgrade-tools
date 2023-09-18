@@ -35,7 +35,6 @@ export class SafeToImaSubmitter extends SafeSubmitter {
         }
         const messageProxyForMainnet = await this.getMessageProxyForMainnet();
         const transactionsToIma = transactions.map((transaction) => ({
-            "to": messageProxyForMainnet.address,
             "data": messageProxyForMainnet.interface.encodeFunctionData(
                 "postOutgoingMessage",
                 [
@@ -43,7 +42,8 @@ export class SafeToImaSubmitter extends SafeSubmitter {
                     transaction.to,
                     transaction.data
                 ]
-            )
+            ),
+            "to": messageProxyForMainnet.address
         }));
         await super.submit(transactionsToIma);
     }

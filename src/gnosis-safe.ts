@@ -24,8 +24,6 @@ const URLS = {
 };
 
 const defaultOptions = {
-    // Max gas to use in the transaction
-    "safeTxGas": "0",
 
     /*
      * Gas costs not related to the transaction execution
@@ -44,7 +42,10 @@ const defaultOptions = {
     "gasToken": ethers.constants.AddressZero,
 
     // Address of receiver of gas payment (or `null` if tx.origin)
-    "refundReceiver": ethers.constants.AddressZero
+    "refundReceiver": ethers.constants.AddressZero,
+
+    // Max gas to use in the transaction
+    "safeTxGas": "0"
 };
 
 // Private functions
@@ -53,10 +54,10 @@ const getSafeTransactionData = (transactions: UnsignedTransaction[]) => {
     const safeTransactionData: MetaTransactionData[] = [];
     for (const transaction of transactions) {
         safeTransactionData.push({
-            "to": transaction.to ?? ethers.constants.AddressZero,
             "data": transaction.data?.toString() ?? "0x",
-            "value": transaction.value?.toString() ?? "0",
-            "operation": 0
+            "operation": OperationType.Call,
+            "to": transaction.to ?? ethers.constants.AddressZero,
+            "value": transaction.value?.toString() ?? "0"
         });
     }
     return safeTransactionData;
@@ -87,8 +88,8 @@ const getSafeService = async () => {
         {chainId} = await ethers.provider.getNetwork();
     const ethAdapter: EthersAdapter = await getEthAdapter();
     const safeService = new SafeApiKit({
-        "txServiceUrl": getSafeTransactionUrl(chainId),
-        ethAdapter
+        ethAdapter,
+        "txServiceUrl": getSafeTransactionUrl(chainId)
     });
     return safeService;
 };
@@ -170,8 +171,8 @@ export const createMultiSendTransaction = async (
         safeAddress
     });
     const safeTransaction = await safeSdk.createTransaction({
-        safeTransactionData,
-        options
+        options,
+        safeTransactionData
     });
 
     await estimateSafeTransaction(

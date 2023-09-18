@@ -9,8 +9,8 @@ const coreArtifacts =
 
 const config: HardhatUserConfig = {
     "typechain": {
-        "target": "ethers-v5",
-        "externalArtifacts": [coreArtifacts]
+        "externalArtifacts": [coreArtifacts],
+        "target": "ethers-v5"
     }
 };
 

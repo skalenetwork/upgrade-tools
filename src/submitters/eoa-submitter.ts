@@ -14,10 +14,10 @@ export class EoaSubmitter extends Submitter {
         const responses =
             await Promise.all(transactions.
                 map((transaction, index) => deployer.sendTransaction({
-                    "to": transaction.to,
-                    "value": transaction.value,
                     "data": transaction.data,
-                    "nonce": nonce + index
+                    "nonce": nonce + index,
+                    "to": transaction.to,
+                    "value": transaction.value
                 })));
 
         console.log("Waiting for transactions");

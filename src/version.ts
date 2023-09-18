@@ -21,8 +21,8 @@ const getVersionFilename = async (folder?: string): Promise<string> => {
     for (const entry of await fs.readdir(
         folder,
         {
-            "withFileTypes": true,
-            "recursive": true
+            "recursive": true,
+            "withFileTypes": true
         }
     )) {
         if (entry.isFile() && entry.name === VERSION_FILENAME) {

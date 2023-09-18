@@ -161,14 +161,14 @@ export abstract class Upgrader {
                 ` to ${contract.implementationAddress}`;
             console.log(chalk.yellowBright(infoMessage));
             this.transactions.push({
-                "to": proxyAdmin.address,
                 "data": proxyAdmin.interface.encodeFunctionData(
                     "upgrade",
                     [
                         contract.proxyAddress,
                         contract.implementationAddress
                     ]
-                )
+                ),
+                "to": proxyAdmin.address
             });
         }
     }
@@ -200,9 +200,9 @@ export abstract class Upgrader {
         ) as string;
         if (newImplementationAddress !== currentImplementationAddress) {
             return {
-                proxyAddress,
                 "implementationAddress": newImplementationAddress,
-                "name": contract
+                "name": contract,
+                proxyAddress
             };
         }
         console.log(chalk.gray(`Contract ${contract} is up to date`));
