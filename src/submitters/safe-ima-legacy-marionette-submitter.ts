@@ -49,15 +49,9 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
         const transactionsToMarionette =
             (await Promise.all(transactions.
                 map((transaction) => this.marionette.encodeFunctionCall(
-                    transaction.to
-                        ? transaction.to
-                        : ethers.constants.AddressZero,
-                    transaction.value
-                        ? transaction.value
-                        : zeroValue,
-                    transaction.data
-                        ? transaction.data
-                        : "0x"
+                    transaction.to ?? ethers.constants.AddressZero,
+                    transaction.value ?? zeroValue,
+                    transaction.data ?? "0x"
                 ) as Promise<BytesLike>))
             ).map((data) => ({
                 data,

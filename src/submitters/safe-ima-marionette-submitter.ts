@@ -52,15 +52,9 @@ export class SafeImaMarionetteSubmitter extends SafeToImaSubmitter {
         const zeroValue = 0;
         for (const transaction of transactions) {
             functionCalls.push({
-                "receiver": transaction.to
-                    ? transaction.to
-                    : ethers.constants.AddressZero,
-                "value": transaction.value
-                    ? transaction.value
-                    : zeroValue,
-                "data": transaction.data
-                    ? transaction.data
-                    : "0x"
+                "data": transaction.data ?? "0x",
+                "receiver": transaction.to ?? ethers.constants.AddressZero,
+                "value": transaction.value ?? zeroValue
             });
         }
         await super.submit([

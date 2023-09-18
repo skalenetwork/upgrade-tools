@@ -13,11 +13,14 @@ module.exports = {
     "plugins": ["@typescript-eslint"],
     "root": true,
     "rules": {
+        "@typescript-eslint/no-shadow": "error",
         "lines-around-comment": [
             "error",
             {"allowBlockStart": true}
         ],
         "no-console": "off",
+        // Replaced with @typescript-eslint/no-shadow
+        "no-shadow": "off",
         "object-curly-spacing": "error",
         "one-var": [
             "error",
@@ -28,8 +31,6 @@ module.exports = {
             "never"
         ],
 
-        "no-shadow": "warn",
-        "no-ternary": "warn",
         "no-undefined": "warn",
         "no-underscore-dangle": "warn",
         "no-use-before-define": "warn",

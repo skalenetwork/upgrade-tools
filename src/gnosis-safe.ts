@@ -100,15 +100,9 @@ const getSafeTransactionData = (transactions: UnsignedTransaction[]) => {
     const safeTransactionData: MetaTransactionData[] = [];
     for (const transaction of transactions) {
         safeTransactionData.push({
-            "to": transaction.to
-                ? transaction.to
-                : ethers.constants.AddressZero,
-            "data": transaction.data
-                ? transaction.data.toString()
-                : "0x",
-            "value": transaction.value
-                ? transaction.value.toString()
-                : "0",
+            "to": transaction.to ?? ethers.constants.AddressZero,
+            "data": transaction.data?.toString() ?? "0x",
+            "value": transaction.value?.toString() ?? "0",
             "operation": 0
         });
     }
