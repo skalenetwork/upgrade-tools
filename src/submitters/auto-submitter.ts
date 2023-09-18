@@ -127,34 +127,31 @@ export class AutoSubmitter extends Submitter {
 
     private static _getSchainHash () {
         // Query Context to get schain hash
-        if (!process.env.SCHAIN_HASH) {
-            if (!process.env.SCHAIN_NAME) {
-                console.log(chalk.red("Set schain name" +
-                    " to SCHAIN_NAME environment variable"));
-                console.log(chalk.red("or schain hash" +
-                    " to SCHAIN_HASH environment variable"));
-                throw Error("Schain is not set");
-            } else {
-                return ethers.utils.solidityKeccak256(
-                    ["string"],
-                    [process.env.SCHAIN_NAME]
-                );
-            }
-        } else {
+        if (process.env.SCHAIN_HASH) {
             return process.env.SCHAIN_HASH;
         }
+        if (process.env.SCHAIN_NAME) {
+            return ethers.utils.solidityKeccak256(
+                ["string"],
+                [process.env.SCHAIN_NAME]
+            );
+        }
+        console.log(chalk.red("Set schain name" +
+            " to SCHAIN_NAME environment variable"));
+        console.log(chalk.red("or schain hash" +
+            " to SCHAIN_HASH environment variable"));
+        throw Error("Schain is not set");
     }
 
     private static _getMainnetChainId () {
-        if (!process.env.MAINNET_CHAIN_ID) {
-            console.log(chalk.red("Set chainId of mainnet" +
-                " to MAINNET_CHAIN_ID environment variable"));
-            console.log(chalk.red("Use 1 for Ethereum mainnet" +
-                " or 5 for Goerli"));
-            throw Error("Mainnet chainId is not set");
-        } else {
+        if (process.env.MAINNET_CHAIN_ID) {
             return Number.parseInt(process.env.MAINNET_CHAIN_ID);
         }
+        console.log(chalk.red("Set chainId of mainnet" +
+            " to MAINNET_CHAIN_ID environment variable"));
+        console.log(chalk.red("Use 1 for Ethereum mainnet" +
+            " or 5 for Goerli"));
+        throw Error("Mainnet chainId is not set");
     }
 
     private static async _versionFunctionExists () {

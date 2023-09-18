@@ -122,13 +122,13 @@ const getLibrariesToUpgrade = async (
         if (manifest.libraries[libraryName] === undefined) {
             librariesToUpgrade.push(libraryName);
         } else if (
-            hashBytecode(byteCodes.get(libraryName) as string) !==
+            hashBytecode(byteCodes.get(libraryName) as string) ===
                 manifest.libraries[libraryName].bytecodeHash
         ) {
-            librariesToUpgrade.push(libraryName);
-        } else {
             oldLibraries[libraryName] =
                     manifest.libraries[libraryName].address;
+        } else {
+            librariesToUpgrade.push(libraryName);
         }
     }
     return {

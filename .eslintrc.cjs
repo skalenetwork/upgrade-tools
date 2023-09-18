@@ -28,7 +28,6 @@ module.exports = {
             "never"
         ],
 
-        "no-negated-condition": "warn",
         "no-shadow": "warn",
         "no-ternary": "warn",
         "no-undefined": "warn",
