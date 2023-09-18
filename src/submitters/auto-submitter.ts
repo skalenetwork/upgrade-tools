@@ -144,8 +144,12 @@ export class AutoSubmitter extends Submitter {
     }
 
     private static getMainnetChainId () {
+        const CHAIN_ID_RADIX = 10;
         if (process.env.MAINNET_CHAIN_ID) {
-            return Number.parseInt(process.env.MAINNET_CHAIN_ID);
+            return Number.parseInt(
+                process.env.MAINNET_CHAIN_ID,
+                CHAIN_ID_RADIX
+            );
         }
         console.log(chalk.red("Set chainId of mainnet" +
             " to MAINNET_CHAIN_ID environment variable"));

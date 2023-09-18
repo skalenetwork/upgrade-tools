@@ -21,6 +21,7 @@ module.exports = {
         "no-console": "off",
         // Replaced with @typescript-eslint/no-shadow
         "no-shadow": "off",
+        "no-warning-comments": "warn",
         "object-curly-spacing": "error",
         "one-var": [
             "error",
@@ -31,9 +32,6 @@ module.exports = {
             "never"
         ],
 
-        "no-warning-comments": "warn",
-        "prefer-destructuring": "warn",
-        "radix": "warn",
         "sort-imports": "warn",
         "sort-keys": "warn"
     }
