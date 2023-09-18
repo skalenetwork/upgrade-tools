@@ -1,7 +1,6 @@
-import hre from "hardhat";
+import hre, {network, upgrades} from "hardhat";
 import chalk from "chalk";
 import {ProxyAdmin} from "../typechain-types";
-import {network, upgrades} from "hardhat";
 import {getManifestAdmin} from "@openzeppelin/hardhat-upgrades/dist/admin";
 import {getVersion} from "./version";
 import {promises as fs} from "fs";

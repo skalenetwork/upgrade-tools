@@ -28,7 +28,6 @@ module.exports = {
             "never"
         ],
 
-        "no-duplicate-imports": "warn",
         "no-inline-comments": "warn",
         "no-magic-numbers": "warn",
         "no-mixed-operators": "warn",
