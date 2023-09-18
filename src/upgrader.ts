@@ -11,6 +11,7 @@ import {Submitter} from "./submitters/submitter";
 import {AutoSubmitter} from "./submitters/auto-submitter";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
 import {getContractFactoryAndUpdateManifest} from "./contractFactory";
+import {EXIT_CODES} from "./exitCodes";
 
 
 interface ContractToUpgrade {
@@ -125,12 +126,13 @@ export abstract class Upgrader {
     }
 
     private async writeTransactions (version: string) {
+        const indentation = 4;
         await fs.writeFile(
             `data/transactions-${version}-${network.name}.json`,
             JSON.stringify(
                 this.transactions,
                 null,
-                4
+                indentation
             )
         );
     }
@@ -227,7 +229,7 @@ export abstract class Upgrader {
                     `This script can't upgrade version ${deployedVersion}` +
                     ` to ${version}`;
                 console.log(chalk.red(cannotUpgradeMessage));
-                process.exit(1);
+                process.exit(EXIT_CODES.BAD_VERSION);
             }
         } else {
             const cannotCheckMessage =

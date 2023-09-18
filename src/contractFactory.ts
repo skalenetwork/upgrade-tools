@@ -62,12 +62,13 @@ const updateManifest = async (
         libraries,
         oldLibraries
     );
+    const indentation = 4;
     await fs.writeFile(
         await getManifestFile(),
         JSON.stringify(
             manifest,
             null,
-            4
+            indentation
         )
     );
 };
@@ -99,9 +100,14 @@ export const getContractFactoryAndUpdateManifest = async (contract: string) => {
     );
 };
 
-const getLibrariesNames =
-    (linkReferences: LinkReferences) => Object.values(linkReferences).
-        map((libraryObject) => Object.keys(libraryObject)[0]);
+
+export const getLibrariesNames = (linkReferences: LinkReferences) => {
+    const libraryNames = [];
+    for (const libraryFile of Object.values(linkReferences)) {
+        libraryNames.push(...Object.keys(libraryFile));
+    }
+    return libraryNames;
+};
 
 
 const getLibrariesToUpgrade = async (

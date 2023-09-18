@@ -11,9 +11,26 @@ import {
 } from "./safe-ima-legacy-marionette-submitter";
 import {MARIONETTE_ADDRESS} from "./types/marionette";
 import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v5";
+import {EXIT_CODES} from "../exitCodes";
 
 export class AutoSubmitter extends Submitter {
     name = "Auto Submitter";
+
+    static marionetteInterface = [
+        {
+            "inputs": [],
+            "name": "version",
+            "outputs": [
+                {
+                    "internalType": "string",
+                    "name": "",
+                    "type": "string"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        }
+    ];
 
     async submit (transactions: Transaction[]) {
         console.log(`Submit via ${this.name}`);
@@ -91,7 +108,7 @@ export class AutoSubmitter extends Submitter {
         if (!process.env.IMA) {
             console.log(chalk.red("Set target IMA alias" +
                 " to IMA environment variable"));
-            process.exit(1);
+            process.exit(EXIT_CODES.UNKNOWN_IMA);
         }
         const network =
             await skaleContracts.getNetworkByProvider(ethers.provider);
@@ -103,7 +120,7 @@ export class AutoSubmitter extends Submitter {
         if (!process.env.SAFE_ADDRESS) {
             console.log(chalk.red("Set Gnosis Safe owner address" +
                 " to SAFE_ADDRESS environment variable"));
-            process.exit(1);
+            process.exit(EXIT_CODES.UNKNOWN_SAFE_ADDRESS);
         }
         return process.env.SAFE_ADDRESS;
     }
@@ -142,35 +159,23 @@ export class AutoSubmitter extends Submitter {
 
     private static async _versionFunctionExists () {
         const bytecode = await hre.ethers.provider.getCode(MARIONETTE_ADDRESS);
+        const hexPrefixLength = 2;
+        const selectorLength = 10;
 
         /*
          * If the bytecode doesn't include the function selector version()
          * is definitely not present
          */
         if (!bytecode.includes(ethers.utils.id("version()").slice(
-            2,
-            10
+            hexPrefixLength,
+            selectorLength
         ))) {
             return false;
         }
 
         const marionette = new ethers.Contract(
             MARIONETTE_ADDRESS,
-            [
-                {
-                    "inputs": [],
-                    "name": "version",
-                    "outputs": [
-                        {
-                            "internalType": "string",
-                            "name": "",
-                            "type": "string"
-                        }
-                    ],
-                    "stateMutability": "view",
-                    "type": "function"
-                }
-            ],
+            AutoSubmitter.marionetteInterface,
             hre.ethers.provider
         );
 

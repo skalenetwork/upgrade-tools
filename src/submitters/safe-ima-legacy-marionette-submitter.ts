@@ -41,9 +41,11 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
     );
 
     async submit (transactions: UnsignedTransaction[]): Promise<void> {
-        if (transactions.length > 1) {
+        const singleTransaction = 1;
+        if (transactions.length > singleTransaction) {
             SafeImaLegacyMarionetteSubmitter._atomicityWarning();
         }
+        const zeroValue = 0;
         const transactionsToMarionette =
             (await Promise.all(transactions.
                 map((transaction) => this.marionette.encodeFunctionCall(
@@ -52,7 +54,7 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
                         : ethers.constants.AddressZero,
                     transaction.value
                         ? transaction.value
-                        : 0,
+                        : zeroValue,
                     transaction.data
                         ? transaction.data
                         : "0x"

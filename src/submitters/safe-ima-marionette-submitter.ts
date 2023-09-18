@@ -49,6 +49,7 @@ export class SafeImaMarionetteSubmitter extends SafeToImaSubmitter {
 
     async submit (transactions: UnsignedTransaction[]): Promise<void> {
         const functionCalls = [];
+        const zeroValue = 0;
         for (const transaction of transactions) {
             functionCalls.push({
                 "receiver": transaction.to
@@ -56,7 +57,7 @@ export class SafeImaMarionetteSubmitter extends SafeToImaSubmitter {
                     : ethers.constants.AddressZero,
                 "value": transaction.value
                     ? transaction.value
-                    : 0,
+                    : zeroValue,
                 "data": transaction.data
                     ? transaction.data
                     : "0x"

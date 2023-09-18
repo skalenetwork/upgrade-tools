@@ -2,7 +2,9 @@ import {Manifest, hashBytecode} from "@openzeppelin/upgrades-core";
 import {artifacts, ethers} from "hardhat";
 import {promises as fs} from "fs";
 import {SkaleManifestData} from "./types/SkaleManifestData";
-import {Artifact, LinkReferences} from "hardhat/types";
+import {Artifact} from "hardhat/types";
+import {hexDataSlice, hexConcat} from "ethers/lib/utils";
+import {getLibrariesNames} from "./contractFactory";
 
 interface LibraryArtifacts {
     [key: string]: unknown
@@ -39,23 +41,32 @@ export const deployLibraries = async (libraryNames: string[]) => {
     return libraries;
 };
 
-const _linkBytecode = (artifact: Artifact, libraries: Map<string, string>) => {
+const firstByteIndex = 0;
+
+const linkBytecode = (artifact: Artifact, libraries: Map<string, string>) => {
     let {bytecode} = artifact;
     for (const [, fileReferences] of Object.entries(artifact.linkReferences)) {
         for (const [
             libName,
             fixups
         ] of Object.entries(fileReferences)) {
-            const addr = libraries.get(libName);
-            if (addr !== undefined) {
+            const libAddress = libraries.get(libName);
+            if (typeof libAddress !== "undefined") {
                 for (const fixup of fixups) {
-                    bytecode =
-                    bytecode.substr(
-                        0,
-                        2 + fixup.start * 2
-                    ) +
-                    addr.substr(2) +
-                    bytecode.substr(2 + (fixup.start + fixup.length) * 2);
+                    const bytecodeBefore = hexDataSlice(
+                        bytecode,
+                        firstByteIndex,
+                        fixup.start
+                    );
+                    const bytecodeAfter = hexDataSlice(
+                        bytecode,
+                        fixup.start + fixup.length
+                    );
+                    bytecode = hexConcat([
+                        bytecodeBefore,
+                        libAddress,
+                        bytecodeAfter
+                    ]);
                 }
             }
         }
@@ -69,7 +80,7 @@ export const getLinkedContractFactory = async (
 ) => {
     const
         cArtifact = await artifacts.readArtifact(contractName);
-    const linkedBytecode = _linkBytecode(
+    const linkedBytecode = linkBytecode(
         cArtifact,
         libraries
     );
@@ -100,12 +111,13 @@ const updateManifest = async (libraryArtifacts: LibraryArtifacts) => {
             manifest.libraries
         );
     }
+    const indentation = 4;
     await fs.writeFile(
         await getManifestFile(),
         JSON.stringify(
             manifest,
             null,
-            4
+            indentation
         )
     );
 };
@@ -142,22 +154,13 @@ const getLibraryArtifacts = async (libraries: Map<string, string>) => {
     return libraryArtifacts;
 };
 
-const getLibraryNames = (linkReferences: LinkReferences) => {
-    const libraryNames = [];
-    for (const key of Object.keys(linkReferences)) {
-        const libraryName = Object.keys(linkReferences[key])[0];
-        libraryNames.push(libraryName);
-    }
-    return libraryNames;
-};
-
 export const getContractFactory = async (contract: string) => {
     const {linkReferences} = await artifacts.readArtifact(contract);
     if (!Object.keys(linkReferences).length) {
         return await ethers.getContractFactory(contract);
     }
 
-    const libraryNames = getLibraryNames(linkReferences);
+    const libraryNames = getLibrariesNames(linkReferences);
     const libraries = await deployLibraries(libraryNames);
     const libraryArtifacts = await getLibraryArtifacts(libraries);
 

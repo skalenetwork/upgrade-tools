@@ -1,30 +1,12 @@
-import {BigNumber} from "ethers";
-
-const padWithZeros = (
-    value: string,
-    targetLength: number
-) => ("0".repeat(targetLength) + value).slice(-targetLength);
-
-const getOperationBytes = (operation: 0 | 1) => {
-    if (operation === 0) {
-        return "00";
-    } else if (operation === 1) {
-        return "01";
-    }
-    throw Error("Operation has an incorrect value");
-};
-
-const getToBytes = (to: string) => {
-    let _to = to;
-    if (to.startsWith("0x")) {
-        _to = _to.slice(2);
-    }
-    _to = padWithZeros(
-        _to,
-        20 * 2
-    );
-    return _to;
-};
+import {OperationType} from "@safe-global/safe-core-sdk-types";
+import {BigNumberish, BytesLike} from "ethers";
+import {
+    hexConcat,
+    hexDataLength,
+    hexValue,
+    hexZeroPad,
+    hexlify
+} from "ethers/lib/utils";
 
 interface Transaction {
 
@@ -32,47 +14,49 @@ interface Transaction {
      * Operation as a uint8 with 0 for a call
      * or 1 for a delegatecall (=> 1 byte)
      */
-    operation: 0 | 1,
+    operation: OperationType,
 
     // To as a address (=> 20 bytes)
     to: string,
 
     // Value as a uint256 (=> 32 bytes)
-    value: BigNumber | number,
+    value: BigNumberish,
 
     // Data as bytes.
-    data: string
+    data: BytesLike
 }
 
+const OPERATION_BYTES = 1;
+const ADDRESS_BYTES = 20;
+const UINT256_BYTES = 32;
+const TO_BYTES = ADDRESS_BYTES;
+const VALUE_BYTES = UINT256_BYTES;
+const DATA_LENGTH_BYTES = UINT256_BYTES;
+
 export const encodeTransaction = (transaction: Transaction) => {
-    const _operation = getOperationBytes(transaction.operation);
-
-    const _to = getToBytes(transaction.to);
-
-    const _value = padWithZeros(
-        BigNumber.from(transaction.value).toHexString().
-            slice(2),
-        32 * 2
+    const operation = hexZeroPad(
+        hexValue(transaction.operation),
+        OPERATION_BYTES
+    );
+    const to = hexZeroPad(
+        hexValue(transaction.to),
+        TO_BYTES
+    );
+    const value = hexZeroPad(
+        hexValue(transaction.value),
+        VALUE_BYTES
+    );
+    const data = hexlify(transaction.data);
+    const dataLength = hexZeroPad(
+        hexValue(hexDataLength(data)),
+        DATA_LENGTH_BYTES
     );
 
-    let _data = transaction.data;
-    if (transaction.data.startsWith("0x")) {
-        _data = _data.slice(2);
-    }
-    if (_data.length % 2 !== 0) {
-        _data = `0${_data}`;
-    }
-
-    const _dataLength = padWithZeros(
-        (_data.length / 2).toString(16),
-        32 * 2
-    );
-
-    return `0x${[
-        _operation,
-        _to,
-        _value,
-        _dataLength,
-        _data
-    ].join("")}`;
+    return hexConcat([
+        operation,
+        to,
+        value,
+        dataLength,
+        data
+    ]);
 };

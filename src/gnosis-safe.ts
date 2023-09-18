@@ -5,24 +5,21 @@ import SafeApiKit from "@safe-global/api-kit";
 import Safe, {EthersAdapter} from "@safe-global/protocol-kit";
 import {
     MetaTransactionData,
+    OperationType,
     SafeTransaction,
     SafeTransactionDataPartial
 } from "@safe-global/safe-core-sdk-types";
+import {getNetwork} from "@ethersproject/networks";
 
-
-enum Network {
-    MAINNET = 1,
-    GOERLI = 5,
-    GANACHE = 1337,
-    HARDHAT = 31337,
-}
 
 // Constants
 
 const URLS = {
     "safe_transaction": {
-        [Network.MAINNET]: "https://safe-transaction-mainnet.safe.global",
-        [Network.GOERLI]: "https://safe-transaction-goerli.safe.global"
+        [getNetwork("mainnet").chainId]:
+            "https://safe-transaction-mainnet.safe.global",
+        [getNetwork("goerli").chainId]:
+            "https://safe-transaction-goerli.safe.global"
     }
 };
 
@@ -129,10 +126,10 @@ const estimateSafeTransaction = async (
             map((transaction) => safeService.estimateSafeTransaction(
                 safeAddress,
                 {
-                    "to": transaction.to,
-                    "value": transaction.value,
                     "data": transaction.data,
-                    "operation": transaction.operation || 0
+                    "operation": transaction.operation || OperationType.Call,
+                    "to": transaction.to,
+                    "value": transaction.value
                 }
             )));
     for (const estimateResponse of gasEstimations) {

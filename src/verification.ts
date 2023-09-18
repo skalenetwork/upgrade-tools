@@ -5,6 +5,8 @@ import {
 import chalk from "chalk";
 import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 
+const RETRIES_AMOUNT = 5;
+
 const processError = (error: unknown, contractName: string) => {
     if (error instanceof Error) {
         const alreadyVerifiedErrorLine =
@@ -59,15 +61,16 @@ const verifyWithRetry = async (
     verificationTarget: VerificationTarget,
     attempts: number
 ) => {
-    if (attempts > 0) {
+    if (attempts) {
         if (!await verificationAttempt(
             verificationTarget.contractName,
             verificationTarget.contractAddress,
             verificationTarget.constructorArguments
         )) {
+            const failedAttempts = 1;
             await verifyWithRetry(
                 verificationTarget,
-                attempts - 1
+                attempts - failedAttempts
             );
         }
     }
@@ -90,7 +93,7 @@ export const verify = async (
             contractAddress,
             constructorArguments
         },
-        5
+        RETRIES_AMOUNT
     );
 };
 

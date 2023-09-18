@@ -28,7 +28,8 @@ export class SafeToImaSubmitter extends SafeSubmitter {
     }
 
     async submit (transactions: UnsignedTransaction[]): Promise<void> {
-        if (transactions.length > 1) {
+        const singleTransaction = 1;
+        if (transactions.length > singleTransaction) {
             SafeToImaSubmitter._atomicityWarning();
         }
         const messageProxyForMainnet = await this._getMessageProxyForMainnet();

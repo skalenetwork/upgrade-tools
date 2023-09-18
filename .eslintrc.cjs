@@ -28,8 +28,6 @@ module.exports = {
             "never"
         ],
 
-        "no-inline-comments": "warn",
-        "no-magic-numbers": "warn",
         "no-mixed-operators": "warn",
         "no-negated-condition": "warn",
         "no-shadow": "warn",
