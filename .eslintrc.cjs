@@ -17,6 +17,7 @@ module.exports = {
             "error",
             {"allowBlockStart": true}
         ],
+        "no-console": "off",
         "object-curly-spacing": "error",
         "one-var": [
             "error",
@@ -27,8 +28,6 @@ module.exports = {
             "never"
         ],
 
-        "no-console": "warn",
-        "no-continue": "warn",
         "no-duplicate-imports": "warn",
         "no-inline-comments": "warn",
         "no-magic-numbers": "warn",

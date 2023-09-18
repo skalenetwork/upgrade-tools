@@ -47,17 +47,16 @@ const _linkBytecode = (artifact: Artifact, libraries: Map<string, string>) => {
             fixups
         ] of Object.entries(fileReferences)) {
             const addr = libraries.get(libName);
-            if (addr === undefined) {
-                continue;
-            }
-            for (const fixup of fixups) {
-                bytecode =
-                bytecode.substr(
-                    0,
-                    2 + fixup.start * 2
-                ) +
-                addr.substr(2) +
-                bytecode.substr(2 + (fixup.start + fixup.length) * 2);
+            if (addr !== undefined) {
+                for (const fixup of fixups) {
+                    bytecode =
+                    bytecode.substr(
+                        0,
+                        2 + fixup.start * 2
+                    ) +
+                    addr.substr(2) +
+                    bytecode.substr(2 + (fixup.start + fixup.length) * 2);
+                }
             }
         }
     }
