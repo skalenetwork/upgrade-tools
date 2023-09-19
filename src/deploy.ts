@@ -1,7 +1,5 @@
 import {Manifest, hashBytecode} from "@openzeppelin/upgrades-core";
 import {artifacts, ethers} from "hardhat";
-import {hexConcat, hexDataSlice} from "ethers/lib/utils";
-import {Artifact} from "hardhat/types";
 import {SkaleManifestData} from "./types/SkaleManifestData";
 import {promises as fs} from "fs";
 import {getLibrariesNames} from "./contractFactory";
@@ -40,56 +38,6 @@ export const deployLibraries = async (libraryNames: string[]) => {
     });
 
     return libraries;
-};
-
-const firstByteIndex = 0;
-
-const linkBytecode = (artifact: Artifact, libraries: Map<string, string>) => {
-    let {bytecode} = artifact;
-    for (const [, fileReferences] of Object.entries(artifact.linkReferences)) {
-        for (const [
-            libName,
-            fixups
-        ] of Object.entries(fileReferences)) {
-            const libAddress = libraries.get(libName);
-            if (typeof libAddress !== "undefined") {
-                for (const fixup of fixups) {
-                    const bytecodeBefore = hexDataSlice(
-                        bytecode,
-                        firstByteIndex,
-                        fixup.start
-                    );
-                    const bytecodeAfter = hexDataSlice(
-                        bytecode,
-                        fixup.start + fixup.length
-                    );
-                    bytecode = hexConcat([
-                        bytecodeBefore,
-                        libAddress,
-                        bytecodeAfter
-                    ]);
-                }
-            }
-        }
-    }
-    return bytecode;
-};
-
-export const getLinkedContractFactory = async (
-    contractName: string,
-    libraries: Map<string, string>
-) => {
-    const
-        cArtifact = await artifacts.readArtifact(contractName);
-    const linkedBytecode = linkBytecode(
-        cArtifact,
-        libraries
-    );
-    const ContractFactory = await ethers.getContractFactory(
-        cArtifact.abi,
-        linkedBytecode
-    );
-    return ContractFactory;
 };
 
 export const getManifestFile = async function getManifestFile () {
@@ -167,8 +115,8 @@ export const getContractFactory = async (contract: string) => {
 
     await updateManifest(libraryArtifacts);
 
-    return await getLinkedContractFactory(
+    return await ethers.getContractFactory(
         contract,
-        libraries
+        {"libraries": Object.fromEntries(libraries)}
     );
 };

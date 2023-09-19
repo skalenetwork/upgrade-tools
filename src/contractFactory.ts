@@ -1,7 +1,6 @@
 import {artifacts, ethers} from "hardhat";
 import {
     deployLibraries,
-    getLinkedContractFactory,
     getManifestFile
 } from "./deploy";
 import {LinkReferences} from "hardhat/types";
@@ -129,8 +128,8 @@ export const getContractFactoryAndUpdateManifest = async (contract: string) => {
         libraries,
         oldLibraries
     );
-    return await getLinkedContractFactory(
+    return await ethers.getContractFactory(
         contract,
-        libraries
+        {"libraries": Object.fromEntries(libraries)}
     );
 };
