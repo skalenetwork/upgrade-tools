@@ -171,7 +171,10 @@ export abstract class Upgrader {
 
     private async deployNewImplementations () {
         const contracts = await Promise.all(this.contractNamesToUpgrade.
-            map(this.deployNewImplementation));
+            map(
+                this.deployNewImplementation,
+                this
+            ));
         return withoutNull(contracts);
     }
 
