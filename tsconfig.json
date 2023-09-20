@@ -2,9 +2,10 @@
   "extends": "@tsconfig/recommended/tsconfig.json",
 
   "compilerOptions": {
-      "target": "ES2020",
-      "outDir": "./dist",
       "declaration": true,
+      "outDir": "./dist",
+      "sourceMap": true,
+      "target": "ES2020"
   },
   "include": ["./src", "./typechain-types"],
   "exclude": ["node_modules", "dist"],

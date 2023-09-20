@@ -23,9 +23,6 @@ interface ContractToUpgrade {
 interface Project {
     name: string;
     instance: Instance;
-}
-
-interface Target {
     version: string;
     contractNamesToUpgrade: string[]
 }
@@ -49,15 +46,14 @@ export abstract class Upgrader {
 
     constructor (
         project: Project,
-        target: Target,
         submitter: Submitter = new AutoSubmitter()
     ) {
-        this.targetVersion = target.version;
-        if (!target.version.includes("-")) {
-            this.targetVersion = `${target.version}-stable.0`;
+        this.targetVersion = project.version;
+        if (!project.version.includes("-")) {
+            this.targetVersion = `${project.version}-stable.0`;
         }
         this.instance = project.instance;
-        this.contractNamesToUpgrade = target.contractNamesToUpgrade;
+        this.contractNamesToUpgrade = project.contractNamesToUpgrade;
         this.projectName = project.name;
         this.transactions = [];
         this.submitter = submitter;
