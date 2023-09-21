@@ -4,6 +4,7 @@ import {
     getManifestFile
 } from "./deploy";
 import {LinkReferences} from "hardhat/types";
+import {NonceProvider} from "./nonceProvider";
 import {SkaleManifestData} from "./types/SkaleManifestData";
 import {promises as fs} from "fs";
 import {hashBytecode} from "@openzeppelin/upgrades-core";
@@ -107,7 +108,10 @@ const getLibrariesToUpgrade = async (
     };
 };
 
-export const getContractFactoryAndUpdateManifest = async (contract: string) => {
+export const getContractFactoryAndUpdateManifest = async (
+    contract: string,
+    nonceProvider?: NonceProvider
+) => {
     const {linkReferences} = await artifacts.readArtifact(contract);
     if (!Object.keys(linkReferences).length) {
         return await ethers.getContractFactory(contract);
@@ -122,7 +126,10 @@ export const getContractFactoryAndUpdateManifest = async (contract: string) => {
         manifest,
         linkReferences
     );
-    const libraries = await deployLibraries(librariesToUpgrade);
+    const libraries = await deployLibraries(
+        librariesToUpgrade,
+        nonceProvider
+    );
     await updateManifest(
         manifest,
         libraries,

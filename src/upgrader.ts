@@ -1,7 +1,8 @@
-import hre, {network, upgrades} from "hardhat";
+import hre, {ethers, network, upgrades} from "hardhat";
 import {AutoSubmitter} from "./submitters/auto-submitter";
 import {EXIT_CODES} from "./exitCodes";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
+import {NonceProvider} from "./nonceProvider";
 import {ProxyAdmin} from "../typechain-types";
 import {Submitter} from "./submitters/submitter";
 import {UnsignedTransaction} from "ethers";
@@ -43,6 +44,8 @@ export abstract class Upgrader {
     transactions: UnsignedTransaction[];
 
     submitter: Submitter;
+
+    nonceProvider?: NonceProvider;
 
     constructor (
         project: Project,
@@ -170,6 +173,8 @@ export abstract class Upgrader {
     }
 
     private async deployNewImplementations () {
+        const [deployer] = await ethers.getSigners();
+        this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
         const contracts = await Promise.all(this.contractNamesToUpgrade.
             map(
                 this.deployNewImplementation,
@@ -179,8 +184,10 @@ export abstract class Upgrader {
     }
 
     private async deployNewImplementation (contract: string) {
-        const contractFactory =
-                await getContractFactoryAndUpdateManifest(contract);
+        const contractFactory = await getContractFactoryAndUpdateManifest(
+            contract,
+            this.nonceProvider
+        );
         const proxyAddress =
                 (await this.instance.getContract(contract)).address;
 
@@ -193,6 +200,11 @@ export abstract class Upgrader {
             proxyAddress,
             contractFactory,
             {
+                "constructorArgs": [
+                    {
+                        "nonce": this.nonceProvider?.reserveNonce()
+                    }
+                ],
                 "unsafeAllowLinkedLibraries": true,
                 "unsafeAllowRenames": true
             }
