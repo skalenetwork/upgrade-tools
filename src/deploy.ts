@@ -1,5 +1,6 @@
 import {Manifest, hashBytecode} from "@openzeppelin/upgrades-core";
 import {artifacts, ethers} from "hardhat";
+import {NonceProvider} from "./nonceProvider";
 import {SkaleManifestData} from "./types/SkaleManifestData";
 import {promises as fs} from "fs";
 import {getLibrariesNames} from "./contractFactory";
@@ -9,23 +10,31 @@ interface LibraryArtifacts {
     [key: string]: unknown
 }
 
-const deployLibrary = async (libraryName: string, nonce: number) => {
+const deployLibrary = async (
+    libraryName: string,
+    nonceProvider: NonceProvider
+) => {
     const Library = await ethers.getContractFactory(libraryName);
-    const library = await Library.deploy({nonce});
+    const library = await Library.
+        deploy({"nonce": nonceProvider.reserveNonce()});
     await library.deployed();
     return library.address;
 };
 
-export const deployLibraries = async (libraryNames: string[]) => {
+export const deployLibraries = async (
+    libraryNames: string[],
+    nonceProvider?: NonceProvider
+) => {
     const [deployer] = await ethers.getSigners();
-    const nonce = await deployer.getTransactionCount();
+    const initializedNonceProvider = nonceProvider ??
+         await NonceProvider.createForWallet(deployer);
     const libraries = new Map<string, string>();
 
-    (await Promise.all(libraryNames.map((libraryName, index) => (async () => [
+    (await Promise.all(libraryNames.map((libraryName) => (async () => [
         libraryName,
         await deployLibrary(
             libraryName,
-            nonce + index
+            initializedNonceProvider
         )
     ])()))).forEach(([
         libraryName,
