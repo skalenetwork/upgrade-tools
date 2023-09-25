@@ -175,11 +175,27 @@ export abstract class Upgrader {
     private async deployNewImplementations () {
         const [deployer] = await ethers.getSigners();
         this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
-        const contracts = await Promise.all(this.contractNamesToUpgrade.
-            map(
-                this.deployNewImplementation,
-                this
-            ));
+
+        /*
+         * TODO:
+         * 1. add explicit nonce in deployNewImplementation
+         * 2. replace for loop with Promise.all
+         *
+         * Const contracts = await Promise.all(this.contractNamesToUpgrade.
+         *     map(
+         *         this.deployNewImplementation,
+         *         this
+         *     ));
+         */
+        const contracts = [];
+        for (const contract of this.contractNamesToUpgrade) {
+            // eslint-disable-next-line no-await-in-loop
+            contracts.push(await this.deployNewImplementation(contract));
+        }
+
+        /*
+         *   TODO: End of TODO
+         */
         return withoutNull(contracts);
     }
 
@@ -200,11 +216,16 @@ export abstract class Upgrader {
             proxyAddress,
             contractFactory,
             {
-                "constructorArgs": [
-                    {
-                        "nonce": this.nonceProvider?.reserveNonce()
-                    }
-                ],
+
+                /*
+                 * TODO: Add txOverride to explicitly set nonce
+                 * after updating of @openzeppelin/hardhat-upgrades
+                 * to version 2.1.0 or newer.
+                 *
+                 * "txOverrides": {
+                 *     "nonce": this.nonceProvider?.reserveNonce()
+                 * },
+                 */
                 "unsafeAllowLinkedLibraries": true,
                 "unsafeAllowRenames": true
             }
