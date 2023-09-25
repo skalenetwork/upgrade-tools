@@ -1,4 +1,4 @@
-import hre, {ethers, network, upgrades} from "hardhat";
+import hre, {network, upgrades} from "hardhat";
 import {AutoSubmitter} from "./submitters/auto-submitter";
 import {EXIT_CODES} from "./exitCodes";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
@@ -173,15 +173,14 @@ export abstract class Upgrader {
     }
 
     private async deployNewImplementations () {
-        const [deployer] = await ethers.getSigners();
-        this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
-
+        // TODO:
         /*
-         * TODO:
          * 1. add explicit nonce in deployNewImplementation
          * 2. replace for loop with Promise.all
          *
-         * Const contracts = await Promise.all(this.contractNamesToUpgrade.
+         * const [deployer] = await ethers.getSigners();
+         * this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
+         * const contracts = await Promise.all(this.contractNamesToUpgrade.
          *     map(
          *         this.deployNewImplementation,
          *         this
