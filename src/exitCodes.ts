@@ -1,0 +1,8 @@
+export enum EXIT_CODES {
+    SUCCESS,
+    BAD_VERSION,
+    NOT_ATOMIC_UPGRADE,
+    UNKNOWN_SAFE_ADDRESS,
+    UNKNOWN_IMA
+}
+

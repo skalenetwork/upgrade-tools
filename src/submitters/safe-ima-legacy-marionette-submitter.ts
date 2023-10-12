@@ -1,7 +1,8 @@
-import { BytesLike, UnsignedTransaction } from "ethers";
-import { ethers } from "hardhat";
-import { SafeToImaSubmitter } from "./safe-to-ima-submitter";
-import { MARIONETTE_ADDRESS } from "./types/marionette";
+import {BytesLike, UnsignedTransaction} from "ethers";
+import {MARIONETTE_ADDRESS} from "./types/marionette";
+import {SafeToImaSubmitter} from "./safe-to-ima-submitter";
+import {ethers} from "hardhat";
+
 
 export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
     marionette = new ethers.Contract(
@@ -37,23 +38,27 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
                 "type": "function"
             }
         ]),
-        ethers.provider);
+        ethers.provider
+    );
 
-    async submit(transactions: UnsignedTransaction[]): Promise<void> {
-        if (transactions.length > 1) {
-            this._atomicityWarning();
+    async submit (transactions: UnsignedTransaction[]): Promise<void> {
+        const singleTransaction = 1;
+        if (transactions.length > singleTransaction) {
+            SafeImaLegacyMarionetteSubmitter.atomicityWarning();
         }
-        const transactionsToMarionette = []
-        for (const transaction of transactions) {
-            transactionsToMarionette.push({
-                to: this.marionette.address,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                data: await this.marionette.encodeFunctionCall(
-                    transaction.to ? transaction.to : ethers.constants.AddressZero,
-                    transaction.value ? transaction.value : 0,
-                    transaction.data ? transaction.data : "0x") as BytesLike
-            });
-        }
+        const zeroValue = 0;
+        const transactionsToMarionette =
+            (await Promise.all(transactions.
+                map((transaction) => this.marionette.encodeFunctionCall(
+                    transaction.to ?? ethers.constants.AddressZero,
+                    transaction.value ?? zeroValue,
+                    transaction.data ?? "0x"
+                ) as Promise<BytesLike>))
+            ).map((data) => ({
+                data,
+                "to": this.marionette.address
+            }));
+
         await super.submit(transactionsToMarionette);
     }
 }
