@@ -1,9 +1,11 @@
 import { ethers, run, network } from "hardhat";
+import { builtinChains } from "@nomicfoundation/hardhat-verify/internal/chain-config";
 import chalk from "chalk";
 import { getImplementationAddress } from "@openzeppelin/upgrades-core";
 
 export async function verify(contractName: string, contractAddress: string, constructorArguments: object) {
-    if (![1337, 31337].includes((await ethers.provider.getNetwork()).chainId)) {
+    const chainId = (await ethers.provider.getNetwork()).chainId;
+    if (builtinChains.find(chain => chain.chainId === chainId) !== undefined) {
         for (let retry = 0; retry <= 5; ++retry) {
             try {
                 await run("verify:verify", {

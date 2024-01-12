@@ -5,8 +5,9 @@ import { SkaleManifestData } from "./types/SkaleManifestData";
 import { Artifact } from "hardhat/types";
 
 async function _deployLibrary(libraryName: string) {
-    const Library = await ethers.getContractFactory(libraryName);
-    const library = await Library.deploy();
+    const
+        Library = await ethers.getContractFactory(libraryName),
+        library = await Library.deploy();
     await library.deployed();
     return library.address;
 }
@@ -39,9 +40,10 @@ function _linkBytecode(artifact: Artifact, libraries: Map<string, string>) {
 }
 
 export async function getLinkedContractFactory(contractName: string, libraries: Map<string, string>) {
-    const cArtifact = await artifacts.readArtifact(contractName);
-    const linkedBytecode = _linkBytecode(cArtifact, libraries);
-    const ContractFactory = await ethers.getContractFactory(cArtifact.abi, linkedBytecode);
+    const
+        cArtifact = await artifacts.readArtifact(contractName),
+        linkedBytecode = _linkBytecode(cArtifact, libraries),
+        ContractFactory = await ethers.getContractFactory(cArtifact.abi, linkedBytecode);
     return ContractFactory;
 }
 
@@ -60,11 +62,15 @@ export async function getContractFactory(contract: string) {
         libraryNames.push(libraryName);
     }
 
-    const libraries = await deployLibraries(libraryNames);
-    const libraryArtifacts: {[key: string]: unknown} = {};
+    const
+        libraries = await deployLibraries(libraryNames),
+        libraryArtifacts: { [key: string]: unknown } = {};
     for (const [libraryName, libraryAddress] of libraries.entries()) {
         const { bytecode } = await artifacts.readArtifact(libraryName);
-        libraryArtifacts[libraryName] = {"address": libraryAddress, "bytecodeHash": hashBytecode(bytecode)};
+        libraryArtifacts[libraryName] = {
+            "address": libraryAddress,
+            "bytecodeHash": hashBytecode(bytecode)
+        };
     }
     let manifest;
     try {
@@ -72,7 +78,7 @@ export async function getContractFactory(contract: string) {
         Object.assign(libraryArtifacts, manifest.libraries);
     } finally {
         if (manifest !== undefined) {
-            Object.assign(manifest, {libraries: libraryArtifacts});
+            Object.assign(manifest, { libraries: libraryArtifacts });
         }
         await fs.writeFile(await getManifestFile(), JSON.stringify(manifest, null, 4));
     }
