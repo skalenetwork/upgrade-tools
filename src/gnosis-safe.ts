@@ -1,9 +1,8 @@
-import chalk from "chalk";
 import { ethers } from "hardhat";
 import { UnsignedTransaction } from "ethers";
 import SafeApiKit from '@safe-global/api-kit'
 import Safe, { EthersAdapter } from '@safe-global/protocol-kit'
-import { MetaTransactionData, SafeTransactionDataPartial, SafeTransaction } from '@safe-global/safe-core-sdk-types'
+import { MetaTransactionData, SafeTransaction } from '@safe-global/safe-core-sdk-types'
 
 
 enum Network {
@@ -53,30 +52,11 @@ export async function createMultiSendTransaction(safeAddress: string, transactio
         safeSdk = await Safe.create({ ethAdapter, safeAddress }),
         safeTransaction = await safeSdk.createTransaction({ safeTransactionData, options });
 
-    await estimateSafeTransaction(safeAddress, safeTransactionData);
-
     await proposeTransaction(safeAddress, safeTransaction);
 }
 
 // private functions
 
-async function estimateSafeTransaction(safeAddress: string, safeTransactionData: SafeTransactionDataPartial | MetaTransactionData[]) {
-    console.log("Estimate gas");
-    const safeService = await getSafeService();
-    for (const transaction of safeTransactionData as MetaTransactionData[]) {
-        const estimateResponse = await safeService.estimateSafeTransaction(
-            safeAddress,
-            {
-                to: transaction.to,
-                value: transaction.value,
-                data: transaction.data,
-                operation: transaction.operation || 0,
-            }
-        );
-        console.log(chalk.cyan(`Recommend to set gas limit to ${parseInt(estimateResponse.safeTxGas, 10)}`));
-    }
-    console.log(chalk.green("Send transaction to gnosis safe"));
-}
 
 async function proposeTransaction(safeAddress: string, safeTransaction: SafeTransaction) {
     const
