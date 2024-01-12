@@ -12,7 +12,7 @@ on:
       - beta
       - develop
 env:
-  NODE_VERSION: 16
+  NODE_VERSION: 20
 
 jobs:
   build:
@@ -44,7 +44,7 @@ jobs:
         yarn
         yarn install-peers
 
-    - name: Compile TypeScript
+    - name: Compile typeScript
       run: yarn compile
 
     - name: Determine version
