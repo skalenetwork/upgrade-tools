@@ -51,31 +51,11 @@ export async function createMultiSendTransaction(safeAddress: string, transactio
     const ethAdapter = await getEthAdapter();
     const safeSdk = await Safe.create({ ethAdapter, safeAddress })
     const safeTransaction = await safeSdk.createTransaction({ safeTransactionData, options })
-
-    await estimateSafeTransaction(safeAddress, safeTransactionData);
-
     await proposeTransaction(safeAddress, safeTransaction);
 }
 
 // private functions
 
-async function estimateSafeTransaction(safeAddress: string, safeTransactionData: SafeTransactionDataPartial | MetaTransactionData[]) {
-    console.log("Estimate gas");
-    const safeService: SafeServiceClient = await getSafeService();
-    for (const transaction of safeTransactionData as MetaTransactionData[]) {
-        const estimateResponse = await safeService.estimateSafeTransaction(
-            safeAddress,
-            {
-                to: transaction.to,
-                value: transaction.value,
-                data: transaction.data,
-                operation: transaction.operation || 0,
-            }
-        );
-        console.log(chalk.cyan(`Recommend to set gas limit to ${parseInt(estimateResponse.safeTxGas, 10)}`));
-    }
-    console.log(chalk.green("Send transaction to gnosis safe"));
-}
 
 async function proposeTransaction(safeAddress: string, safeTransaction: SafeTransaction) {
     const [ safeOwner ] = await ethers.getSigners();
