@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 import { UnsignedTransaction } from "ethers";
 import SafeApiKit from '@safe-global/api-kit'
 import Safe, { EthersAdapter } from '@safe-global/protocol-kit'
-import { MetaTransactionData, SafeTransactionDataPartial, SafeTransaction } from '@safe-global/safe-core-sdk-types'
+import { MetaTransactionData, SafeTransaction } from '@safe-global/safe-core-sdk-types'
 
 
 enum Network {
