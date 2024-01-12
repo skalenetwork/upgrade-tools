@@ -44,7 +44,10 @@ jobs:
         yarn
         yarn install-peers
 
-    - name: Compile typescript
+    - name: Compile TypeScript (First time)
+      run: yarn compile
+
+    - name: Compile TypeScript (Second time)
       run: yarn compile
 
     - name: Determine version
