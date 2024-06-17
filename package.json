@@ -10,12 +10,9 @@
   "repository": "git@github.com:skalenetwork/upgrade-tools.git",
   "author": "Dmytro Stebaiev <dmytro@skalelabs.com>",
   "license": "AGPL-3.0",
-  "private": false,
   "scripts": {
-    "prepare": "yarn hooks && yarn install-peers",
     "compile": "npx hardhat typechain && tsc",
     "prepublishOnly": "yarn compile",
-    "install-peers": "install-peers -f",
     "hooks": "git config core.hooksPath .githooks || true",
     "no-hooks": "git config core.hooksPath .git/hooks",
     "fullCheck": "yarn compile && yarn eslint && yarn cspell",
@@ -23,16 +20,23 @@
     "cspell": "npx cspell \"**/*\""
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-verify": "^1.1.1",
+    "@nomiclabs/hardhat-ethers": "^2.0.4",
     "@openzeppelin/contracts-upgradeable": "^4.4.2",
+    "@openzeppelin/hardhat-upgrades": "^1.14.0",
+    "@openzeppelin/upgrades-core": "^1.27.1",
     "@tsconfig/recommended": "^1.0.2",
     "@typechain/ethers-v5": "^9.0.0",
     "@typechain/hardhat": "^8.0.0",
+    "@types/mocha": "^9.1.0",
     "@types/node": "^20.6.0",
     "@typescript-eslint/eslint-plugin": "^6.6.0",
     "@typescript-eslint/parser": "^6.6.0",
     "cspell": "^7.0.0",
     "eslint": "^8.15.0",
-    "install-peers-cli": "^2.2.0",
+    "ethers": "^5.7.2",
+    "hardhat": "2.8.3 - 2.16.1",
+    "install-peers": "^1.0.4",
     "ts-node": "^10.5.0",
     "typechain": "^8.2.0",
     "typescript": "^5.1.6"
@@ -45,13 +49,5 @@
     "axios": "^1.4.0",
     "ethereumjs-util": "^7.1.4"
   },
-  "peerDependencies": {
-    "@nomicfoundation/hardhat-verify": "^1.1.1",
-    "@nomiclabs/hardhat-ethers": "^2.0.4",
-    "@openzeppelin/hardhat-upgrades": "^1.14.0",
-    "@openzeppelin/upgrades-core": "^1.27.1",
-    "@types/mocha": "^9.1.0",
-    "ethers": "^5.7.2",
-    "hardhat": "2.8.3 - 2.16.1"
-  }
+  "packageManager": "yarn@3.6.4"
 }
