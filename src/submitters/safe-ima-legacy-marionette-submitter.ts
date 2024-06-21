@@ -1,13 +1,13 @@
-import {BytesLike, UnsignedTransaction} from "ethers";
-import {MARIONETTE_ADDRESS} from "./types/marionette";
+import {LegacyMarionette, MARIONETTE_ADDRESS} from "./types/marionette";
 import {SafeToImaSubmitter} from "./safe-to-ima-submitter";
+import {Transaction} from "ethers";
 import {ethers} from "hardhat";
 
 
 export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
-    marionette = new ethers.Contract(
+    marionette = new ethers.BaseContract(
         MARIONETTE_ADDRESS,
-        new ethers.utils.Interface([
+        new ethers.Interface([
             {
                 "inputs": [
                     {
@@ -39,24 +39,24 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
             }
         ]),
         ethers.provider
-    );
+    ) as LegacyMarionette;
 
-    async submit (transactions: UnsignedTransaction[]): Promise<void> {
+    async submit (transactions: Transaction[]): Promise<void> {
         const singleTransaction = 1;
         if (transactions.length > singleTransaction) {
             SafeImaLegacyMarionetteSubmitter.atomicityWarning();
         }
-        const zeroValue = 0;
+        const marionetteAddress = await this.marionette.getAddress();
         const transactionsToMarionette =
             (await Promise.all(transactions.
                 map((transaction) => this.marionette.encodeFunctionCall(
-                    transaction.to ?? ethers.constants.AddressZero,
-                    transaction.value ?? zeroValue,
-                    transaction.data ?? "0x"
-                ) as Promise<BytesLike>))
-            ).map((data) => ({
-                data,
-                "to": this.marionette.address
+                    transaction.to ?? ethers.ZeroAddress,
+                    transaction.value ,
+                    transaction.data
+                )))
+            ).map((data) => Transaction.from({
+                "data": ethers.hexlify(data),
+                "to": marionetteAddress
             }));
 
         await super.submit(transactionsToMarionette);

@@ -1,15 +1,15 @@
 import {Submitter} from "./submitter";
-import {UnsignedTransaction} from "ethers";
+import {Transaction} from "ethers";
 import {ethers} from "hardhat";
 
 
 export class EoaSubmitter extends Submitter {
     name = "EOA Submitter";
 
-    async submit (transactions: UnsignedTransaction[]) {
+    async submit (transactions: Transaction[]) {
         EoaSubmitter.atomicityWarning();
         const [deployer] = await ethers.getSigners();
-        const nonce = await deployer.getTransactionCount();
+        const nonce = await deployer.getNonce();
         console.log(`Send transaction via ${this.name}`);
         const responses =
             await Promise.all(transactions.

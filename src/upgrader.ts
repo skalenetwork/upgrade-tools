@@ -1,16 +1,15 @@
-import hre, {network, upgrades} from "hardhat";
+import {Manifest, getImplementationAddress} from "@openzeppelin/upgrades-core";
+import {ethers, network, upgrades} from "hardhat";
 import {AutoSubmitter} from "./submitters/auto-submitter";
 import {EXIT_CODES} from "./exitCodes";
-import {Instance} from "@skalenetwork/skale-contracts-ethers-v5";
+import {Instance} from "@skalenetwork/skale-contracts-ethers-v6";
 import {NonceProvider} from "./nonceProvider";
 import {ProxyAdmin} from "../typechain-types";
 import {Submitter} from "./submitters/submitter";
-import {UnsignedTransaction} from "ethers";
+import {Transaction} from "ethers";
 import chalk from "chalk";
 import {promises as fs} from "fs";
 import {getContractFactoryAndUpdateManifest} from "./contractFactory";
-import {getImplementationAddress} from "@openzeppelin/upgrades-core";
-import {getManifestAdmin} from "@openzeppelin/hardhat-upgrades/dist/admin";
 import {getVersion} from "./version";
 import {verify} from "./verification";
 
@@ -41,7 +40,7 @@ export abstract class Upgrader {
 
     projectName: string;
 
-    transactions: UnsignedTransaction[];
+    transactions: Transaction[];
 
     submitter: Submitter;
 
@@ -83,9 +82,9 @@ export abstract class Upgrader {
 
         const contractsToUpgrade = await this.deployNewImplementations();
 
-        this.switchToNewImplementations(
+        await this.switchToNewImplementations(
             contractsToUpgrade,
-            await getManifestAdmin(hre) as unknown as ProxyAdmin
+            await Upgrader.getProxyAdmin()
         );
 
         await this.callInitialize();
@@ -100,6 +99,16 @@ export abstract class Upgrader {
         await Upgrader.verify(contractsToUpgrade);
 
         console.log("Done");
+    }
+
+    static async getProxyAdmin() {
+        const manifest = await Manifest.forNetwork(network.provider);
+        const adminDeployment = await manifest.getAdmin();
+        if (!adminDeployment) {
+            throw new Error("Can't load ProxyAdmin address");
+        }
+        const factory = await ethers.getContractFactory("ProxyAdmin");
+        return factory.attach(adminDeployment.address) as ProxyAdmin;
     }
 
     // Private
@@ -149,17 +158,18 @@ export abstract class Upgrader {
         }
     }
 
-    private switchToNewImplementations (
+    private async switchToNewImplementations (
         contractsToUpgrade: ContractToUpgrade[],
         proxyAdmin: ProxyAdmin
     ) {
+        const proxyAdminAddress = await proxyAdmin.getAddress();
         for (const contract of contractsToUpgrade) {
             const infoMessage =
                 `Prepare transaction to upgrade ${contract.name}` +
                 ` at ${contract.proxyAddress}` +
                 ` to ${contract.implementationAddress}`;
             console.log(chalk.yellowBright(infoMessage));
-            this.transactions.push({
+            this.transactions.push(Transaction.from({
                 "data": proxyAdmin.interface.encodeFunctionData(
                     "upgrade",
                     [
@@ -167,34 +177,19 @@ export abstract class Upgrader {
                         contract.implementationAddress
                     ]
                 ),
-                "to": proxyAdmin.address
-            });
+                "to": proxyAdminAddress
+            }));
         }
     }
 
     private async deployNewImplementations () {
-        // TODO:
-        /*
-         * 1. add explicit nonce in deployNewImplementation
-         * 2. replace for loop with Promise.all
-         *
-         * const [deployer] = await ethers.getSigners();
-         * this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
-         * const contracts = await Promise.all(this.contractNamesToUpgrade.
-         *     map(
-         *         this.deployNewImplementation,
-         *         this
-         *     ));
-         */
-        const contracts = [];
-        for (const contract of this.contractNamesToUpgrade) {
-            // eslint-disable-next-line no-await-in-loop
-            contracts.push(await this.deployNewImplementation(contract));
-        }
-
-        /*
-         *   TODO: End of TODO
-         */
+        const [deployer] = await ethers.getSigners();
+        this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
+        const contracts = await Promise.all(this.contractNamesToUpgrade.
+            map(
+                this.deployNewImplementation,
+                this
+            ));
         return withoutNull(contracts);
     }
 
@@ -203,8 +198,8 @@ export abstract class Upgrader {
             contract,
             this.nonceProvider
         );
-        const proxyAddress =
-                (await this.instance.getContract(contract)).address;
+        const proxyAddress = await
+                (await this.instance.getContract(contract)).getAddress();
 
         console.log(`Prepare upgrade of ${contract}`);
         const currentImplementationAddress = await getImplementationAddress(
@@ -215,16 +210,9 @@ export abstract class Upgrader {
             proxyAddress,
             contractFactory,
             {
-
-                /*
-                 * TODO: Add txOverride to explicitly set nonce
-                 * after updating of @openzeppelin/hardhat-upgrades
-                 * to version 2.1.0 or newer.
-                 *
-                 * "txOverrides": {
-                 *     "nonce": this.nonceProvider?.reserveNonce()
-                 * },
-                 */
+                "txOverrides": {
+                    "nonce": this.nonceProvider?.reserveNonce()
+                },
                 "unsafeAllowLinkedLibraries": true,
                 "unsafeAllowRenames": true
             }

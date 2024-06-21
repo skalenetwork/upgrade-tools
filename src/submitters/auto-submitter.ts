@@ -2,16 +2,15 @@ import hre, {ethers} from "hardhat";
 import {EXIT_CODES} from "../exitCodes";
 import {EoaSubmitter} from "./eoa-submitter";
 import {MARIONETTE_ADDRESS} from "./types/marionette";
-import {ProxyAdmin} from "../../typechain-types";
 import {
     SafeImaLegacyMarionetteSubmitter
 } from "./safe-ima-legacy-marionette-submitter";
 import {SafeSubmitter} from "./safe-submitter";
 import {Submitter} from "./submitter";
 import {Transaction} from "ethers";
+import {Upgrader} from "../upgrader";
 import chalk from "chalk";
-import {getManifestAdmin} from "@openzeppelin/hardhat-upgrades/dist/admin";
-import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v5";
+import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v6";
 
 
 export class AutoSubmitter extends Submitter {
@@ -42,8 +41,7 @@ export class AutoSubmitter extends Submitter {
     // Private
 
     private static async getSubmitter () {
-        // TODO: remove unknown when move everything to ethers 6
-        const proxyAdmin = await getManifestAdmin(hre) as unknown as ProxyAdmin;
+        const proxyAdmin = await Upgrader.getProxyAdmin();
         const owner = await proxyAdmin.owner();
         if (await hre.ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
@@ -55,8 +53,8 @@ export class AutoSubmitter extends Submitter {
     }
 
     private static async getSubmitterForContractOwner (owner: string) {
-        if (ethers.utils.getAddress(owner) ===
-            ethers.utils.getAddress(MARIONETTE_ADDRESS)) {
+        if (ethers.getAddress(owner) ===
+            ethers.getAddress(MARIONETTE_ADDRESS)) {
             console.log("Marionette owner is detected");
 
             const imaInstance = await AutoSubmitter.getImaInstance();
@@ -111,9 +109,9 @@ export class AutoSubmitter extends Submitter {
                 " to IMA environment variable"));
             process.exit(EXIT_CODES.UNKNOWN_IMA);
         }
-        const network =
+        const contractsNetwork =
             await skaleContracts.getNetworkByProvider(ethers.provider);
-        const ima = await network.getProject("ima");
+        const ima = await contractsNetwork.getProject("ima");
         return await ima.getInstance(process.env.IMA);
     }
 
@@ -132,7 +130,7 @@ export class AutoSubmitter extends Submitter {
             return process.env.SCHAIN_HASH;
         }
         if (process.env.SCHAIN_NAME) {
-            return ethers.utils.solidityKeccak256(
+            return ethers.solidityPackedKeccak256(
                 ["string"],
                 [process.env.SCHAIN_NAME]
             );
@@ -145,12 +143,8 @@ export class AutoSubmitter extends Submitter {
     }
 
     private static getMainnetChainId () {
-        const CHAIN_ID_RADIX = 10;
         if (process.env.MAINNET_CHAIN_ID) {
-            return Number.parseInt(
-                process.env.MAINNET_CHAIN_ID,
-                CHAIN_ID_RADIX
-            );
+            return BigInt(process.env.MAINNET_CHAIN_ID);
         }
         console.log(chalk.red("Set chainId of mainnet" +
             " to MAINNET_CHAIN_ID environment variable"));
@@ -168,7 +162,7 @@ export class AutoSubmitter extends Submitter {
          * If the bytecode doesn't include the function selector version()
          * is definitely not present
          */
-        if (!bytecode.includes(ethers.utils.id("version()").slice(
+        if (!bytecode.includes(ethers.id("version()").slice(
             hexPrefixLength,
             selectorLength
         ))) {
@@ -186,7 +180,7 @@ export class AutoSubmitter extends Submitter {
          * given the provided function selector
          */
         try {
-            await marionette.estimateGas.version();
+            await marionette.version.estimateGas();
             return true;
         } catch {
             /*

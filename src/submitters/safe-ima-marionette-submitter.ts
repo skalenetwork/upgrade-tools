@@ -1,13 +1,13 @@
 import {MARIONETTE_ADDRESS, Marionette} from "./types/marionette";
 import {SafeToImaSubmitter} from "./safe-to-ima-submitter";
-import {UnsignedTransaction} from "ethers";
+import {Transaction} from "ethers";
 import {ethers} from "hardhat";
 
 
 export class SafeImaMarionetteSubmitter extends SafeToImaSubmitter {
-    marionette = new ethers.Contract(
+    marionette = new ethers.BaseContract(
         MARIONETTE_ADDRESS,
-        new ethers.utils.Interface([
+        new ethers.Interface([
             {
                 "inputs": [
                     {
@@ -48,22 +48,20 @@ export class SafeImaMarionetteSubmitter extends SafeToImaSubmitter {
         ethers.provider
     ) as Marionette;
 
-    async submit (transactions: UnsignedTransaction[]): Promise<void> {
+    async submit (transactions: Transaction[]): Promise<void> {
         const functionCalls = [];
-        const zeroValue = 0;
         for (const transaction of transactions) {
             functionCalls.push({
-                "data": transaction.data ?? "0x",
-                "receiver": transaction.to ?? ethers.constants.AddressZero,
-                "value": transaction.value ?? zeroValue
+                "data": transaction.data,
+                "receiver": transaction.to ?? ethers.ZeroAddress,
+                "value": transaction.value
             });
         }
-        await super.submit([
-            {
-                "data": await this.marionette.
-                    encodeFunctionCalls(functionCalls),
-                "to": this.marionette.address
-            }
+        await super.submit([Transaction.from({
+                "data": ethers.hexlify(await this.marionette.
+                    encodeFunctionCalls(functionCalls)),
+                "to": await this.marionette.getAddress()
+            })
         ]);
     }
 }

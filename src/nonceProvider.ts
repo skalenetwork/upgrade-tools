@@ -8,7 +8,7 @@ export class NonceProvider {
     }
 
     static async createForWallet (signer: Signer) {
-        return new NonceProvider(await signer.getTransactionCount());
+        return new NonceProvider(await signer.getNonce());
     }
 
     reserveNonce () {

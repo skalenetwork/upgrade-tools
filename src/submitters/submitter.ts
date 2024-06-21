@@ -1,10 +1,10 @@
 import {EXIT_CODES} from "../exitCodes";
-import {UnsignedTransaction} from "ethers";
+import {Transaction} from "ethers";
 import chalk from "chalk";
 
 
 export abstract class Submitter {
-    abstract submit(transactions: UnsignedTransaction[]): Promise<void>;
+    abstract submit(transactions: Transaction[]): Promise<void>;
 
     // Protected
 

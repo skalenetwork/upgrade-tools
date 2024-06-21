@@ -82,7 +82,7 @@ export const verify = async (
     constructorArguments: object
 ) => {
     const {chainId} = await ethers.provider.getNetwork();
-    if (!builtinChains.map((chain) => chain.chainId).includes(chainId)) {
+    if (!builtinChains.map((chain) => chain.chainId).includes(Number(chainId))) {
         const errorMessage = "Verification on this network is not supported";
         console.log(chalk.grey(errorMessage));
         return;

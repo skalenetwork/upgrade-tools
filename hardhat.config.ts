@@ -1,5 +1,5 @@
 import "@typechain/hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import "@openzeppelin/hardhat-upgrades";
 import {HardhatUserConfig} from "hardhat/config";
 
@@ -10,7 +10,7 @@ const coreArtifacts =
 const config: HardhatUserConfig = {
     "typechain": {
         "externalArtifacts": [coreArtifacts],
-        "target": "ethers-v5"
+        "target": "ethers-v6"
     }
 };
 

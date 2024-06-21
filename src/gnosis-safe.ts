@@ -4,22 +4,52 @@ import {
     SafeTransaction,
     SafeTransactionDataPartial
 } from "@safe-global/safe-core-sdk-types";
-import Safe, {EthersAdapter} from "@safe-global/protocol-kit";
+import {Network, Transaction} from "ethers";
+import {ethers, network} from "hardhat";
+import Safe from "@safe-global/protocol-kit";
 import SafeApiKit from "@safe-global/api-kit";
-import {UnsignedTransaction} from "ethers";
 import chalk from "chalk";
-import {ethers} from "hardhat";
-import {getNetwork} from "@ethersproject/networks";
+
+// Cspell:words arbitrum celo sepolia xdai
 
 
 // Constants
 
 const URLS = {
     "safe_transaction": {
-        [getNetwork("mainnet").chainId]:
+        [Network.from("mainnet").chainId.toString()]:
             "https://safe-transaction-mainnet.safe.global",
-        [getNetwork("goerli").chainId]:
-            "https://safe-transaction-goerli.safe.global"
+        [Network.from("arbitrum").chainId.toString()]:
+            "https://safe-transaction-arbitrum.safe.global",
+        [Network.from("aurora").chainId.toString()]:
+            "https://safe-transaction-aurora.safe.global",
+        [Network.from("avalanche").chainId.toString()]:
+            "https://safe-transaction-avalanche.safe.global",
+        [Network.from("base").chainId.toString()]:
+            "https://safe-transaction-base.safe.global",
+        [Network.from("base-sepolia").chainId.toString()]:
+            "https://safe-transaction-base-sepolia.safe.global",
+        [Network.from("bnb").chainId.toString()]:
+            "https://safe-transaction-bsc.safe.global",
+        [Network.from("celo").chainId.toString()]:
+            "https://safe-transaction-celo.safe.global",
+        [Network.from("xdai").chainId.toString()]:
+            "https://safe-transaction-gnosis-chain.safe.global",
+        [Network.from("optimism").chainId.toString()]:
+            "https://safe-transaction-optimism.safe.global",
+        [Network.from("matic").chainId.toString()]:
+            "https://safe-transaction-polygon.safe.global",
+        // Polygon zkEVM
+        "1101":
+            "https://safe-transaction-zkevm.safe.global",
+        // ZkSync Era Mainnet
+        "324":
+        "https://safe-transaction-zksync.safe.global",
+        // Scroll
+        "534352":
+            "https://safe-transaction-scroll.safe.global",
+        [Network.from("sepolia").chainId.toString()]:
+            "https://safe-transaction-sepolia.safe.global",
     }
 };
 
@@ -39,10 +69,10 @@ const defaultOptions = {
      * to be used as a refund to the sender,
      * if `null` is Ether
      */
-    "gasToken": ethers.constants.AddressZero,
+    "gasToken": ethers.ZeroAddress,
 
     // Address of receiver of gas payment (or `null` if tx.origin)
-    "refundReceiver": ethers.constants.AddressZero,
+    "refundReceiver": ethers.ZeroAddress,
 
     // Max gas to use in the transaction
     "safeTxGas": "0"
@@ -50,45 +80,34 @@ const defaultOptions = {
 
 // Private functions
 
-const getSafeTransactionData = (transactions: UnsignedTransaction[]) => {
+const getSafeTransactionData = (transactions: Transaction[]) => {
     const safeTransactionData: MetaTransactionData[] = [];
     for (const transaction of transactions) {
         safeTransactionData.push({
-            "data": transaction.data?.toString() ?? "0x",
+            "data": transaction.data,
             "operation": OperationType.Call,
-            "to": transaction.to ?? ethers.constants.AddressZero,
-            "value": transaction.value?.toString() ?? "0"
+            "to": transaction.to ?? ethers.ZeroAddress,
+            "value": transaction.value.toString()
         });
     }
     return safeTransactionData;
 };
 
-const getEthAdapter = async (): Promise<EthersAdapter> => {
-    const
-        [safeOwner] = await ethers.getSigners();
-    const ethAdapter = new EthersAdapter({
-        ethers,
-        "signerOrProvider": safeOwner
-    });
-    return ethAdapter;
-};
-
-const getSafeTransactionUrl = (chainId: number) => {
+const getSafeTransactionUrl = (chainId: bigint) => {
     if (Object.keys(URLS.safe_transaction).includes(chainId.toString())) {
         return URLS.safe_transaction[
-            chainId as keyof typeof URLS.safe_transaction
+            Number(chainId) as keyof typeof URLS.safe_transaction
         ];
     }
-    throw Error("Can't get safe-transaction url" +
+    throw Error("Can't get Safe Transaction Service url" +
         ` at network with chainId = ${chainId}`);
 };
 
 const getSafeService = async () => {
     const
         {chainId} = await ethers.provider.getNetwork();
-    const ethAdapter: EthersAdapter = await getEthAdapter();
     const safeService = new SafeApiKit({
-        ethAdapter,
+        chainId,
         "txServiceUrl": getSafeTransactionUrl(chainId)
     });
     return safeService;
@@ -122,13 +141,10 @@ const proposeTransaction = async (
     safeAddress: string,
     safeTransaction: SafeTransaction
 ) => {
-    const
-        [safeOwner] = await ethers.getSigners();
-    const ethAdapter = await getEthAdapter();
-    const safeSdk = await Safe.create({ethAdapter,
-        safeAddress});
+    const [safeOwner] = await ethers.getSigners();
+    const safeSdk = await Safe.init({provider: network.provider, safeAddress});
     const safeTxHash = await safeSdk.getTransactionHash(safeTransaction);
-    const senderSignature = await safeSdk.signTransactionHash(safeTxHash);
+    const senderSignature = await safeSdk.signHash(safeTxHash);
     const safeService = await getSafeService();
     await safeService.proposeTransaction({
         safeAddress,
@@ -143,7 +159,7 @@ const proposeTransaction = async (
 
 export const createMultiSendTransaction = async (
     safeAddress: string,
-    transactions: UnsignedTransaction[]
+    transactions: Transaction[]
 ) => {
     const safeTransactionData = getSafeTransactionData(transactions);
     const safeService = await getSafeService();
@@ -165,14 +181,13 @@ export const createMultiSendTransaction = async (
             nonce
         }
     };
-    const ethAdapter = await getEthAdapter();
-    const safeSdk = await Safe.create({
-        ethAdapter,
+    const safeSdk = await Safe.init({
+        provider: network.provider,
         safeAddress
     });
     const safeTransaction = await safeSdk.createTransaction({
         options,
-        safeTransactionData
+        transactions: safeTransactionData
     });
 
     await estimateSafeTransaction(

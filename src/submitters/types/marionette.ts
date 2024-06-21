@@ -9,7 +9,16 @@ type FunctionCallStruct = {
     data: BytesLike;
   };
 
-export interface Marionette extends RawEthers.Contract {
+export interface LegacyMarionette extends RawEthers.BaseContract {
+  encodeFunctionCall(
+    receiver: string,
+    value: BigNumberish,
+    data: BytesLike
+  ): Promise<BytesLike>
+  version(): Promise<string>;
+}
+
+export interface Marionette extends RawEthers.BaseContract {
     encodeFunctionCalls(
         functionCalls: FunctionCallStruct[]
       ): Promise<BytesLike>
