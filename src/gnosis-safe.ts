@@ -12,7 +12,6 @@ import chalk from "chalk";
 
 // Cspell:words arbitrum celo sepolia xdai
 
-
 // Constants
 
 const URLS = {
@@ -21,35 +20,38 @@ const URLS = {
             "https://safe-transaction-mainnet.safe.global",
         [Network.from("arbitrum").chainId.toString()]:
             "https://safe-transaction-arbitrum.safe.global",
-        [Network.from("aurora").chainId.toString()]:
-            "https://safe-transaction-aurora.safe.global",
-        [Network.from("avalanche").chainId.toString()]:
-            "https://safe-transaction-avalanche.safe.global",
         [Network.from("base").chainId.toString()]:
             "https://safe-transaction-base.safe.global",
         [Network.from("base-sepolia").chainId.toString()]:
             "https://safe-transaction-base-sepolia.safe.global",
         [Network.from("bnb").chainId.toString()]:
             "https://safe-transaction-bsc.safe.global",
-        [Network.from("celo").chainId.toString()]:
-            "https://safe-transaction-celo.safe.global",
         [Network.from("xdai").chainId.toString()]:
             "https://safe-transaction-gnosis-chain.safe.global",
         [Network.from("optimism").chainId.toString()]:
             "https://safe-transaction-optimism.safe.global",
         [Network.from("matic").chainId.toString()]:
             "https://safe-transaction-polygon.safe.global",
+        [Network.from("sepolia").chainId.toString()]:
+            "https://safe-transaction-sepolia.safe.global",
+        // Aurora
+        "0x4e454152":
+            "https://safe-transaction-aurora.safe.global",
         // Polygon zkEVM
         "1101":
             "https://safe-transaction-zkevm.safe.global",
         // ZkSync Era Mainnet
         "324":
-        "https://safe-transaction-zksync.safe.global",
+            "https://safe-transaction-zksync.safe.global",
+        // Celo
+        "42220":
+            "https://safe-transaction-celo.safe.global",
+        // Avalanche
+        "43114":
+            "https://safe-transaction-avalanche.safe.global",
         // Scroll
         "534352":
             "https://safe-transaction-scroll.safe.global",
-        [Network.from("sepolia").chainId.toString()]:
-            "https://safe-transaction-sepolia.safe.global",
     }
 };
 
