@@ -43,7 +43,8 @@
     "@safe-global/safe-core-sdk-types": "^5.0.1",
     "@skalenetwork/skale-contracts-ethers-v6": "^1.0.0",
     "axios": "^1.4.0",
-    "ethereumjs-util": "^7.1.4"
+    "ethereumjs-util": "^7.1.4",
+    "semaphore-async-await": "^1.5.1"
   },
   "peerDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.0",

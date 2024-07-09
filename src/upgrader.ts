@@ -5,6 +5,7 @@ import {EXIT_CODES} from "./exitCodes";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v6";
 import {NonceProvider} from "./nonceProvider";
 import {ProxyAdmin} from "../typechain-types";
+import Semaphore from 'semaphore-async-await';
 import {Submitter} from "./submitters/submitter";
 import {Transaction} from "ethers";
 import chalk from "chalk";
@@ -30,6 +31,10 @@ interface Project {
 const withoutNull = <T>(array: Array<T | null>) => array.
     filter((element) => element !== null) as Array<T>;
 
+const maxSimultaneousDeployments = 10;
+//                    10 minutes
+const deployTimeout = 60e4;
+
 
 export abstract class Upgrader {
     instance: Instance;
@@ -46,6 +51,8 @@ export abstract class Upgrader {
 
     nonceProvider?: NonceProvider;
 
+    deploySemaphore: Semaphore;
+
     constructor (
         project: Project,
         submitter: Submitter = new AutoSubmitter()
@@ -59,6 +66,7 @@ export abstract class Upgrader {
         this.projectName = project.name;
         this.transactions = [];
         this.submitter = submitter;
+        this.deploySemaphore = new Semaphore(maxSimultaneousDeployments);
     }
 
     // Abstract
@@ -187,10 +195,19 @@ export abstract class Upgrader {
         this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
         const contracts = await Promise.all(this.contractNamesToUpgrade.
             map(
-                this.deployNewImplementation,
+                this.protectedDeployNewImplementation,
                 this
             ));
         return withoutNull(contracts);
+    }
+
+    private async protectedDeployNewImplementation (contract: string) {
+        await this.deploySemaphore.acquire();
+        try {
+            return this.deployNewImplementation(contract);
+        } finally {
+            this.deploySemaphore.release();
+        }
     }
 
     private async deployNewImplementation (contract: string) {
@@ -210,6 +227,7 @@ export abstract class Upgrader {
             proxyAddress,
             contractFactory,
             {
+                "timeout": deployTimeout,
                 "txOverrides": {
                     "nonce": this.nonceProvider?.reserveNonce()
                 },
