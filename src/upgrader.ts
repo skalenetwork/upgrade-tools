@@ -203,11 +203,13 @@ export abstract class Upgrader {
 
     private async protectedDeployNewImplementation (contract: string) {
         await this.deploySemaphore.acquire();
+        let result: ContractToUpgrade | null = null;
         try {
-            return this.deployNewImplementation(contract);
+            result = await this.deployNewImplementation(contract);
         } finally {
             this.deploySemaphore.release();
         }
+        return result;
     }
 
     private async deployNewImplementation (contract: string) {
