@@ -31,7 +31,7 @@ interface Project {
 const withoutNull = <T>(array: Array<T | null>) => array.
     filter((element) => element !== null) as Array<T>;
 
-const maxSimultaneousDeployments = 10;
+const maxSimultaneousDeployments = 5;
 //                    10 minutes
 const deployTimeout = 60e4;
 
