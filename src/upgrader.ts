@@ -1,3 +1,4 @@
+import {ContractFactory, Transaction} from "ethers";
 import {Manifest, getImplementationAddress} from "@openzeppelin/upgrades-core";
 import {ethers, network, upgrades} from "hardhat";
 import {AutoSubmitter} from "./submitters/auto-submitter";
@@ -7,7 +8,6 @@ import {NonceProvider} from "./nonceProvider";
 import {ProxyAdmin} from "../typechain-types";
 import Semaphore from 'semaphore-async-await';
 import {Submitter} from "./submitters/submitter";
-import {Transaction} from "ethers";
 import chalk from "chalk";
 import {promises as fs} from "fs";
 import {getContractFactoryAndUpdateManifest} from "./contractFactory";
@@ -31,7 +31,7 @@ interface Project {
 const withoutNull = <T>(array: Array<T | null>) => array.
     filter((element) => element !== null) as Array<T>;
 
-const maxSimultaneousDeployments = 5;
+const maxSimultaneousDeployments = 8;
 //                    10 minutes
 const deployTimeout = 60e4;
 
@@ -221,17 +221,25 @@ export abstract class Upgrader {
                 (await this.instance.getContract(contract)).getAddress();
 
         console.log(`Prepare upgrade of ${contract}`);
+
+        return this.prepareUpgrade(contract, proxyAddress, contractFactory);
+    }
+
+    private async prepareUpgrade(contractName: string, proxyAddress: string, contractFactory: ContractFactory) {
         const currentImplementationAddress = await getImplementationAddress(
             network.provider,
             proxyAddress
         );
+
+        const nonce = this.nonceProvider?.reserveNonce();
+
         const newImplementationAddress = await upgrades.prepareUpgrade(
             proxyAddress,
             contractFactory,
             {
                 "timeout": deployTimeout,
                 "txOverrides": {
-                    "nonce": this.nonceProvider?.reserveNonce()
+                    nonce
                 },
                 "unsafeAllowLinkedLibraries": true,
                 "unsafeAllowRenames": true
@@ -240,11 +248,14 @@ export abstract class Upgrader {
         if (newImplementationAddress !== currentImplementationAddress) {
             return {
                 "implementationAddress": newImplementationAddress,
-                "name": contract,
+                "name": contractName,
                 proxyAddress
             };
         }
-        console.log(chalk.gray(`Contract ${contract} is up to date`));
+        console.log(chalk.gray(`Contract ${contractName} is up to date`));
+        if (nonce) {
+            this.nonceProvider?.releaseNonce(nonce);
+        }
         return null;
     }
 
