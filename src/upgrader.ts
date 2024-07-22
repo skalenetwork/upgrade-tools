@@ -31,7 +31,8 @@ interface Project {
 const withoutNull = <T>(array: Array<T | null>) => array.
     filter((element) => element !== null) as Array<T>;
 
-const maxSimultaneousDeployments = 8;
+// TODO: Set to 8 when upgrade plugins become thread safe
+const maxSimultaneousDeployments = 1;
 //                    10 minutes
 const deployTimeout = 60e4;
 
