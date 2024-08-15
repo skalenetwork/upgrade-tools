@@ -1,4 +1,4 @@
-import hre, {ethers} from "hardhat";
+import {Transaction, ethers} from "ethers";
 import {EXIT_CODES} from "../exitCodes";
 import {EoaSubmitter} from "./eoa-submitter";
 import {MARIONETTE_ADDRESS} from "./types/marionette";
@@ -7,9 +7,10 @@ import {
 } from "./safe-ima-legacy-marionette-submitter";
 import {SafeSubmitter} from "./safe-submitter";
 import {Submitter} from "./submitter";
-import {Transaction} from "ethers";
+
 import {Upgrader} from "../upgrader";
 import chalk from "chalk";
+import hre from "hardhat";
 import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v6";
 
 
@@ -110,7 +111,7 @@ export class AutoSubmitter extends Submitter {
             process.exit(EXIT_CODES.UNKNOWN_IMA);
         }
         const contractsNetwork =
-            await skaleContracts.getNetworkByProvider(ethers.provider);
+            await skaleContracts.getNetworkByProvider(hre.ethers.provider);
         const ima = await contractsNetwork.getProject("ima");
         return await ima.getInstance(process.env.IMA);
     }
