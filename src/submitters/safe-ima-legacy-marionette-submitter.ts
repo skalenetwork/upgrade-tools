@@ -1,12 +1,13 @@
-import { BytesLike, UnsignedTransaction } from "ethers";
-import { ethers } from "hardhat";
-import { SafeToImaSubmitter } from "./safe-to-ima-submitter";
-import { MARIONETTE_ADDRESS } from "./types/marionette";
+import {LegacyMarionette, MARIONETTE_ADDRESS} from "./types/marionette";
+import {SafeToImaSubmitter} from "./safe-to-ima-submitter";
+import {Transaction} from "ethers";
+import {ethers} from "hardhat";
+
 
 export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
-    marionette = new ethers.Contract(
+    marionette = new ethers.BaseContract(
         MARIONETTE_ADDRESS,
-        new ethers.utils.Interface([
+        new ethers.Interface([
             {
                 "inputs": [
                     {
@@ -37,23 +38,27 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
                 "type": "function"
             }
         ]),
-        ethers.provider);
+        ethers.provider
+    ) as LegacyMarionette;
 
-    async submit(transactions: UnsignedTransaction[]): Promise<void> {
-        if (transactions.length > 1) {
-            this._atomicityWarning();
+    async submit (transactions: Transaction[]): Promise<void> {
+        const singleTransaction = 1;
+        if (transactions.length > singleTransaction) {
+            SafeImaLegacyMarionetteSubmitter.atomicityWarning();
         }
-        const transactionsToMarionette = []
-        for (const transaction of transactions) {
-            transactionsToMarionette.push({
-                to: this.marionette.address,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                data: await this.marionette.encodeFunctionCall(
-                    transaction.to ? transaction.to : ethers.constants.AddressZero,
-                    transaction.value ? transaction.value : 0,
-                    transaction.data ? transaction.data : "0x") as BytesLike
-            });
-        }
+        const marionetteAddress = await this.marionette.getAddress();
+        const transactionsToMarionette =
+            (await Promise.all(transactions.
+                map((transaction) => this.marionette.encodeFunctionCall(
+                    transaction.to ?? ethers.ZeroAddress,
+                    transaction.value ,
+                    transaction.data
+                )))
+            ).map((data) => Transaction.from({
+                "data": ethers.hexlify(data),
+                "to": marionetteAddress
+            }));
+
         await super.submit(transactionsToMarionette);
     }
 }

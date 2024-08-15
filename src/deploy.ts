@@ -1,86 +1,131 @@
-import { Manifest, hashBytecode } from "@openzeppelin/upgrades-core";
-import { ethers, artifacts } from "hardhat";
-import { promises as fs } from 'fs';
-import { SkaleManifestData } from "./types/SkaleManifestData";
-import { Artifact } from "hardhat/types";
+import {Manifest, hashBytecode} from "@openzeppelin/upgrades-core";
+import {artifacts, ethers} from "hardhat";
+import {NonceProvider} from "./nonceProvider";
+import {SkaleManifestData} from "./types/SkaleManifestData";
+import {promises as fs} from "fs";
+import {getLibrariesNames} from "./contractFactory";
 
-async function _deployLibrary(libraryName: string) {
-    const
-        Library = await ethers.getContractFactory(libraryName),
-        library = await Library.deploy();
-    await library.deployed();
-    return library.address;
+
+interface LibraryArtifacts {
+    [key: string]: unknown
 }
 
-export async function deployLibraries(libraryNames: string[]) {
+const deployLibrary = async (
+    libraryName: string,
+    nonceProvider: NonceProvider
+) => {
+    const Library = await ethers.getContractFactory(libraryName);
+    const library = await Library.
+        deploy({"nonce": nonceProvider.reserveNonce()});
+    await library.waitForDeployment()
+    return await library.getAddress();
+};
+
+export const deployLibraries = async (
+    libraryNames: string[],
+    nonceProvider?: NonceProvider
+) => {
+    const [deployer] = await ethers.getSigners();
+    const initializedNonceProvider = nonceProvider ??
+         await NonceProvider.createForWallet(deployer);
     const libraries = new Map<string, string>();
-    for (const libraryName of libraryNames) {
-        libraries.set(libraryName, await _deployLibrary(libraryName));
-    }
+
+    (await Promise.all(libraryNames.map((libraryName) => (async () => [
+        libraryName,
+        await deployLibrary(
+            libraryName,
+            initializedNonceProvider
+        )
+    ])()))).forEach(([
+        libraryName,
+        libraryAddress
+    ]) => {
+        libraries.set(
+            libraryName,
+            libraryAddress
+        );
+    });
+
     return libraries;
-}
+};
 
-function _linkBytecode(artifact: Artifact, libraries: Map<string, string>) {
-    let bytecode = artifact.bytecode;
-    for (const [, fileReferences] of Object.entries(artifact.linkReferences)) {
-        for (const [libName, fixups] of Object.entries(fileReferences)) {
-            const addr = libraries.get(libName);
-            if (addr === undefined) {
-                continue;
-            }
-            for (const fixup of fixups) {
-                bytecode =
-                bytecode.substr(0, 2 + fixup.start * 2) +
-                addr.substr(2) +
-                bytecode.substr(2 + (fixup.start + fixup.length) * 2);
-            }
-        }
-    }
-    return bytecode;
-}
-
-export async function getLinkedContractFactory(contractName: string, libraries: Map<string, string>) {
-    const
-        cArtifact = await artifacts.readArtifact(contractName),
-        linkedBytecode = _linkBytecode(cArtifact, libraries),
-        ContractFactory = await ethers.getContractFactory(cArtifact.abi, linkedBytecode);
-    return ContractFactory;
-}
-
-export async function getManifestFile(): Promise<string> {
+export const getManifestFile = async function getManifestFile () {
     return (await Manifest.forNetwork(ethers.provider)).file;
-}
+};
 
-export async function getContractFactory(contract: string) {
-    const { linkReferences } = await artifacts.readArtifact(contract);
-    if (!Object.keys(linkReferences).length)
-        return await ethers.getContractFactory(contract);
-
-    const libraryNames = [];
-    for (const key of Object.keys(linkReferences)) {
-        const libraryName = Object.keys(linkReferences[key])[0];
-        libraryNames.push(libraryName);
+const updateManifest = async (libraryArtifacts: LibraryArtifacts) => {
+    const manifest = JSON.parse(await fs.readFile(
+        await getManifestFile(),
+        "utf-8"
+    )) as SkaleManifestData;
+    if (typeof manifest.libraries === "undefined") {
+        Object.assign(
+            manifest,
+            {"libraries": libraryArtifacts}
+        );
+    } else {
+        Object.assign(
+            libraryArtifacts,
+            manifest.libraries
+        );
     }
+    const indentation = 4;
+    await fs.writeFile(
+        await getManifestFile(),
+        JSON.stringify(
+            manifest,
+            null,
+            indentation
+        )
+    );
+};
 
-    const
-        libraries = await deployLibraries(libraryNames),
-        libraryArtifacts: { [key: string]: unknown } = {};
-    for (const [libraryName, libraryAddress] of libraries.entries()) {
-        const { bytecode } = await artifacts.readArtifact(libraryName);
-        libraryArtifacts[libraryName] = {
+const getLibraryArtifacts = async (libraries: Map<string, string>) => {
+    const libraryArtifacts: LibraryArtifacts = {};
+
+    const getLibraryArtifact = async (
+        libraryName: string,
+        libraryAddress: string
+    ) => {
+        const {bytecode} = await artifacts.readArtifact(libraryName);
+        return {
             "address": libraryAddress,
-            "bytecodeHash": hashBytecode(bytecode)
+            "bytecodeHash": hashBytecode(bytecode),
+            libraryName
+        };
+    };
+
+    for (const libraryArtifact of await Promise.
+        all(Array.from(libraries.entries()).map(([
+            libraryName,
+            libraryAddress
+        ]) => getLibraryArtifact(
+            libraryName,
+            libraryAddress
+        )))) {
+        libraryArtifacts[libraryArtifact.libraryName] = {
+            "address": libraryArtifact.address,
+            "bytecodeHash": libraryArtifact.bytecodeHash
         };
     }
-    let manifest;
-    try {
-        manifest = JSON.parse(await fs.readFile(await getManifestFile(), "utf-8")) as SkaleManifestData;
-        Object.assign(libraryArtifacts, manifest.libraries);
-    } finally {
-        if (manifest !== undefined) {
-            Object.assign(manifest, { libraries: libraryArtifacts });
-        }
-        await fs.writeFile(await getManifestFile(), JSON.stringify(manifest, null, 4));
+
+    return libraryArtifacts;
+};
+
+export const getContractFactory = async (contract: string) => {
+    const {linkReferences} = await artifacts.readArtifact(contract);
+    if (!Object.keys(linkReferences).length) {
+        return await ethers.getContractFactory(contract);
     }
-    return await getLinkedContractFactory(contract, libraries);
-}
+
+    const libraryNames = getLibrariesNames(linkReferences);
+    const libraries = await deployLibraries(libraryNames);
+    const libraryArtifacts = await getLibraryArtifacts(libraries);
+
+    await updateManifest(libraryArtifacts);
+
+    return await ethers.getContractFactory(
+        contract,
+        {"libraries": Object.fromEntries(libraries)}
+    );
+};

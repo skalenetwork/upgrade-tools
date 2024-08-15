@@ -1,12 +1,16 @@
-import { HardhatUserConfig } from "hardhat/config";
-import '@typechain/hardhat'
-import "@nomiclabs/hardhat-ethers";
+import "@typechain/hardhat";
+import "@nomicfoundation/hardhat-ethers";
 import "@openzeppelin/hardhat-upgrades";
+import {HardhatUserConfig} from "hardhat/config";
+
+
+const coreArtifacts =
+    "node_modules/@openzeppelin/upgrades-core/artifacts/[!b]*.json";
 
 const config: HardhatUserConfig = {
-    typechain: {
-        target: "ethers-v5",
-        externalArtifacts: ['node_modules/@openzeppelin/upgrades-core/artifacts/[!b]*.json']
+    "typechain": {
+        "externalArtifacts": [coreArtifacts],
+        "target": "ethers-v6"
     }
 };
 

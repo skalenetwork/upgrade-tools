@@ -1,22 +1,27 @@
-import { UnsignedTransaction } from "ethers";
-import { ethers } from "hardhat";
-import { createMultiSendTransaction } from "../gnosis-safe";
-import { Submitter } from "./submitter";
+import {Submitter} from "./submitter";
+import {Transaction} from "ethers";
+import {createMultiSendTransaction} from "../gnosis-safe";
+import {ethers} from "hardhat";
+
 
 export class SafeSubmitter extends Submitter {
     safeAddress: string;
-    chainId: number | undefined;
 
-    constructor(safeAddress: string, chainId?: number) {
+    chainId: bigint | undefined;
+
+    constructor (safeAddress: string, chainId?: bigint) {
         super();
         this.safeAddress = safeAddress;
         this.chainId = chainId;
     }
 
-    async submit(transactions: UnsignedTransaction[]): Promise<void> {
+    async submit (transactions: Transaction[]): Promise<void> {
         if (!this.chainId) {
             this.chainId = (await ethers.provider.getNetwork()).chainId;
         }
-        await createMultiSendTransaction(this.safeAddress, transactions);
+        await createMultiSendTransaction(
+            this.safeAddress,
+            transactions
+        );
     }
 }
