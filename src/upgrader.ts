@@ -1,4 +1,5 @@
 import {ContractFactory, Transaction} from "ethers";
+import {ContractToUpgrade, Project} from "./types/upgrader";
 import {Manifest, getImplementationAddress} from "@openzeppelin/upgrades-core";
 import {ethers, network, upgrades} from "hardhat";
 import {AutoSubmitter} from "./submitters/auto-submitter";
@@ -14,19 +15,6 @@ import {getContractFactoryAndUpdateManifest} from "./contractFactory";
 import {getVersion} from "./version";
 import {verify} from "./verification";
 
-
-interface ContractToUpgrade {
-    proxyAddress: string,
-    implementationAddress: string,
-    name: string
-}
-
-interface Project {
-    name: string;
-    instance: Instance;
-    version: string;
-    contractNamesToUpgrade: string[]
-}
 
 const withoutNull = <T>(array: Array<T | null>) => array.
     filter((element) => element !== null) as Array<T>;
@@ -86,27 +74,18 @@ export abstract class Upgrader {
 
     async upgrade () {
         const version = await this.prepareVersion();
-
         await this.callDeployNewContracts();
-
         const contractsToUpgrade = await this.deployNewImplementations();
-
         await this.switchToNewImplementations(
             contractsToUpgrade,
             await Upgrader.getProxyAdmin()
         );
-
         await this.callInitialize();
-
         // Write version
         await this.setVersion(version);
-
         await this.writeTransactions(version);
-
         await this.submitter.submit(this.transactions);
-
         await Upgrader.verify(contractsToUpgrade);
-
         console.log("Done");
     }
 
@@ -172,22 +151,37 @@ export abstract class Upgrader {
         proxyAdmin: ProxyAdmin
     ) {
         const proxyAdminAddress = await proxyAdmin.getAddress();
+        const newProxyAdmin = await Upgrader.isNewProxyAdmin(proxyAdminAddress);
         for (const contract of contractsToUpgrade) {
             const infoMessage =
                 `Prepare transaction to upgrade ${contract.name}` +
                 ` at ${contract.proxyAddress}` +
                 ` to ${contract.implementationAddress}`;
             console.log(chalk.yellowBright(infoMessage));
-            this.transactions.push(Transaction.from({
-                "data": proxyAdmin.interface.encodeFunctionData(
-                    "upgrade",
-                    [
-                        contract.proxyAddress,
-                        contract.implementationAddress
-                    ]
-                ),
-                "to": proxyAdminAddress
-            }));
+            let transaction = Transaction.from({
+                    "data": proxyAdmin.interface.encodeFunctionData(
+                        "upgradeAndCall",
+                        [
+                            contract.proxyAddress,
+                            contract.implementationAddress,
+                            ""
+                        ]
+                    ),
+                    "to": proxyAdminAddress
+                });
+            if (!newProxyAdmin) {
+                transaction = Transaction.from({
+                    "data": proxyAdmin.interface.encodeFunctionData(
+                        "upgrade",
+                        [
+                            contract.proxyAddress,
+                            contract.implementationAddress
+                        ]
+                    ),
+                    "to": proxyAdminAddress
+                });
+            }
+            this.transactions.push(transaction);
         }
     }
 
@@ -285,6 +279,19 @@ export abstract class Upgrader {
             const cannotCheckMessage =
                 `Can't check currently deployed version of ${this.projectName}`;
             console.log(chalk.yellow(cannotCheckMessage));
+        }
+    }
+
+    private static async isNewProxyAdmin(proxyAdminAddress: string) {
+        const interfaceVersionAbi = ["function UPGRADE_INTERFACE_VERSION()"];
+        const proxyAdminContract = new ethers.Contract(proxyAdminAddress, interfaceVersionAbi);
+        try {
+            // This function name is set in external library
+            // eslint-disable-next-line new-cap
+            await proxyAdminContract.UPGRADE_INTERFACE_VERSION();
+            return true;
+        } catch {
+            return false;
         }
     }
 }
