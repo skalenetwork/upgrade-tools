@@ -497,6 +497,11 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.9.3.tgz#ff17a80fb945f5102571f8efecb5ce5915cc4811"
   integrity sha512-jjaHAVRMrE4UuZNfDwjlLGDxTHWIOwTJS2ldnc278a0gevfXfPr8hxKEVBGFBE96kl2G3VHDZhUimw/+G3TG2A==
 
+"@renovatebot/pep440@^3.0.20":
+  version "3.0.20"
+  resolved "https://registry.yarnpkg.com/@renovatebot/pep440/-/pep440-3.0.20.tgz#eac961dec19ac7dca488c1ec20a91df17161f0e2"
+  integrity sha512-Jw8jzHh2r1LAPTrjQlIwh/+8J3N2MqXZgPuTt6HdNeJIBjJskV8bsEfGs9rBzXi/omeHob3BXnvlECu2rCCUYw==
+
 "@safe-global/api-kit@^2.4.1":
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/@safe-global/api-kit/-/api-kit-2.4.1.tgz#5f8b9825e6654dea2e96902a6047c25841d515a4"
@@ -534,20 +539,22 @@
   dependencies:
     semver "^7.6.0"
 
-"@skalenetwork/skale-contracts-ethers-v6@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts-ethers-v6/-/skale-contracts-ethers-v6-1.0.0.tgz#2ec9e1e6113c0b0e0e7abaa492702baa9d647148"
-  integrity sha512-V9sttSFsntgQiQouxnL/Mr2pLQWX7hXy4fmM8d9x2UFfSbLCVXJth/n0YzEGSxEzjSN5IPvOBRJ4kdxyGauTUg==
+"@skalenetwork/skale-contracts-ethers-v6@^1.0.2-develop.0":
+  version "1.0.2-develop.0"
+  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts-ethers-v6/-/skale-contracts-ethers-v6-1.0.2-develop.0.tgz#ac19771afeb319d90083cd7e78e1dd210bea26e6"
+  integrity sha512-ECiS705gj2Ppgfkdc0LLSHf8TEWbMKzw5RmtF6qvM67wSvdtCTCpQSvOgc7IQFX5XUFUk/U/r8Lv9TA2pRqqXg==
   dependencies:
-    "@skalenetwork/skale-contracts" "1.0.0"
+    "@skalenetwork/skale-contracts" "1.0.2-develop.0"
     ethers "^6.7.1"
 
-"@skalenetwork/skale-contracts@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts/-/skale-contracts-1.0.0.tgz#0135e67086714eebd7f936100714c3bcc89384df"
-  integrity sha512-uTvjAlfFL6XRa9p0ogcXO3k9w6bm1UCHRbtKsfb5VrnqQKcCsJoJ9sX55Rcj1YNVy4Dy2E5H8NFVhGUUp0rwtQ==
+"@skalenetwork/skale-contracts@1.0.2-develop.0":
+  version "1.0.2-develop.0"
+  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts/-/skale-contracts-1.0.2-develop.0.tgz#095dd49d8f7c6c89936aa908af5391a42dac2a9a"
+  integrity sha512-erx4tF6VTg8wn/1xdcAjBpkLyO2K8C5Cfi74dvV+EJP7flOV9BuehO3vPqj/ZKM8Fg6N6x9V2PYdA1Y2ep7WBg==
   dependencies:
+    "@renovatebot/pep440" "^3.0.20"
     axios "^1.4.0"
+    semver "^7.6.0"
 
 "@tsconfig/node10@^1.0.7":
   version "1.0.8"
