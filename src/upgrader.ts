@@ -27,19 +27,12 @@ const deployTimeout = 60e4;
 
 export abstract class Upgrader {
     instance: Instance;
-
     targetVersion: string;
-
     contractNamesToUpgrade: string[];
-
     projectName: string;
-
     transactions: Transaction[];
-
     submitter: Submitter;
-
     nonceProvider?: NonceProvider;
-
     deploySemaphore: Semaphore;
 
     constructor (
@@ -214,9 +207,7 @@ export abstract class Upgrader {
         );
         const proxyAddress = await
                 (await this.instance.getContract(contract)).getAddress();
-
         console.log(`Prepare upgrade of ${contract}`);
-
         return this.prepareUpgrade(contract, proxyAddress, contractFactory);
     }
 
@@ -283,8 +274,12 @@ export abstract class Upgrader {
     }
 
     private static async isNewProxyAdmin(proxyAdminAddress: string) {
-        const interfaceVersionAbi = ["function UPGRADE_INTERFACE_VERSION()"];
-        const proxyAdminContract = new ethers.Contract(proxyAdminAddress, interfaceVersionAbi);
+        const interfaceVersionAbi = ["function UPGRADE_INTERFACE_VERSION() view returns (string memory)"];
+        const proxyAdminContract = new ethers.Contract(
+            proxyAdminAddress,
+            interfaceVersionAbi,
+            await ethers.provider.getSigner()
+        );
         try {
             console.log(chalk.gray(`ProxyAdmin version ${
                 // This function name is set in external library
