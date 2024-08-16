@@ -164,7 +164,7 @@ export abstract class Upgrader {
                         [
                             contract.proxyAddress,
                             contract.implementationAddress,
-                            ""
+                            "0x"
                         ]
                     ),
                     "to": proxyAdminAddress
