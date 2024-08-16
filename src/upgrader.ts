@@ -286,11 +286,14 @@ export abstract class Upgrader {
         const interfaceVersionAbi = ["function UPGRADE_INTERFACE_VERSION()"];
         const proxyAdminContract = new ethers.Contract(proxyAdminAddress, interfaceVersionAbi);
         try {
-            // This function name is set in external library
-            // eslint-disable-next-line new-cap
-            await proxyAdminContract.UPGRADE_INTERFACE_VERSION();
+            console.log(chalk.gray(`ProxyAdmin version ${
+                // This function name is set in external library
+                // eslint-disable-next-line new-cap
+                await proxyAdminContract.UPGRADE_INTERFACE_VERSION()
+            }`));
             return true;
-        } catch {
+        } catch (error) {
+            console.log(error);
             return false;
         }
     }
