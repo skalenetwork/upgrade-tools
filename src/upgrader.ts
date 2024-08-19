@@ -1,4 +1,4 @@
-import {ContractFactory, Transaction} from "ethers";
+import {Contract, ContractFactory, Transaction} from "ethers";
 import {ContractToUpgrade, Project} from "./types/upgrader";
 import {Manifest, getImplementationAddress} from "@openzeppelin/upgrades-core";
 import {ethers, network, upgrades} from "hardhat";
@@ -6,7 +6,6 @@ import {AutoSubmitter} from "./submitters/auto-submitter";
 import {EXIT_CODES} from "./exitCodes";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v6";
 import {NonceProvider} from "./nonceProvider";
-import {ProxyAdmin} from "../typechain-types";
 import Semaphore from 'semaphore-async-await';
 import {Submitter} from "./submitters/submitter";
 import chalk from "chalk";
@@ -88,8 +87,16 @@ export abstract class Upgrader {
         if (!adminDeployment) {
             throw new Error("Can't load ProxyAdmin address");
         }
-        const factory = await ethers.getContractFactory("ProxyAdmin");
-        return factory.attach(adminDeployment.address) as ProxyAdmin;
+        const generalProxyAdminAbi = [
+            "function UPGRADE_INTERFACE_VERSION() view returns (string)",
+            "function upgrade(address,address)",
+            "function upgradeAndCall(address,address,bytes) payable",
+        ];
+        return new ethers.Contract(
+            adminDeployment.address,
+            generalProxyAdminAbi,
+            await ethers.provider.getSigner()
+        );
     }
 
     // Private
@@ -141,10 +148,10 @@ export abstract class Upgrader {
 
     private async switchToNewImplementations (
         contractsToUpgrade: ContractToUpgrade[],
-        proxyAdmin: ProxyAdmin
+        proxyAdmin: Contract
     ) {
         const proxyAdminAddress = await proxyAdmin.getAddress();
-        const newProxyAdmin = await Upgrader.isNewProxyAdmin(proxyAdminAddress);
+        const newProxyAdmin = await Upgrader.isNewProxyAdmin(proxyAdmin);
         for (const contract of contractsToUpgrade) {
             const infoMessage =
                 `Prepare transaction to upgrade ${contract.name}` +
@@ -273,20 +280,12 @@ export abstract class Upgrader {
         }
     }
 
-    private static async isNewProxyAdmin(proxyAdminAddress: string) {
-        const proxyAdminVersionAbi = [
-            "function UPGRADE_INTERFACE_VERSION() view returns (string)",
-        ];
-        const proxyAdminContract = new ethers.Contract(
-            proxyAdminAddress,
-            proxyAdminVersionAbi,
-            await ethers.provider.getSigner()
-        );
+    private static async isNewProxyAdmin(proxyAdmin: Contract) {
         try {
             console.log(chalk.gray(`ProxyAdmin version ${
                 // This function name is set in external library
                 // eslint-disable-next-line new-cap
-                await proxyAdminContract.UPGRADE_INTERFACE_VERSION()
+                await proxyAdmin.UPGRADE_INTERFACE_VERSION()
             }`));
             return true;
         } catch (error) {
