@@ -91,6 +91,7 @@ export abstract class Upgrader {
             "function UPGRADE_INTERFACE_VERSION() view returns (string)",
             "function upgrade(address,address)",
             "function upgradeAndCall(address,address,bytes) payable",
+            "function owner() view returns (address)"
         ];
         return new ethers.Contract(
             adminDeployment.address,
