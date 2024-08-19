@@ -1,11 +1,11 @@
-import {ContractFactory, Transaction} from "ethers";
+import {Contract, ContractFactory, Transaction} from "ethers";
+import {ContractToUpgrade, Project} from "./types/upgrader";
 import {Manifest, getImplementationAddress} from "@openzeppelin/upgrades-core";
 import {ethers, network, upgrades} from "hardhat";
 import {AutoSubmitter} from "./submitters/auto-submitter";
 import {EXIT_CODES} from "./exitCodes";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v6";
 import {NonceProvider} from "./nonceProvider";
-import {ProxyAdmin} from "../typechain-types";
 import Semaphore from 'semaphore-async-await';
 import {Submitter} from "./submitters/submitter";
 import chalk from "chalk";
@@ -14,19 +14,6 @@ import {getContractFactoryAndUpdateManifest} from "./contractFactory";
 import {getVersion} from "./version";
 import {verify} from "./verification";
 
-
-interface ContractToUpgrade {
-    proxyAddress: string,
-    implementationAddress: string,
-    name: string
-}
-
-interface Project {
-    name: string;
-    instance: Instance;
-    version: string;
-    contractNamesToUpgrade: string[]
-}
 
 const withoutNull = <T>(array: Array<T | null>) => array.
     filter((element) => element !== null) as Array<T>;
@@ -39,19 +26,12 @@ const deployTimeout = 60e4;
 
 export abstract class Upgrader {
     instance: Instance;
-
     targetVersion: string;
-
     contractNamesToUpgrade: string[];
-
     projectName: string;
-
     transactions: Transaction[];
-
     submitter: Submitter;
-
     nonceProvider?: NonceProvider;
-
     deploySemaphore: Semaphore;
 
     constructor (
@@ -86,27 +66,18 @@ export abstract class Upgrader {
 
     async upgrade () {
         const version = await this.prepareVersion();
-
         await this.callDeployNewContracts();
-
         const contractsToUpgrade = await this.deployNewImplementations();
-
         await this.switchToNewImplementations(
             contractsToUpgrade,
             await Upgrader.getProxyAdmin()
         );
-
         await this.callInitialize();
-
         // Write version
         await this.setVersion(version);
-
         await this.writeTransactions(version);
-
         await this.submitter.submit(this.transactions);
-
         await Upgrader.verify(contractsToUpgrade);
-
         console.log("Done");
     }
 
@@ -116,8 +87,17 @@ export abstract class Upgrader {
         if (!adminDeployment) {
             throw new Error("Can't load ProxyAdmin address");
         }
-        const factory = await ethers.getContractFactory("ProxyAdmin");
-        return factory.attach(adminDeployment.address) as ProxyAdmin;
+        const generalProxyAdminAbi = [
+            "function UPGRADE_INTERFACE_VERSION() view returns (string)",
+            "function upgrade(address,address)",
+            "function upgradeAndCall(address,address,bytes) payable",
+            "function owner() view returns (address)"
+        ];
+        return new ethers.Contract(
+            adminDeployment.address,
+            generalProxyAdminAbi,
+            await ethers.provider.getSigner()
+        );
     }
 
     // Private
@@ -169,25 +149,40 @@ export abstract class Upgrader {
 
     private async switchToNewImplementations (
         contractsToUpgrade: ContractToUpgrade[],
-        proxyAdmin: ProxyAdmin
+        proxyAdmin: Contract
     ) {
         const proxyAdminAddress = await proxyAdmin.getAddress();
+        const newProxyAdmin = await Upgrader.isNewProxyAdmin(proxyAdmin);
         for (const contract of contractsToUpgrade) {
             const infoMessage =
                 `Prepare transaction to upgrade ${contract.name}` +
                 ` at ${contract.proxyAddress}` +
                 ` to ${contract.implementationAddress}`;
             console.log(chalk.yellowBright(infoMessage));
-            this.transactions.push(Transaction.from({
-                "data": proxyAdmin.interface.encodeFunctionData(
-                    "upgrade",
-                    [
-                        contract.proxyAddress,
-                        contract.implementationAddress
-                    ]
-                ),
-                "to": proxyAdminAddress
-            }));
+            let transaction = Transaction.from({
+                    "data": proxyAdmin.interface.encodeFunctionData(
+                        "upgradeAndCall",
+                        [
+                            contract.proxyAddress,
+                            contract.implementationAddress,
+                            "0x"
+                        ]
+                    ),
+                    "to": proxyAdminAddress
+                });
+            if (!newProxyAdmin) {
+                transaction = Transaction.from({
+                    "data": proxyAdmin.interface.encodeFunctionData(
+                        "upgrade",
+                        [
+                            contract.proxyAddress,
+                            contract.implementationAddress
+                        ]
+                    ),
+                    "to": proxyAdminAddress
+                });
+            }
+            this.transactions.push(transaction);
         }
     }
 
@@ -220,9 +215,7 @@ export abstract class Upgrader {
         );
         const proxyAddress = await
                 (await this.instance.getContract(contract)).getAddress();
-
         console.log(`Prepare upgrade of ${contract}`);
-
         return this.prepareUpgrade(contract, proxyAddress, contractFactory);
     }
 
@@ -285,6 +278,20 @@ export abstract class Upgrader {
             const cannotCheckMessage =
                 `Can't check currently deployed version of ${this.projectName}`;
             console.log(chalk.yellow(cannotCheckMessage));
+        }
+    }
+
+    private static async isNewProxyAdmin(proxyAdmin: Contract) {
+        try {
+            console.log(chalk.gray(`ProxyAdmin version ${
+                // This function name is set in external library
+                // eslint-disable-next-line new-cap
+                await proxyAdmin.UPGRADE_INTERFACE_VERSION()
+            }`));
+            return true;
+        } catch (error) {
+            console.log(chalk.gray("Use old ProxyAdmin"));
+            return false;
         }
     }
 }
