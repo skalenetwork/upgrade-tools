@@ -274,10 +274,12 @@ export abstract class Upgrader {
     }
 
     private static async isNewProxyAdmin(proxyAdminAddress: string) {
-        const interfaceVersionAbi = ["function UPGRADE_INTERFACE_VERSION() view returns (string memory)"];
+        const proxyAdminVersionAbi = [
+            "function UPGRADE_INTERFACE_VERSION() view returns (string)",
+        ];
         const proxyAdminContract = new ethers.Contract(
             proxyAdminAddress,
-            interfaceVersionAbi,
+            proxyAdminVersionAbi,
             await ethers.provider.getSigner()
         );
         try {
@@ -288,7 +290,7 @@ export abstract class Upgrader {
             }`));
             return true;
         } catch (error) {
-            console.log(error);
+            console.log(chalk.gray("Use old ProxyAdmin"));
             return false;
         }
     }
