@@ -21,6 +21,7 @@ export class SafeSubmitter extends Submitter {
         }
         await createMultiSendTransaction(
             this.safeAddress,
+            this.chainId,
             transactions
         );
     }

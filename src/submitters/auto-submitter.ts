@@ -54,12 +54,12 @@ export class AutoSubmitter extends Submitter {
     }
 
     private static async getSubmitterForContractOwner (owner: string) {
+        const mainnetChainId = AutoSubmitter.getMainnetChainId();
         if (ethers.getAddress(owner) ===
             ethers.getAddress(MARIONETTE_ADDRESS)) {
             console.log("Marionette owner is detected");
 
             const imaInstance = await AutoSubmitter.getImaInstance();
-            const mainnetChainId = AutoSubmitter.getMainnetChainId();
             const safeAddress = AutoSubmitter.getSafeAddress();
             const schainHash = AutoSubmitter.getSchainHash();
 
@@ -101,7 +101,7 @@ export class AutoSubmitter extends Submitter {
         // Assuming owner is a Gnosis Safe
         console.log("Using Gnosis Safe");
 
-        return new SafeSubmitter(owner);
+        return new SafeSubmitter(owner, mainnetChainId);
     }
 
     private static async getImaInstance () {

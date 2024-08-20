@@ -105,9 +105,7 @@ const getSafeTransactionUrl = (chainId: bigint) => {
         ` at network with chainId = ${chainId}`);
 };
 
-const getSafeService = async () => {
-    const
-        {chainId} = await ethers.provider.getNetwork();
+const getSafeService = (chainId: bigint) => {
     const safeService = new SafeApiKit({
         chainId,
         "txServiceUrl": getSafeTransactionUrl(chainId)
@@ -117,10 +115,11 @@ const getSafeService = async () => {
 
 const estimateSafeTransaction = async (
     safeAddress: string,
+    chainId: bigint,
     safeTransactionData: SafeTransactionDataPartial | MetaTransactionData[]
 ) => {
     console.log("Estimate gas");
-    const safeService = await getSafeService();
+    const safeService = getSafeService(chainId);
     const gasEstimations = await Promise.
         all((safeTransactionData as MetaTransactionData[]).
             map((transaction) => safeService.estimateSafeTransaction(
@@ -141,13 +140,14 @@ const estimateSafeTransaction = async (
 
 const proposeTransaction = async (
     safeAddress: string,
+    chainId: bigint,
     safeTransaction: SafeTransaction
 ) => {
     const [safeOwner] = await ethers.getSigners();
     const safeSdk = await Safe.init({provider: network.provider, safeAddress});
     const safeTxHash = await safeSdk.getTransactionHash(safeTransaction);
     const senderSignature = await safeSdk.signHash(safeTxHash);
-    const safeService = await getSafeService();
+    const safeService = getSafeService(chainId);
     await safeService.proposeTransaction({
         safeAddress,
         "safeTransactionData": safeTransaction.data,
@@ -161,10 +161,11 @@ const proposeTransaction = async (
 
 export const createMultiSendTransaction = async (
     safeAddress: string,
+    chainId: bigint,
     transactions: Transaction[]
 ) => {
     const safeTransactionData = getSafeTransactionData(transactions);
-    const safeService = await getSafeService();
+    const safeService = getSafeService(chainId);
     const nonce = await safeService.getNextNonce(safeAddress);
     console.log(
         "Will send tx to Gnosis with nonce",
@@ -194,11 +195,13 @@ export const createMultiSendTransaction = async (
 
     await estimateSafeTransaction(
         safeAddress,
+        chainId,
         safeTransactionData
     );
 
     await proposeTransaction(
         safeAddress,
+        chainId,
         safeTransaction
     );
 };
