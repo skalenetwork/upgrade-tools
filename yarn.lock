@@ -526,9 +526,9 @@
     semver "^7.6.1"
 
 "@safe-global/safe-core-sdk-types@^5.0.1":
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/@safe-global/safe-core-sdk-types/-/safe-core-sdk-types-5.0.1.tgz#0ccfb83b37e18b2683901f6879d0d25fcf676346"
-  integrity sha512-xIlHZ9kaAIwEhR0OY0i2scdcQyrc0tDJ+eZZ04lhvg81cgYLY1Z5wfJQqazR2plPT1Hz0A9C79jYdUVvzoF/tw==
+  version "5.0.3"
+  resolved "https://registry.yarnpkg.com/@safe-global/safe-core-sdk-types/-/safe-core-sdk-types-5.0.3.tgz#0093898a0585efcae01b4da9cdd5998bc1f4a251"
+  integrity sha512-SNoIq/bYeUvxtB9bn+9FVMcCW3SCOJaK6crRN7DXY+N2xaLtTMAaGeUCPuOGsHxfAJVkO+CdiwWNFoqt9GN0Zg==
   dependencies:
     abitype "^1.0.2"
 
