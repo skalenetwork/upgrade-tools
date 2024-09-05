@@ -7,7 +7,6 @@ import {
 } from "./safe-ima-legacy-marionette-submitter";
 import {SafeSubmitter} from "./safe-submitter";
 import {Submitter} from "./submitter";
-
 import {Upgrader} from "../upgrader";
 import chalk from "chalk";
 import hre from "hardhat";
@@ -16,6 +15,14 @@ import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v6";
 
 export class AutoSubmitter extends Submitter {
     name = "Auto Submitter";
+    upgrader: Upgrader
+
+    constructor (
+        upgrader: Upgrader
+    ) {
+        super();
+        this.upgrader = upgrader
+    }
 
     static marionetteInterface = [
         {
@@ -35,15 +42,14 @@ export class AutoSubmitter extends Submitter {
 
     async submit (transactions: Transaction[]) {
         console.log(`Submit via ${this.name}`);
-        const submitter = await AutoSubmitter.getSubmitter();
+        const submitter = await this.getSubmitter();
         await submitter.submit(transactions);
     }
 
     // Private
 
-    private static async getSubmitter () {
-        const proxyAdmin = await Upgrader.getProxyAdmin();
-        const owner = await proxyAdmin.owner();
+    private async getSubmitter () {
+        const owner = await this.upgrader.getOwner();
         if (await hre.ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
             return new EoaSubmitter();
