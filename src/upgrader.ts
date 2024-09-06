@@ -26,14 +26,15 @@ const deployTimeout = 60e4;
 
 
 export abstract class Upgrader {
-    private instance: Instance;
     private targetVersion: string;
     private contractNamesToUpgrade: string[];
     private projectName: string;
-    private transactions: Transaction[];
     private submitter: Submitter;
     private nonceProvider?: NonceProvider;
     private deploySemaphore: Semaphore;
+
+    protected instance: Instance;
+    protected transactions: Transaction[];
 
     constructor (
         project: Project,
