@@ -1,7 +1,7 @@
-import {Contract, ContractFactory, Transaction} from "ethers";
+import {ContractFactory, Transaction} from "ethers";
 import {ContractToUpgrade, Project} from "./types/upgrader";
-import {Manifest, getImplementationAddress} from "@openzeppelin/upgrades-core";
 import {ethers, network, upgrades} from "hardhat";
+import {getProxyAdmin, getUpgradeTransaction} from "./proxyAdmin";
 import {AutoSubmitter} from "./submitters/auto-submitter";
 import {EXIT_CODES} from "./exitCodes";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v6";
@@ -11,6 +11,7 @@ import {Submitter} from "./submitters/submitter";
 import chalk from "chalk";
 import {promises as fs} from "fs";
 import {getContractFactoryAndUpdateManifest} from "./contractFactory";
+import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 import {getVersion} from "./version";
 import {verify} from "./verification";
 
@@ -25,18 +26,19 @@ const deployTimeout = 60e4;
 
 
 export abstract class Upgrader {
-    instance: Instance;
-    targetVersion: string;
-    contractNamesToUpgrade: string[];
-    projectName: string;
-    transactions: Transaction[];
-    submitter: Submitter;
-    nonceProvider?: NonceProvider;
-    deploySemaphore: Semaphore;
+    private targetVersion: string;
+    private contractNamesToUpgrade: string[];
+    private projectName: string;
+    private submitter: Submitter;
+    private nonceProvider?: NonceProvider;
+    private deploySemaphore: Semaphore;
+
+    protected instance: Instance;
+    protected transactions: Transaction[];
 
     constructor (
         project: Project,
-        submitter: Submitter = new AutoSubmitter()
+        submitter?: Submitter
     ) {
         this.targetVersion = project.version;
         if (!project.version.includes("-")) {
@@ -46,7 +48,7 @@ export abstract class Upgrader {
         this.contractNamesToUpgrade = project.contractNamesToUpgrade;
         this.projectName = project.name;
         this.transactions = [];
-        this.submitter = submitter;
+        this.submitter = submitter ?? new AutoSubmitter(this);
         this.deploySemaphore = new Semaphore(maxSimultaneousDeployments);
     }
 
@@ -69,8 +71,7 @@ export abstract class Upgrader {
         await this.callDeployNewContracts();
         const contractsToUpgrade = await this.deployNewImplementations();
         await this.switchToNewImplementations(
-            contractsToUpgrade,
-            await Upgrader.getProxyAdmin()
+            contractsToUpgrade
         );
         await this.callInitialize();
         // Write version
@@ -81,23 +82,29 @@ export abstract class Upgrader {
         console.log("Done");
     }
 
-    static async getProxyAdmin() {
-        const manifest = await Manifest.forNetwork(network.provider);
-        const adminDeployment = await manifest.getAdmin();
-        if (!adminDeployment) {
-            throw new Error("Can't load ProxyAdmin address");
-        }
-        const generalProxyAdminAbi = [
-            "function UPGRADE_INTERFACE_VERSION() view returns (string)",
-            "function upgrade(address,address)",
-            "function upgradeAndCall(address,address,bytes) payable",
-            "function owner() view returns (address)"
-        ];
-        return new ethers.Contract(
-            adminDeployment.address,
-            generalProxyAdminAbi,
-            await ethers.provider.getSigner()
+    async getOwner() {
+        const proxyAddresses = await Promise.all(
+            this.contractNamesToUpgrade.map(
+                (contract) => this.instance.getContractAddress(contract),
+                this
+            )
         );
+        const admins = await Promise.all(
+            proxyAddresses.map(
+                (proxy) => getProxyAdmin(proxy)
+            )
+        );
+        const owners = await Promise.all(
+            admins.map(
+                (admin) => admin.owner() as Promise<string>
+            )
+        );
+        return owners.reduce( (owner1, owner2) => {
+            if (owner1 !== owner2) {
+                throw Error("Proxies have different owners");
+            }
+            return owner1;
+        })
     }
 
     // Private
@@ -148,42 +155,21 @@ export abstract class Upgrader {
     }
 
     private async switchToNewImplementations (
-        contractsToUpgrade: ContractToUpgrade[],
-        proxyAdmin: Contract
+        contractsToUpgrade: ContractToUpgrade[]
     ) {
-        const proxyAdminAddress = await proxyAdmin.getAddress();
-        const newProxyAdmin = await Upgrader.isNewProxyAdmin(proxyAdmin);
-        for (const contract of contractsToUpgrade) {
+        const upgradeTransactions = await Promise.all(
+            contractsToUpgrade.map(
+                (contract) => getUpgradeTransaction(contract.proxyAddress, contract.implementationAddress)
+            )
+        );
+        contractsToUpgrade.forEach((contract, index) => {
             const infoMessage =
                 `Prepare transaction to upgrade ${contract.name}` +
                 ` at ${contract.proxyAddress}` +
                 ` to ${contract.implementationAddress}`;
             console.log(chalk.yellowBright(infoMessage));
-            let transaction = Transaction.from({
-                    "data": proxyAdmin.interface.encodeFunctionData(
-                        "upgradeAndCall",
-                        [
-                            contract.proxyAddress,
-                            contract.implementationAddress,
-                            "0x"
-                        ]
-                    ),
-                    "to": proxyAdminAddress
-                });
-            if (!newProxyAdmin) {
-                transaction = Transaction.from({
-                    "data": proxyAdmin.interface.encodeFunctionData(
-                        "upgrade",
-                        [
-                            contract.proxyAddress,
-                            contract.implementationAddress
-                        ]
-                    ),
-                    "to": proxyAdminAddress
-                });
-            }
-            this.transactions.push(transaction);
-        }
+            this.transactions.push(upgradeTransactions[index]);
+        });
     }
 
     private async deployNewImplementations () {
@@ -278,20 +264,6 @@ export abstract class Upgrader {
             const cannotCheckMessage =
                 `Can't check currently deployed version of ${this.projectName}`;
             console.log(chalk.yellow(cannotCheckMessage));
-        }
-    }
-
-    private static async isNewProxyAdmin(proxyAdmin: Contract) {
-        try {
-            console.log(chalk.gray(`ProxyAdmin version ${
-                // This function name is set in external library
-                // eslint-disable-next-line new-cap
-                await proxyAdmin.UPGRADE_INTERFACE_VERSION()
-            }`));
-            return true;
-        } catch (error) {
-            console.log(chalk.gray("Use old ProxyAdmin"));
-            return false;
         }
     }
 }
