@@ -513,40 +513,40 @@
   integrity sha512-Jw8jzHh2r1LAPTrjQlIwh/+8J3N2MqXZgPuTt6HdNeJIBjJskV8bsEfGs9rBzXi/omeHob3BXnvlECu2rCCUYw==
 
 "@safe-global/api-kit@^2.4.1":
-  version "2.4.4"
-  resolved "https://registry.yarnpkg.com/@safe-global/api-kit/-/api-kit-2.4.4.tgz#f53799f4e9373f4001db783c85728c11e1eb3241"
-  integrity sha512-5Px4OZEikamGgmoqIOstMSr6blmJws2yN7LBoCtCqt4RM9Aa9cFp1jZlENvXITSSAFiUhGa3vK8+OAmbhq2nvQ==
+  version "2.4.6"
+  resolved "https://registry.yarnpkg.com/@safe-global/api-kit/-/api-kit-2.4.6.tgz#b1377ee16d9af2db29f59bce5262ffad59f61b82"
+  integrity sha512-57lXrqXnmdUdQ12ssWSVDZhpIY2HcJzDvR4w6edT8xebEaduKx2UpwRJ8U2WVEBrx5K9PYuLAPsPHs+/r0yuGg==
   dependencies:
-    "@safe-global/protocol-kit" "^4.0.4"
-    "@safe-global/safe-core-sdk-types" "^5.0.3"
+    "@safe-global/protocol-kit" "^4.1.1"
+    "@safe-global/safe-core-sdk-types" "^5.1.0"
     ethers "^6.13.1"
     node-fetch "^2.7.0"
 
-"@safe-global/protocol-kit@^4.0.1", "@safe-global/protocol-kit@^4.0.4":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@safe-global/protocol-kit/-/protocol-kit-4.1.0.tgz#8ab41e179c559840f0cd6b6ae296438dabe1793f"
-  integrity sha512-WAGXEn6UvKGlEYNqcWUasLZ4240sVWBg8T2SsfHoTs8Im0x2i48CNNZ5Mw9x+oKqhWs/Q9frNG6JcycN19LDRw==
+"@safe-global/protocol-kit@^4.0.1", "@safe-global/protocol-kit@^4.1.1":
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/@safe-global/protocol-kit/-/protocol-kit-4.1.1.tgz#3c23616578c7e071cca5e5d945a2f995b6903b0d"
+  integrity sha512-11Jui1gIpCOV1sUn5HlT+hVn/+gJnKjik0V0aUPDKIL2zajwc+jReZK43CH5GyOHKOF7gCs2yprMHOrQuKkkqw==
   dependencies:
     "@noble/hashes" "^1.3.3"
     "@safe-global/safe-core-sdk-types" "^5.1.0"
-    "@safe-global/safe-deployments" "^1.37.3"
+    "@safe-global/safe-deployments" "^1.37.9"
     "@safe-global/safe-modules-deployments" "^2.2.1"
     abitype "^1.0.2"
     ethereumjs-util "^7.1.5"
     ethers "^6.13.1"
     semver "^7.6.2"
 
-"@safe-global/safe-core-sdk-types@^5.0.1", "@safe-global/safe-core-sdk-types@^5.0.3", "@safe-global/safe-core-sdk-types@^5.1.0":
+"@safe-global/safe-core-sdk-types@^5.0.1", "@safe-global/safe-core-sdk-types@^5.1.0":
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/@safe-global/safe-core-sdk-types/-/safe-core-sdk-types-5.1.0.tgz#af8d877b9af231242d023c7182f78ff4223bc3f4"
   integrity sha512-UzXR4zWmVzux25FcIm4H049QhZZpVpIBL5HE+V0p5gHpArZROL+t24fZmsKUf403CtBxIJM5zZSVQL0nFJi+IQ==
   dependencies:
     abitype "^1.0.2"
 
-"@safe-global/safe-deployments@^1.37.3":
-  version "1.37.3"
-  resolved "https://registry.yarnpkg.com/@safe-global/safe-deployments/-/safe-deployments-1.37.3.tgz#ded9fa6bb04f0e8972c00c481badcf513d590b0b"
-  integrity sha512-EtbiOJVGe697+GcbHtfo75NYpp+hTlIIBqL2ETPLGoQBHoxo9HWbGX/6ZkVxsZv/NN4nKawyMi+MvpUkH9VXGg==
+"@safe-global/safe-deployments@^1.37.9":
+  version "1.37.10"
+  resolved "https://registry.yarnpkg.com/@safe-global/safe-deployments/-/safe-deployments-1.37.10.tgz#2f61a25bd479332821ba2e91a575237d77406ec3"
+  integrity sha512-lcxX9CV+xdcLs4dF6Cx18zDww5JyqaX6RdcvU0o/34IgJ4Wjo3J/RNzJAoMhurCAfTGr+0vyJ9V13Qo50AR6JA==
   dependencies:
     semver "^7.6.2"
 
