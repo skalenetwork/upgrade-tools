@@ -602,17 +602,17 @@
     "@scure/base" "~1.1.8"
 
 "@skalenetwork/skale-contracts-ethers-v6@^1.0.2-develop.0":
-  version "1.0.2-develop.15"
-  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts-ethers-v6/-/skale-contracts-ethers-v6-1.0.2-develop.15.tgz#80112f26ea0bca652c40d1ec6b361fa444141533"
-  integrity sha512-m4L6Wn+vNlXGQSiwDhh4yfs2Vdw1EVZvskV1Q7OBXPN/thN2qQorhO9OntZ3WoSlcHJ18otR/gkZTiDQuOl6Mg==
+  version "1.0.2-develop.18"
+  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts-ethers-v6/-/skale-contracts-ethers-v6-1.0.2-develop.18.tgz#f5c6b55308a1fcda65c73913429792036a6af7ee"
+  integrity sha512-XaebgizUXJCwQNAohgezuUR/0YJ5uqWJqYXa17/3QV3YheNyyQyRDzKxMBHscpMyl5MoV88AVlEyNIWj3Pt9Lw==
   dependencies:
-    "@skalenetwork/skale-contracts" "1.0.2-develop.15"
+    "@skalenetwork/skale-contracts" "1.0.2-develop.18"
     ethers "^6.13.3"
 
-"@skalenetwork/skale-contracts@1.0.2-develop.15":
-  version "1.0.2-develop.15"
-  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts/-/skale-contracts-1.0.2-develop.15.tgz#37e28e0b4c13606bdb1ccf75551fee27d9324db3"
-  integrity sha512-5fwJGHcXBU78xS5YD5Ot575l1ALnHYldeWP9EYkd/IUPnfJ/1qqk3r+QwpHW0qaqmTrLymWagZbnDqoW0rYb/A==
+"@skalenetwork/skale-contracts@1.0.2-develop.18":
+  version "1.0.2-develop.18"
+  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts/-/skale-contracts-1.0.2-develop.18.tgz#1b45dce464eac1e822ccd5b6c5b08f0c7685d34f"
+  integrity sha512-TX7h2knMCobWvWeGt4SE+/jHamzkh8gCUHIeainWxr6uYy2sHpQonW8dEXUTdnFDhPIDgJpNUM1EN7N4kJNujA==
   dependencies:
     "@renovatebot/pep440" "^3.0.20"
     axios "^1.4.0"
