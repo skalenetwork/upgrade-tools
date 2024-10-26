@@ -531,22 +531,22 @@
   integrity sha512-Jw8jzHh2r1LAPTrjQlIwh/+8J3N2MqXZgPuTt6HdNeJIBjJskV8bsEfGs9rBzXi/omeHob3BXnvlECu2rCCUYw==
 
 "@safe-global/api-kit@^2.4.1":
-  version "2.5.1"
-  resolved "https://registry.yarnpkg.com/@safe-global/api-kit/-/api-kit-2.5.1.tgz#621e814a2a1a057d594931b2b0184c8061e3b2cb"
-  integrity sha512-0M4oIpz1YIjLcNUDv6DG+56KsdveXNz4K9Z52zo5GneBrS12Q78PEY/O3WcF8mIEmY9X5W0YFmWwvmdv/cL8qA==
+  version "2.5.3"
+  resolved "https://registry.yarnpkg.com/@safe-global/api-kit/-/api-kit-2.5.3.tgz#8b0e996836a55e1c4cac6609b97a46c48bcb58fc"
+  integrity sha512-BHKKKohtM6cqtWmu2BIBl5YVMFeIzE1kBe2kfDi0JG9UbzTKYUYU8d/RnteFe5Nj/KiO7F7bJ708Z7ZxQ9Ap0g==
   dependencies:
-    "@safe-global/protocol-kit" "^5.0.1"
+    "@safe-global/protocol-kit" "^5.0.3"
     "@safe-global/types-kit" "^1.0.0"
     node-fetch "^2.7.0"
     viem "^2.21.8"
 
-"@safe-global/protocol-kit@^5.0.1":
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/@safe-global/protocol-kit/-/protocol-kit-5.0.1.tgz#886774f9a9f1712a52ee16950b4cb69f0188b88f"
-  integrity sha512-1nd+IIhNOSEMt9Mv7QEuPcEOOd4B+GMXPxADJCvSGkDmo1BwHi8EEn/HZfIPf/N92IswXd4cpA7oHnFaInS7tQ==
+"@safe-global/protocol-kit@^5.0.1", "@safe-global/protocol-kit@^5.0.3":
+  version "5.0.3"
+  resolved "https://registry.yarnpkg.com/@safe-global/protocol-kit/-/protocol-kit-5.0.3.tgz#187cfdeaf892c832265cb356d0ef5e230cb8fc4f"
+  integrity sha512-xVpuj1Ge/XYdLucPe36MXl09yK83f3drPqFK0UPhrONg//SP/K/sgyXnKy5o4zJrjidNV9V0PV7Xw84HOqOxtg==
   dependencies:
     "@noble/hashes" "^1.3.3"
-    "@safe-global/safe-deployments" "^1.37.9"
+    "@safe-global/safe-deployments" "^1.37.12"
     "@safe-global/safe-modules-deployments" "^2.2.4"
     "@safe-global/types-kit" "^1.0.0"
     abitype "^1.0.2"
@@ -560,10 +560,10 @@
   dependencies:
     abitype "^1.0.2"
 
-"@safe-global/safe-deployments@^1.37.9":
-  version "1.37.10"
-  resolved "https://registry.yarnpkg.com/@safe-global/safe-deployments/-/safe-deployments-1.37.10.tgz#2f61a25bd479332821ba2e91a575237d77406ec3"
-  integrity sha512-lcxX9CV+xdcLs4dF6Cx18zDww5JyqaX6RdcvU0o/34IgJ4Wjo3J/RNzJAoMhurCAfTGr+0vyJ9V13Qo50AR6JA==
+"@safe-global/safe-deployments@^1.37.12":
+  version "1.37.13"
+  resolved "https://registry.yarnpkg.com/@safe-global/safe-deployments/-/safe-deployments-1.37.13.tgz#9965d6c5669db526a472a0576828063aa50234df"
+  integrity sha512-DXDbyW+pSK5W+eyrT7I2VHgHjCUhiXgcmSjekCzwmzrRXB5sW36DLLDwfC5c1gvo26ix6NcIGRSk2sf68BHdeg==
   dependencies:
     semver "^7.6.2"
 
