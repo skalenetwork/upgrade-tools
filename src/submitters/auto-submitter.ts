@@ -1,4 +1,3 @@
-import {Transaction, ethers} from "ethers";
 import {EXIT_CODES} from "../exitCodes";
 import {EoaSubmitter} from "./eoa-submitter";
 import {MARIONETTE_ADDRESS} from "./types/marionette";
@@ -7,9 +6,10 @@ import {
 } from "./safe-ima-legacy-marionette-submitter";
 import {SafeSubmitter} from "./safe-submitter";
 import {Submitter} from "./submitter";
+import {Transaction} from "ethers";
 import {Upgrader} from "../upgrader";
 import chalk from "chalk";
-import hre from "hardhat";
+import {ethers} from "hardhat";
 import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v6";
 
 
@@ -50,7 +50,7 @@ export class AutoSubmitter extends Submitter {
 
     private async getSubmitter () {
         const owner = await this.upgrader.getOwner();
-        if (await hre.ethers.provider.getCode(owner) === "0x") {
+        if (await ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
             return new EoaSubmitter();
         }
@@ -117,7 +117,7 @@ export class AutoSubmitter extends Submitter {
             process.exit(EXIT_CODES.UNKNOWN_IMA);
         }
         const contractsNetwork =
-            await skaleContracts.getNetworkByProvider(hre.ethers.provider);
+            await skaleContracts.getNetworkByProvider(ethers.provider);
         const ima = await contractsNetwork.getProject("ima");
         return await ima.getInstance(process.env.IMA);
     }
@@ -161,7 +161,7 @@ export class AutoSubmitter extends Submitter {
     }
 
     private static async _versionFunctionExists () {
-        const bytecode = await hre.ethers.provider.getCode(MARIONETTE_ADDRESS);
+        const bytecode = await ethers.provider.getCode(MARIONETTE_ADDRESS);
         const hexPrefixLength = 2;
         const selectorLength = 10;
 
@@ -179,7 +179,7 @@ export class AutoSubmitter extends Submitter {
         const marionette = new ethers.Contract(
             MARIONETTE_ADDRESS,
             AutoSubmitter.marionetteInterface,
-            hre.ethers.provider
+            ethers.provider
         );
 
         /*
