@@ -17,41 +17,41 @@ import chalk from "chalk";
 const URLS = {
     "safe_transaction": {
         [Network.from("mainnet").chainId.toString()]:
-            "https://safe-transaction-mainnet.safe.global",
+            "https://safe-transaction-mainnet.safe.global/api",
         [Network.from("arbitrum").chainId.toString()]:
-            "https://safe-transaction-arbitrum.safe.global",
+            "https://safe-transaction-arbitrum.safe.global/api",
         [Network.from("base").chainId.toString()]:
-            "https://safe-transaction-base.safe.global",
+            "https://safe-transaction-base.safe.global/api",
         [Network.from("base-sepolia").chainId.toString()]:
-            "https://safe-transaction-base-sepolia.safe.global",
+            "https://safe-transaction-base-sepolia.safe.global/api",
         [Network.from("bnb").chainId.toString()]:
-            "https://safe-transaction-bsc.safe.global",
+            "https://safe-transaction-bsc.safe.global/api",
         [Network.from("xdai").chainId.toString()]:
-            "https://safe-transaction-gnosis-chain.safe.global",
+            "https://safe-transaction-gnosis-chain.safe.global/api",
         [Network.from("optimism").chainId.toString()]:
-            "https://safe-transaction-optimism.safe.global",
+            "https://safe-transaction-optimism.safe.global/api",
         [Network.from("matic").chainId.toString()]:
-            "https://safe-transaction-polygon.safe.global",
+            "https://safe-transaction-polygon.safe.global/api",
         [Network.from("sepolia").chainId.toString()]:
-            "https://safe-transaction-sepolia.safe.global",
+            "https://safe-transaction-sepolia.safe.global/api",
         // Aurora
         "0x4e454152":
-            "https://safe-transaction-aurora.safe.global",
+            "https://safe-transaction-aurora.safe.global/api",
         // Polygon zkEVM
         "1101":
-            "https://safe-transaction-zkevm.safe.global",
+            "https://safe-transaction-zkevm.safe.global/api",
         // ZkSync Era Mainnet
         "324":
-            "https://safe-transaction-zksync.safe.global",
+            "https://safe-transaction-zksync.safe.global/api",
         // Celo
         "42220":
-            "https://safe-transaction-celo.safe.global",
+            "https://safe-transaction-celo.safe.global/api",
         // Avalanche
         "43114":
-            "https://safe-transaction-avalanche.safe.global",
+            "https://safe-transaction-avalanche.safe.global/api",
         // Scroll
         "534352":
-            "https://safe-transaction-scroll.safe.global",
+            "https://safe-transaction-scroll.safe.global/api",
     }
 };
 
