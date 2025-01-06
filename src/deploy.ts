@@ -33,22 +33,10 @@ export const deployLibraries = async (
          await NonceProvider.createForWallet(deployer);
     const libraries = new Map<string, string>();
 
-    (await Promise.all(libraryNames.map((libraryName) => (async () => [
-        libraryName,
-        await deployLibrary(
-            libraryName,
-            initializedNonceProvider
-        )
-    ])()))).forEach(([
-        libraryName,
-        libraryAddress
-    ]) => {
-        libraries.set(
-            libraryName,
-            libraryAddress
-        );
-    });
-
+    for (const libraryName of libraryNames) {
+        const libraryAddress = await deployLibrary(libraryName, initializedNonceProvider);
+        libraries.set(libraryName, libraryAddress);
+    }
     return libraries;
 };
 
