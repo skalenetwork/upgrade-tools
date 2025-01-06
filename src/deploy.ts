@@ -15,6 +15,9 @@ const deployLibrary = async (
     nonceProvider: NonceProvider
 ) => {
     const Library = await ethers.getContractFactory(libraryName);
+    console.log('Deploying library', libraryName);
+    const nonce = nonceProvider.reserveNonce();
+    console.log('Nonce:', nonce);
     const library = await Library.
         deploy({"nonce": nonceProvider.reserveNonce()});
     await library.waitForDeployment()
