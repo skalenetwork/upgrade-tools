@@ -19,7 +19,7 @@ const deployLibrary = async (
     const nonce = nonceProvider.reserveNonce();
     console.log('Nonce:', nonce);
     const library = await Library.
-        deploy({"nonce": nonceProvider.reserveNonce()});
+        deploy({"nonce": nonce});
     await library.waitForDeployment()
     return await library.getAddress();
 };
