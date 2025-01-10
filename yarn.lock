@@ -525,11 +525,6 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.9.6.tgz#38b21708a719da647de4bb0e4802ee235a0d24df"
   integrity sha512-m4iHazOsOCv1DgM7eD7GupTJ+NFVujRZt1wzddDPSVGpWdKq1SKkla5htKG7+IS4d2XOCtzkUNwRZ7Vq5aEUMA==
 
-"@renovatebot/pep440@^3.0.20":
-  version "3.0.20"
-  resolved "https://registry.yarnpkg.com/@renovatebot/pep440/-/pep440-3.0.20.tgz#eac961dec19ac7dca488c1ec20a91df17161f0e2"
-  integrity sha512-Jw8jzHh2r1LAPTrjQlIwh/+8J3N2MqXZgPuTt6HdNeJIBjJskV8bsEfGs9rBzXi/omeHob3BXnvlECu2rCCUYw==
-
 "@safe-global/api-kit@^2.4.1":
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/@safe-global/api-kit/-/api-kit-2.5.1.tgz#621e814a2a1a057d594931b2b0184c8061e3b2cb"
@@ -602,21 +597,11 @@
     "@scure/base" "~1.1.8"
 
 "@skalenetwork/skale-contracts-ethers-v6@^1.0.2-develop.30":
-  version "1.0.2-develop.30"
-  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts-ethers-v6/-/skale-contracts-ethers-v6-1.0.2-develop.30.tgz#d4adf188041fa5de7c34d6cefbabdd4835547266"
-  integrity sha512-mWYCyK1kneEAd4RsAYXoiVj2kmcYhKtB/gnAGM7nOGaaLjMsHPGLxGU9bGytiZZRiwGf5758x/F2Trrn5bKR9g==
+  version "1.0.2-develop.47"
+  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts-ethers-v6/-/skale-contracts-ethers-v6-1.0.2-develop.47.tgz#a6aa6003aa869fce2826132ddf889ad7886863f2"
+  integrity sha512-OFbd4DHIjrA43kFzkleUuynOXhbCmbDdjj4t2flTsHo+nbZA2hThXxdb4ct4xdhuUjtro5ANY8tMlWtDYgknyA==
   dependencies:
-    "@skalenetwork/skale-contracts" "1.0.2-develop.30"
     ethers "^6.13.4"
-
-"@skalenetwork/skale-contracts@1.0.2-develop.30":
-  version "1.0.2-develop.30"
-  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts/-/skale-contracts-1.0.2-develop.30.tgz#ed165d49ef6de6c4bbc831a741b206ffb833d5ab"
-  integrity sha512-h84NQxobzbI5KZcPZtcgKZYL9/iOJym2mF876pfUY7ftBd0aIu/xtJqIPfeoAcDaevhxJEg9QeabCXKp+9tbCA==
-  dependencies:
-    "@renovatebot/pep440" "^3.0.20"
-    axios "^1.4.0"
-    semver "^7.6.0"
 
 "@tsconfig/node10@^1.0.7":
   version "1.0.8"
@@ -2313,7 +2298,7 @@ semaphore-async-await@^1.5.1:
   resolved "https://registry.yarnpkg.com/semaphore-async-await/-/semaphore-async-await-1.5.1.tgz#857bef5e3644601ca4b9570b87e9df5ca12974fa"
   integrity sha512-b/ptP11hETwYWpeilHXXQiV5UJNJl7ZWWooKRE5eBIYWoom6dZ0SluCIdCtKycsMtZgKWE01/qAw6jblw1YVhg==
 
-semver@^7.5.4, semver@^7.6.0, semver@^7.6.2, semver@^7.6.3:
+semver@^7.5.4, semver@^7.6.2, semver@^7.6.3:
   version "7.6.3"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.3.tgz#980f7b5550bc175fb4dc09403085627f9eb33143"
   integrity sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==
