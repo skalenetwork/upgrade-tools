@@ -54,6 +54,6 @@ export class SafeToImaSubmitter extends SafeSubmitter {
             this.messageProxyForMainnet =
                 await this.imaInstance.getContract("MessageProxyForMainnet");
         }
-        return this.messageProxyForMainnet;
+        return this.messageProxyForMainnet!;
     }
 }
