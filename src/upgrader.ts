@@ -83,7 +83,7 @@ export abstract class Upgrader {
     }
 
     async getOwner() {
-        const proxyAddresses: string[] = await Promise.all(
+        const proxyAddresses = await Promise.all(
             this.contractNamesToUpgrade.map(
                 (contract) => this.instance.getContractAddress(contract),
                 this
