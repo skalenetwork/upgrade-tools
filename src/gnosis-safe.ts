@@ -2,13 +2,11 @@ import {
     MetaTransactionData,
     OperationType,
     SafeTransaction,
-    SafeTransactionDataPartial
 } from "@safe-global/safe-core-sdk-types";
 import {Network, Transaction} from "ethers";
 import {ethers, network} from "hardhat";
 import Safe from "@safe-global/protocol-kit";
 import SafeApiKit from "@safe-global/api-kit";
-import chalk from "chalk";
 
 // Cspell:words arbitrum celo sepolia xdai
 
