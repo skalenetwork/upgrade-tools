@@ -113,31 +113,6 @@ const getSafeService = (chainId: bigint) => {
     return safeService;
 };
 
-const estimateSafeTransaction = async (
-    safeAddress: string,
-    chainId: bigint,
-    safeTransactionData: SafeTransactionDataPartial | MetaTransactionData[]
-) => {
-    console.log("Estimate gas");
-    const safeService = getSafeService(chainId);
-    const gasEstimations = await Promise.
-        all((safeTransactionData as MetaTransactionData[]).
-            map((transaction) => safeService.estimateSafeTransaction(
-                safeAddress,
-                {
-                    "data": transaction.data,
-                    "operation": transaction.operation || OperationType.Call,
-                    "to": transaction.to,
-                    "value": transaction.value
-                }
-            )));
-    for (const estimateResponse of gasEstimations) {
-        console.log(chalk.cyan("Recommend to set gas limit" +
-            ` to ${estimateResponse.safeTxGas}`));
-    }
-    console.log(chalk.green("Send transaction to gnosis safe"));
-};
-
 const proposeTransaction = async (
     safeAddress: string,
     chainId: bigint,
@@ -192,12 +167,6 @@ export const createMultiSendTransaction = async (
         options,
         transactions: safeTransactionData
     });
-
-    await estimateSafeTransaction(
-        safeAddress,
-        chainId,
-        safeTransactionData
-    );
 
     await proposeTransaction(
         safeAddress,
