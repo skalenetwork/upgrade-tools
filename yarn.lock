@@ -625,17 +625,17 @@
     "@scure/base" "~1.1.8"
 
 "@skalenetwork/skale-contracts-ethers-v6@^1.0.2-develop.50":
-  version "1.0.2-develop.50"
-  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts-ethers-v6/-/skale-contracts-ethers-v6-1.0.2-develop.50.tgz#1a4a5ee7a30b4b51f72a58ce540a0ed5bbe354dd"
-  integrity sha512-L4Bl+dVZGP6HC3Oect0VOZxvy8SnoJZloHGMhkeqQoHKPixln9Pgsw+Ruh9p6Y/pGHD2z9mIQwJbDWhzE/K1Hg==
+  version "1.0.2-develop.53"
+  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts-ethers-v6/-/skale-contracts-ethers-v6-1.0.2-develop.53.tgz#85313213ac3d58e8282110ee571165416bd8bb71"
+  integrity sha512-FbqlgKLgTbd23rDDdZoyDxi1xThdJz+bQqY1gYaapa7FtNLhZgtidUgjqzJFa7rzlxTiDlqScFZdIMR3jDjmwg==
   dependencies:
-    "@skalenetwork/skale-contracts" "1.0.2-develop.50"
-    ethers "^6.13.4"
+    "@skalenetwork/skale-contracts" "1.0.2-develop.53"
+    ethers "^6.13.5"
 
-"@skalenetwork/skale-contracts@1.0.2-develop.50":
-  version "1.0.2-develop.50"
-  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts/-/skale-contracts-1.0.2-develop.50.tgz#70cfd201150369fceb18e78825befe8d6cac9cf8"
-  integrity sha512-hSdctlxBz1XJFyyoCZ+KsTCt+Gr4YUI9RniiZi9fTK5R4hW0pXAJRFXd1RrntSAWnCN7LoVzeKdKkAUDq88SXw==
+"@skalenetwork/skale-contracts@1.0.2-develop.53":
+  version "1.0.2-develop.53"
+  resolved "https://registry.yarnpkg.com/@skalenetwork/skale-contracts/-/skale-contracts-1.0.2-develop.53.tgz#fab4e218ec4fbdaae6c51523f3db556a9e004ffa"
+  integrity sha512-y+C+R3/vE8aLUAYKKHN6rdSNmOk8C1+f6D5PJDQ3vzG39CsfbI1ttdL0xTXEWvveAL9Z1J766RMAGMH1h5OUIA==
   dependencies:
     "@renovatebot/pep440" "^3.0.20"
     axios "^1.4.0"
@@ -1550,10 +1550,10 @@ ethereumjs-util@^7.1.4:
     ethereum-cryptography "^0.1.3"
     rlp "^2.2.4"
 
-ethers@^6.13.4:
-  version "6.13.4"
-  resolved "https://registry.yarnpkg.com/ethers/-/ethers-6.13.4.tgz#bd3e1c3dc1e7dc8ce10f9ffb4ee40967a651b53c"
-  integrity sha512-21YtnZVg4/zKkCQPjrDj38B1r4nQvTZLopUGMLQ1ePU2zV/joCfDC3t3iKQjWRzjjjbzR+mdAIoikeBRNkdllA==
+ethers@^6.13.5:
+  version "6.13.5"
+  resolved "https://registry.yarnpkg.com/ethers/-/ethers-6.13.5.tgz#8c1d6ac988ac08abc3c1d8fabbd4b8b602851ac4"
+  integrity sha512-+knKNieu5EKRThQJWwqaJ10a6HE9sSehGeqWN65//wE7j47ZpFhKAnHB/JJFibwwg61I/koxaPsXbXpD/skNOQ==
   dependencies:
     "@adraffy/ens-normalize" "1.10.1"
     "@noble/curves" "1.2.0"
