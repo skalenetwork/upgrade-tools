@@ -14,7 +14,7 @@ export class NonceProvider {
     }
 
     reserveNonce () {
-        if (!this.releasedNonces) {
+        if (!this.releasedNonces.length) {
             const nonce = this.currentNonce;
             this.currentNonce += 1;
             return nonce;
