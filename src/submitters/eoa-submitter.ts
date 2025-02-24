@@ -9,18 +9,21 @@ export class EoaSubmitter extends Submitter {
     async submit (transactions: Transaction[]) {
         EoaSubmitter.atomicityWarning();
         const [deployer] = await ethers.getSigners();
-        let nonce = await deployer.getNonce();
         console.log(`Send transaction via ${this.name}`);
 
+        /*
+         * TODO: Refactor this section.
+         * Now sending transactions sequentially.
+         * Previously, concurrent eth_estimateGas calls during initialize()
+         * could invoke unavailable functions (pre-upgrade), causing failures.
+         */
         for (const tx of transactions) {
             /* eslint-disable no-await-in-loop */
             const receipt = await (await deployer.sendTransaction({
                 data: tx.data,
-                nonce,
                 to: tx.to,
                 value: tx.value
             })).wait();
-            ++nonce;
             console.log(`Sent transaction with hash: ${receipt?.hash}`);
         }
 

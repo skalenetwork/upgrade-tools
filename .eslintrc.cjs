@@ -30,7 +30,6 @@ module.exports = {
         "padded-blocks": [
             "error",
             "never"
-        ],
-        "no-plusplus": "off"
+        ]
     }
 };
