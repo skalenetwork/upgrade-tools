@@ -1,3 +1,4 @@
+import {JsonRpcProvider, Transaction} from "ethers";
 import {EXIT_CODES} from "../exitCodes";
 import {EoaSubmitter} from "./eoa-submitter";
 import {MARIONETTE_ADDRESS} from "./types/marionette";
@@ -6,7 +7,6 @@ import {
 } from "./safe-ima-legacy-marionette-submitter";
 import {SafeSubmitter} from "./safe-submitter";
 import {Submitter} from "./submitter";
-import {Transaction} from "ethers";
 import {Upgrader} from "../upgrader";
 import chalk from "chalk";
 import {ethers} from "hardhat";
@@ -116,9 +116,17 @@ export class AutoSubmitter extends Submitter {
                 " to IMA environment variable"));
             process.exit(EXIT_CODES.UNKNOWN_IMA);
         }
+        if (!process.env.MAINNET_ENDPOINT) {
+            console.log(chalk.red("Set mainnet endpoint" +
+                " to MAINNET_ENDPOINT environment variable"));
+            process.exit(EXIT_CODES.UNKNOWN_MAINNET_ENDPOINT);
+        }
+        const mainnetProvider = new JsonRpcProvider(
+            process.env.MAINNET_ENDPOINT
+        );
         const contractsNetwork =
-            await skaleContracts.getNetworkByProvider(ethers.provider);
-        const ima = await contractsNetwork.getProject("ima");
+            await skaleContracts.getNetworkByProvider(mainnetProvider);
+        const ima = contractsNetwork.getProject("mainnet-ima");
         return await ima.getInstance(process.env.IMA);
     }
 
