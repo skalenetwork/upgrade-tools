@@ -8,7 +8,7 @@ import {ethers, network} from "hardhat";
 import Safe from "@safe-global/protocol-kit";
 import SafeApiKit from "@safe-global/api-kit";
 
-// Cspell:words arbitrum celo sepolia xdai
+// Cspell:words arbitrum celo sepolia xdai holesky
 
 // Constants
 
@@ -32,6 +32,8 @@ const URLS = {
             "https://safe-transaction-polygon.safe.global/api",
         [Network.from("sepolia").chainId.toString()]:
             "https://safe-transaction-sepolia.safe.global/api",
+        [Network.from("holesky").chainId.toString()]:
+            "https://transaction-holesky.holesky-safe.protofire.io/api",
         // Aurora
         "0x4e454152":
             "https://safe-transaction-aurora.safe.global/api",
