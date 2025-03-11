@@ -1,22 +1,33 @@
+import Semaphore from 'semaphore-async-await';
 import {Signer} from "ethers";
 
+const MAX_CONCURRENT_NOUNCE_REQUESTS = 1;
 export class NonceProvider {
     currentNonce: number;
     releasedNonces: number[];
+    semaphore: Semaphore;
 
     constructor (nonce: number) {
         this.currentNonce = nonce;
         this.releasedNonces = [];
+        this.semaphore = new Semaphore(MAX_CONCURRENT_NOUNCE_REQUESTS);
     }
 
     static async createForWallet (signer: Signer) {
         return new NonceProvider(await signer.getNonce());
     }
 
-    reserveNonce () {
+    async reserveNonce () {
         if (!this.releasedNonces.length) {
-            const nonce = this.currentNonce;
-            this.currentNonce += 1;
+            let nonce = this.currentNonce;
+            try {
+                await this.semaphore.acquire()
+                nonce = this.currentNonce;
+                this.currentNonce += 1;
+            }
+            finally {
+                this.semaphore.release();
+            }
             return nonce;
         }
         return this.releasedNonces.shift();
