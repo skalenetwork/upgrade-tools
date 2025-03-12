@@ -34,7 +34,7 @@ async function main() {
 
     const upgrader = new ExampleContractUpgrader(
         "ExampleContract",
-        "1.0.0",
+        ["1.0.0"], //specify set of versions this script is designed to upgrade contracts from
         abi,
         ["ExampleContract"]
     );
