@@ -43,7 +43,9 @@ export abstract class Upgrader {
         if (typeof(project.oldVersion) === 'string') {
             this.targetVersions = [project.oldVersion]
         }
-        else {this.targetVersions = project.oldVersion;}
+        else {
+            this.targetVersions = project.oldVersion;
+        }
 
         this.targetVersions.map((version) => {
             if (!version.includes("-")) {
