@@ -21,6 +21,23 @@ const deployLibrary = async (
     return await library.getAddress();
 };
 
+export const  deployLibrariesSequential = async (
+    libraryNames: string[],
+    nonceProvider?: NonceProvider
+) => {
+    const [deployer] = await ethers.getSigners();
+    const initializedNonceProvider = nonceProvider ??
+         await NonceProvider.createForWallet(deployer);
+    const libraries = new Map<string, string>();
+
+    for (const lib of libraryNames){
+        // Parallelization can't occur in testing environment (no mempool for transactions)
+        // eslint-disable-next-line no-await-in-loop
+        libraries.set(lib, await deployLibrary(lib, initializedNonceProvider));
+    }
+    return libraries;
+};
+
 export const deployLibraries = async (
     libraryNames: string[],
     nonceProvider?: NonceProvider
