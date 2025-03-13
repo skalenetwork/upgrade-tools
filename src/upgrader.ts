@@ -40,7 +40,11 @@ export abstract class Upgrader {
         project: Project,
         submitter?: Submitter
     ) {
-        this.targetVersions = project.versions;
+        if (typeof(project.oldVersion) === 'string') {
+            this.targetVersions = [project.oldVersion]
+        }
+        else {this.targetVersions = project.oldVersion;}
+
         this.targetVersions.map((version) => {
             if (!version.includes("-")) {
                 return `${version}-stable.0`;
