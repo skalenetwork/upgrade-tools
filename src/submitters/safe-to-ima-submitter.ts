@@ -34,6 +34,7 @@ export class SafeToImaSubmitter extends SafeSubmitter {
             SafeToImaSubmitter.atomicityWarning();
         }
         const messageProxyForMainnet = await this.getMessageProxyForMainnet();
+        if(!messageProxyForMainnet) {throw Error("MainnetImaProxyForMainnet not found")}
         const messageProxyForMainnetAddress = await messageProxyForMainnet.getAddress();
         const transactionsToIma = transactions.map((transaction) => Transaction.from({
             "data": messageProxyForMainnet.interface.encodeFunctionData(
@@ -52,7 +53,8 @@ export class SafeToImaSubmitter extends SafeSubmitter {
     private async getMessageProxyForMainnet () {
         if (typeof this.messageProxyForMainnet === "undefined") {
             this.messageProxyForMainnet =
-                await this.imaInstance.getContract("MessageProxyForMainnet");
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await this.imaInstance.getContract("MessageProxyForMainnet") as any;
         }
         return this.messageProxyForMainnet;
     }

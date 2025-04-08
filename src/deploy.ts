@@ -27,7 +27,8 @@ export const  deployLibrariesSequential = async (
 ) => {
     const [deployer] = await ethers.getSigners();
     const initializedNonceProvider = nonceProvider ??
-         await NonceProvider.createForWallet(deployer);
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         await NonceProvider.createForWallet(deployer as any);
     const libraries = new Map<string, string>();
 
     for (const lib of libraryNames){
@@ -44,7 +45,8 @@ export const deployLibraries = async (
 ) => {
     const [deployer] = await ethers.getSigners();
     const initializedNonceProvider = nonceProvider ??
-         await NonceProvider.createForWallet(deployer);
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         await NonceProvider.createForWallet(deployer as any);
     const libraries = new Map<string, string>();
 
     (await Promise.all(libraryNames.map((libraryName) => (async () => [
