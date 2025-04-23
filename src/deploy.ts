@@ -136,7 +136,16 @@ export const getContractFactory = async (contract: string) => {
     }
 
     const libraryNames = getLibrariesNames(linkReferences);
-    const libraries = await deployLibraries(libraryNames);
+    const {chainId} = await ethers.provider.getNetwork();
+
+    const libraries = await (async () => {
+        const hardhatChainId = 31337n;
+        if (chainId === hardhatChainId) {
+            return await deployLibrariesSequential(libraryNames);
+        }
+        return await deployLibraries(libraryNames);
+    })();
+
     const libraryArtifacts = await getLibraryArtifacts(libraries);
 
     await updateManifest(libraryArtifacts);
