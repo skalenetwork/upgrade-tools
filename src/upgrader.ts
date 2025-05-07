@@ -148,8 +148,7 @@ export abstract class Upgrader {
             console.log("Start verification");
             await Promise.all(contractsToUpgrade.map((contract) => verify(
                 contract.name,
-                contract.implementationAddress,
-                []
+                contract.implementationAddress
             )));
         }
     }
