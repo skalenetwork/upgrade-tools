@@ -1,6 +1,6 @@
 import {artifacts, ethers, network} from "hardhat";
 import {ChainConfig} from "@nomicfoundation/hardhat-verify/types";
-import {Etherscan} from "@nomicfoundation/hardhat-verify/etherscan";
+import {ContractVerifier} from "./contractVerifier";
 import {
     builtinChains
 } from "@nomicfoundation/hardhat-verify/internal/chain-config";
@@ -12,7 +12,7 @@ import proxyBuildInfo from "@openzeppelin/upgrades-core/artifacts/build-info-v5.
 
 const RETRIES_AMOUNT = 5;
 
-interface VerificationTarget {
+export interface VerificationTarget {
     contractName: string;
     contractAddress: string;
     explorerUrls: {
@@ -79,9 +79,9 @@ const pingExplorer = async (baseUrl: string): Promise<boolean> => {
 
 const parseEndpoint = (endpoint: string) => {
     const {host, pathname} = new URL(endpoint);
-    const schain = pathname.split("/").filter(Boolean).pop()!;
+    const schainName = pathname.split("/").filter(Boolean).pop()!;
 
-    let networkType: keyof typeof BASE_EXPLORER_URLS;
+    let networkType: keyof typeof BASE_EXPLORER_URLS = "mainnet";
     if (host.includes("mainnet.")) {
         networkType = "mainnet";
     } else if (host.includes("testnet.")) {
@@ -91,32 +91,36 @@ const parseEndpoint = (endpoint: string) => {
     } else {
         throw new Error(`Unknown network in ENDPOINT: ${endpoint}`);
     }
-    return {networkType, schain};
+    return {networkType, schainName};
 }
 
-const getExplorerUrls = async (chainConfig?: ChainConfig) => {
-    if (process.env.EXPLORER_URL) {
-        const browserURL = process.env.EXPLORER_URL;
-        const apiURL = `${browserURL}/api`;
-        return {apiURL, browserURL};
-    }
-    if (chainConfig) {
-        return chainConfig.urls;
-    }
-    const endpoint = process.env.ENDPOINT;
-    if (!endpoint) {
+const getSchainExplorerUrls = async () => {
+    if (!process.env.ENDPOINT) {
         throw new Error("ENDPOINT is not set");
     }
-    const {schain, networkType} = parseEndpoint(endpoint);
-    const browserURL = `https://${schain}.${BASE_EXPLORER_URLS[networkType]}`;
+    const {schainName, networkType} = parseEndpoint(process.env.ENDPOINT);
+    const browserURL = `https://${schainName}.${BASE_EXPLORER_URLS[networkType]}`;
     const apiURL = `${browserURL}/api`;
-    if (!(await pingExplorer(browserURL))) {
+    if (!await pingExplorer(browserURL)) {
         throw new Error(`Explorer is not reachable, set EXPLORER_URL`);
     }
     return {apiURL, browserURL};
 }
 
-const isVerifiedOnBlockscout = async (apiURL: string, address: string): Promise<boolean> => {
+const getExplorerUrls = async (chainConfig?: ChainConfig) => {
+    if (process.env.EXPLORER_URL) {
+        return {
+            apiURL: `${process.env.EXPLORER_URL}/api`,
+            browserURL: process.env.EXPLORER_URL
+        };
+    }
+    if (chainConfig) {
+        return chainConfig.urls;
+    }
+    return await getSchainExplorerUrls();
+}
+
+export const isVerifiedOnBlockscout = async (apiURL: string, address: string): Promise<boolean> => {
     const url = `${apiURL}/v2/smart-contracts/${address}`;
     try {
         const response = await fetch(url);
@@ -127,81 +131,34 @@ const isVerifiedOnBlockscout = async (apiURL: string, address: string): Promise<
     }
 };
 
-const getVerifyParameters = async (contractName: string) => {
-    let fullContractName: string;
-    let compilerVersion: string;
-    let solcInputJson: string;
+export const getVerifyParameters = async (contractName: string) => {
     if (contractName === "TransparentUpgradeableProxy") {
-        fullContractName = `${proxyArtifact.sourceName}:${contractName}`;
-        compilerVersion = proxyBuildInfo.solcLongVersion;
-        solcInputJson = JSON.stringify(proxyBuildInfo.input);
-    } else {
-        const artifact = await artifacts.readArtifact(contractName);
-        fullContractName = `${artifact.sourceName}:${contractName}`;
-        const buildinfo = await artifacts.getBuildInfo(fullContractName);
-        if (!buildinfo) {
-            throw new Error(`No build-info for ${contractName}`);
-        }
-        compilerVersion = buildinfo.solcLongVersion;
-        solcInputJson = JSON.stringify(buildinfo.input);
+        return {
+            compilerVersion: proxyBuildInfo.solcLongVersion,
+            fullContractName: `${proxyArtifact.sourceName}:${contractName}`,
+            solcInputJson: JSON.stringify(proxyBuildInfo.input)
+        };
+    }
+    const artifact = await artifacts.readArtifact(contractName);
+    const fullContractName = `${artifact.sourceName}:${contractName}`;
+    const buildInfo = await artifacts.getBuildInfo(fullContractName);
+    if (!buildInfo) {
+        throw new Error(`No build-info for ${contractName}`);
     }
     return {
-        compilerVersion,
+        compilerVersion: buildInfo.solcLongVersion,
         fullContractName,
-        solcInputJson
-    }
+        solcInputJson: JSON.stringify(buildInfo.input)
+    };
 }
-
-const verificationAttempt = async (verificationTarget: VerificationTarget) => {
-    const {contractName, contractAddress, explorerUrls, isEtherscan} = verificationTarget;
-    const {browserURL, apiURL} = explorerUrls;
-    const escan = new Etherscan(
-        process.env.ETHERSCAN || "",
-        apiURL,
-        browserURL,
-    );
-    const {fullContractName, compilerVersion, solcInputJson} = await getVerifyParameters(contractName);
-    const isVerifiedOnEtherscan = isEtherscan && await escan.isVerified(contractAddress);
-    if (isVerifiedOnEtherscan || await isVerifiedOnBlockscout(apiURL, contractAddress)) {
-        const contractURL = escan.getContractUrl(contractAddress);
-        console.log(
-            `${contractName} is already verified on: ${contractURL}`
-        );
-        return true;
-    }
-    let guid: string;
-    try {
-        const result = await escan.verify(
-            contractAddress,
-            solcInputJson,
-            fullContractName,
-            compilerVersion,
-            "0x"
-        );
-        guid = result.message;
-    } catch (error) {
-        console.log(chalk.yellow(`Verification attempt for ${contractName} failed with error: ${error}`));
-        return false;
-    }
-    const verificationStatus = await escan.getVerificationStatus(guid);
-    if (verificationStatus.isFailure()) {
-        const errorMessage = `Failed to verify contract ${contractName}`;
-        console.log(chalk.red(errorMessage));
-        return false;
-    }
-    const contractURL = escan.getContractUrl(contractAddress);
-    console.log(
-        `${contractName} is successfully verified on: ${contractURL}`
-    );
-    return true;
-};
 
 const verifyWithRetry = async (
     verificationTarget: VerificationTarget,
     attempts: number
 ) => {
     if (attempts) {
-        if (!await verificationAttempt(verificationTarget)) {
+        const verifier = new ContractVerifier(verificationTarget);
+        if (!await verifier.attempt()) {
             const failedAttempts = 1;
             await verifyWithRetry(
                 verificationTarget,
@@ -211,62 +168,80 @@ const verifyWithRetry = async (
     }
 };
 
-export const verify = async (
+const verifyOnEtherscan = async (
+    contractName: string,
+    contractAddress: string,
+    chainConfig: ChainConfig
+) => {
+    if (!process.env.ETHERSCAN) {
+        console.log(
+            chalk.yellow(
+                `No etherscan API key provided. Skipping verification for ${contractName}.`
+            )
+        );
+        return;
+    }
+    const explorerUrls = await getExplorerUrls(chainConfig);
+    await verifyWithRetry(
+        {
+            contractAddress,
+            contractName,
+            explorerUrls,
+            isEtherscan: true
+        },
+        RETRIES_AMOUNT
+    );
+}
+
+const verifyOnBlockscout = async (
+    contractName: string,
+    contractAddress: string,
+    chainConfig: ChainConfig
+) => {
+    const explorerUrls = await getExplorerUrls(chainConfig);
+    await verifyWithRetry(
+        {
+            contractAddress,
+            contractName,
+            explorerUrls
+        },
+        RETRIES_AMOUNT
+    );
+}
+
+const verifyOnSkale = async (
     contractName: string,
     contractAddress: string
 ) => {
+    const explorerUrls = await getExplorerUrls();
+    await verifyWithRetry(
+        {
+            contractAddress,
+            contractName,
+            explorerUrls
+        },
+        RETRIES_AMOUNT
+    );
+}
+
+export const verify = async (contractName: string, contractAddress: string) => {
     const {chainId} = await ethers.provider.getNetwork();
-    const etherscanChainConfig = builtinChains.find((chain) => chain.chainId === Number(chainId));
-    const blockscoutChainConfig = blockscoutChains.find((chain) => chain.chainId === Number(chainId));
-    const isSkaleChain = !etherscanChainConfig && !blockscoutChainConfig;
-    if (etherscanChainConfig) {
-        if (process.env.ETHERSCAN) {
-            const explorerUrls = await getExplorerUrls(etherscanChainConfig);
-            await verifyWithRetry(
-                {
-                    contractAddress,
-                    contractName,
-                    explorerUrls,
-                    isEtherscan: true
-                },
-                RETRIES_AMOUNT
-            );
-        } else {
-            console.log(
-                chalk.yellow(
-                    `No etherscan API key provided. Skipping verification for ${contractName} on Etherscan.`
-                )
-            );
-        }
+    const etherscanConfig = builtinChains.find(config => config.chainId === Number(chainId));
+    const blockscoutConfig = blockscoutChains.find(config => config.chainId === Number(chainId));
+    const isSkaleChain = !etherscanConfig && !blockscoutConfig;
+
+    if (etherscanConfig) {
+        await verifyOnEtherscan(contractName, contractAddress, etherscanConfig);
     }
-    if (blockscoutChainConfig) {
-        const explorerUrls = await getExplorerUrls(blockscoutChainConfig);
-        await verifyWithRetry(
-            {
-                contractAddress,
-                contractName,
-                explorerUrls
-            },
-            RETRIES_AMOUNT
-        );
+    if (blockscoutConfig) {
+        await verifyOnBlockscout(contractName, contractAddress, blockscoutConfig);
     }
     if (isSkaleChain) {
-        const explorerUrls = await getExplorerUrls();
-        await verifyWithRetry(
-            {
-                contractAddress,
-                contractName,
-                explorerUrls
-            },
-            RETRIES_AMOUNT
-        );
+        await verifyOnSkale(contractName, contractAddress);
     }
 };
 
-export const verifyProxy = async (
-    contractName: string,
-    proxyAddress: string
-) => {
+export const verifyProxy = async (contractName: string, proxyAddress: string) => {
     await verify(
         contractName,
         await getImplementationAddress(
