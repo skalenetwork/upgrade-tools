@@ -12,7 +12,7 @@ export class ContractVerifier {
     private readonly apiURL: string;
     private readonly browserURL: string;
     private readonly isEtherscan: boolean;
-    private readonly escan: Etherscan;
+    private readonly etherscan: Etherscan;
 
     constructor(target: VerificationTarget) {
         this.contractName = target.contractName;
@@ -20,7 +20,7 @@ export class ContractVerifier {
         this.apiURL = target.explorerUrls.apiURL;
         this.browserURL = target.explorerUrls.browserURL;
         this.isEtherscan = Boolean(target.isEtherscan);
-        this.escan = new Etherscan(
+        this.etherscan = new Etherscan(
             process.env.ETHERSCAN ?? "",
             this.apiURL,
             this.browserURL
@@ -31,7 +31,7 @@ export class ContractVerifier {
         let verified = false;
 
         if (this.isEtherscan) {
-            verified = await this.escan.isVerified(this.contractAddress);
+            verified = await this.etherscan.isVerified(this.contractAddress);
         }
         if (!verified) {
             verified = await isVerifiedOnBlockscout(
@@ -41,7 +41,7 @@ export class ContractVerifier {
         }
         if (verified) {
             console.log(
-                `${this.contractName} is already verified on: ${this.escan.getContractUrl(
+                `${this.contractName} is already verified on: ${this.etherscan.getContractUrl(
                     this.contractAddress
                 )}`
             );
@@ -55,7 +55,7 @@ export class ContractVerifier {
         compilerVersion: string;
     }): Promise<string | null> {
         try {
-            const res = await this.escan.verify(
+            const res = await this.etherscan.verify(
                 this.contractAddress,
                 params.solcInputJson,
                 params.fullContractName,
@@ -74,7 +74,7 @@ export class ContractVerifier {
     }
 
     private async checkVerificationStatus(guid: string): Promise<boolean> {
-        const status = await this.escan.getVerificationStatus(guid);
+        const status = await this.etherscan.getVerificationStatus(guid);
 
         if (status.isFailure()) {
             console.log(
@@ -84,7 +84,7 @@ export class ContractVerifier {
         }
 
         console.log(
-            `${this.contractName} is successfully verified on: ${this.escan.getContractUrl(
+            `${this.contractName} is successfully verified on: ${this.etherscan.getContractUrl(
                 this.contractAddress
             )}`
         );
