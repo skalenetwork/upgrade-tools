@@ -10,7 +10,7 @@ import proxyArtifact from
 "@openzeppelin/upgrades-core/artifacts/@openzeppelin/contracts-v5/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json";
 import proxyBuildInfo from "@openzeppelin/upgrades-core/artifacts/build-info-v5.json";
 
-// cspell:words skalenodes holesky hoodi
+// Cspell:words skalenodes holesky hoodi
 
 const RETRIES_AMOUNT = 5;
 
