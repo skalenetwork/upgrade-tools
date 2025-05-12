@@ -16,6 +16,3 @@ stebaiev
 vadim
 yavorsky
 blockscout
-skalenodes
-holesky
-hoodi
