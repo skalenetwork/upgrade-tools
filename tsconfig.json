@@ -5,6 +5,7 @@
       "declaration": true,
       "outDir": "./dist",
       "sourceMap": true,
+      "resolveJsonModule": true,
       "target": "ES2020"
   },
   "include": ["./src", "./typechain-types"],
