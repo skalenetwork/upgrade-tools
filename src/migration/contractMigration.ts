@@ -140,6 +140,7 @@ export class ContractMigration {
                  */
                 if (slot.value === zeroPadValue(oldVal, ADDRESS_SIZE)){
                     slot.value = zeroPadValue(newVal as string, ADDRESS_SIZE);
+                    break;
                 }
             }
             filteredSlots.push(slot);
