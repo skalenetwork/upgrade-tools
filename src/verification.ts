@@ -22,6 +22,7 @@ export interface VerificationTarget {
         apiURL: string;
     }
     isEtherscan?: boolean;
+    chainId?: number;
 }
 
 const BASE_EXPLORER_URLS = {
@@ -186,10 +187,11 @@ const verifyOnEtherscan = async (
     const explorerUrls = await getExplorerUrls(chainConfig);
     await verifyWithRetry(
         {
+            chainId: chainConfig.chainId,
             contractAddress,
             contractName,
             explorerUrls,
-            isEtherscan: true
+            isEtherscan: true,
         },
         RETRIES_AMOUNT
     );
@@ -228,17 +230,24 @@ const verifyOnSkale = async (
 
 export const verify = async (contractName: string, contractAddress: string) => {
     const {chainId} = await ethers.provider.getNetwork();
-    const etherscanConfig = builtinChains.find(config => config.chainId === Number(chainId));
+    let etherscanConfig = builtinChains.find(config => config.chainId === Number(chainId));
     const blockscoutConfig = blockscoutChains.find(config => config.chainId === Number(chainId));
-    const isSkaleChain = !etherscanConfig && !blockscoutConfig;
-
+    if (blockscoutConfig){
+        etherscanConfig = {
+            chainId: blockscoutConfig.chainId,
+            network: blockscoutConfig.network,
+            urls: {
+                apiURL: "https://api.etherscan.io/v2/api",
+                browserURL: "https://etherscan.io",
+            }
+        };
+        await verifyOnBlockscout(contractName, contractAddress, blockscoutConfig);
+    }
     if (etherscanConfig) {
         await verifyOnEtherscan(contractName, contractAddress, etherscanConfig);
     }
-    if (blockscoutConfig) {
-        await verifyOnBlockscout(contractName, contractAddress, blockscoutConfig);
-    }
-    if (isSkaleChain) {
+    // Is probably SkaleChain
+    if (!etherscanConfig && !blockscoutConfig) {
         await verifyOnSkale(contractName, contractAddress);
     }
 };

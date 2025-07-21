@@ -23,7 +23,8 @@ export class ContractVerifier {
         this.etherscan = new Etherscan(
             process.env.ETHERSCAN ?? "",
             this.apiURL,
-            this.browserURL
+            this.browserURL,
+            target.chainId
         );
     }
 
