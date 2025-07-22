@@ -98,6 +98,9 @@ export class ContractVerifier {
         }
 
         const params = await getVerifyParameters(this.contractName);
+        if (this.isEtherscan) {
+            params.compilerVersion = `v${params.compilerVersion}`;
+        }
         const guid = await this.submitVerification(params);
         if (!guid) {
             return false;
