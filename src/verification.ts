@@ -148,7 +148,6 @@ export const getVerifyParameters = async (contractName: string) => {
     if (!buildInfo) {
         throw new Error(`No build-info for ${contractName}`);
     }
-    console.log(buildInfo.input);
     return {
         compilerVersion: buildInfo.solcLongVersion,
         fullContractName,

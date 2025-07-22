@@ -61,7 +61,8 @@ export class ContractVerifier {
                 params.solcInputJson,
                 params.fullContractName,
                 params.compilerVersion,
-                "0x"
+                // eslint-disable-next-line no-ternary
+                this.isEtherscan ? "" : "0x"
             );
             return res.message;
         } catch (error) {
