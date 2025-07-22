@@ -33,7 +33,6 @@ jobs:
     - name: Install project
       run: |
         yarn
-        yarn install-peers
 
     - name: Compile typescript
       run: yarn compile

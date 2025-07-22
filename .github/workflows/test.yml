@@ -25,9 +25,6 @@ jobs:
     - name: Install project
       run: yarn install
 
-    - name: Install dependencies
-      run: yarn install-peers
-
     - name: Compile
       run: yarn compile
 

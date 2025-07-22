@@ -18,7 +18,9 @@
         "**/dist/**",
         "**/coverage.json",
         "**/*.hbs",
-        "**/*.orig"
+        "**/*.orig",
+        ".yarn/**/*",
+        ".yarnrc.yml"
     ],
     "dictionaries": ["domain-terms", "libraries", "names", "skale-terms", "solidity"],
     "dictionaryDefinitions": [
