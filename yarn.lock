@@ -2152,13 +2152,6 @@ __metadata:
     ts-node: ^10.5.0
     typechain: ^8.3.2
     typescript: ^5.1.6
-  peerDependencies:
-    "@nomicfoundation/hardhat-ethers": ^3.0.0
-    "@nomicfoundation/hardhat-verify": 2.0.14
-    "@openzeppelin/hardhat-upgrades": ^3.1.1
-    "@openzeppelin/upgrades-core": ^1.27.1
-    "@types/mocha": ^9.1.0
-    hardhat: ^2.9.9
   languageName: unknown
   linkType: soft
 

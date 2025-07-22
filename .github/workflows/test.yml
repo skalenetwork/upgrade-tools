@@ -22,11 +22,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
 
-    - name: Ensure Yarn cache folder exists
-      run: mkdir -p "$(yarn config get cacheFolder)"
-
     - name: Install project
-      run: yarn
+      run: yarn install
 
     - name: Compile
       run: yarn compile
