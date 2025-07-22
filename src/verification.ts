@@ -246,7 +246,6 @@ export const verify = async (contractName: string, contractAddress: string) => {
     if (etherscanConfig) {
         await verifyOnEtherscan(contractName, contractAddress, etherscanConfig);
     }
-    // Is probably SkaleChain
     if (!etherscanConfig && !blockscoutConfig) {
         await verifyOnSkale(contractName, contractAddress);
     }
