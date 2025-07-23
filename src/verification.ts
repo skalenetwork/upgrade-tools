@@ -7,7 +7,7 @@ import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 import proxyArtifact from
 "@openzeppelin/upgrades-core/artifacts/@openzeppelin/contracts-v5/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json";
 import proxyBuildInfo from "@openzeppelin/upgrades-core/artifacts/build-info-v5.json";
-// Cspell:words skalenodes holesky hoodi chainname blockexplorer apiurl chainname apiurl blockexplorer
+// Cspell:words skalenodes holesky hoodi chainname blockexplorer apiurl
 
 const RETRIES_AMOUNT = 5;
 const MAX_CONCURRENCY = 1;
