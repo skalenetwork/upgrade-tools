@@ -14,7 +14,7 @@ on:
       - beta
       - develop
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: 22
 
 jobs:
   build:
@@ -23,7 +23,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Node
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         registry-url: 'https://registry.npmjs.org'
@@ -33,7 +33,6 @@ jobs:
     - name: Install project
       run: |
         yarn
-        yarn install-peers
 
     - name: Compile typescript
       run: yarn compile
@@ -68,7 +67,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Node
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'yarn'

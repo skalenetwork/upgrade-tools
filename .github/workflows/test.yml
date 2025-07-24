@@ -9,23 +9,21 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x, 22.x, 24.x]
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Install NODE JS
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
 
     - name: Install project
       run: yarn install
-
-    - name: Install dependencies
-      run: yarn install-peers
 
     - name: Compile
       run: yarn compile

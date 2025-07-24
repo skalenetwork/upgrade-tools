@@ -1,18 +1,16 @@
 import {artifacts, ethers, network} from "hardhat";
 import {ChainConfig} from "@nomicfoundation/hardhat-verify/types";
 import {ContractVerifier} from "./contractVerifier";
-import {
-    builtinChains
-} from "@nomicfoundation/hardhat-verify/internal/chain-config";
+import Semaphore from 'semaphore-async-await';
 import chalk from "chalk";
 import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 import proxyArtifact from
 "@openzeppelin/upgrades-core/artifacts/@openzeppelin/contracts-v5/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json";
 import proxyBuildInfo from "@openzeppelin/upgrades-core/artifacts/build-info-v5.json";
-
-// Cspell:words skalenodes holesky hoodi
+// Cspell:words skalenodes holesky hoodi chainname blockexplorer apiurl
 
 const RETRIES_AMOUNT = 5;
+const MAX_CONCURRENCY = 1;
 
 export interface VerificationTarget {
     contractName: string;
@@ -22,6 +20,7 @@ export interface VerificationTarget {
         apiURL: string;
     }
     isEtherscan?: boolean;
+    chainId?: number;
 }
 
 const BASE_EXPLORER_URLS = {
@@ -29,7 +28,37 @@ const BASE_EXPLORER_URLS = {
     mainnet: "explorer.mainnet.skalenodes.com",
     testnet: "explorer.testnet.skalenodes.com"
 };
+const etherscanChains: ChainConfig[] = [];
+const lock = new Semaphore(MAX_CONCURRENCY);
 
+const loadEtherscanSupportedChains = async () => {
+    const resp = await fetch("https://api.etherscan.io/v2/chainlist");
+    if (!resp.ok) {
+        throw new Error(`Etherscan API error: ${resp.status} ${resp.statusText}`);
+    }
+    const data = await resp.json();
+    data.result.forEach((element: {chainid: string, chainname: string, blockexplorer: string, apiurl: string}) => {
+        etherscanChains.push({
+            chainId: parseInt(element.chainid, 10),
+            network: element.chainname,
+            urls: {
+                apiURL: element.apiurl,
+                browserURL: element.blockexplorer
+            }
+
+        } as ChainConfig);
+    });
+}
+const safeLoadSupportedChains = async () => {
+    await lock.acquire();
+    try {
+        if (!etherscanChains.length) {
+            await loadEtherscanSupportedChains();
+        }
+    } finally {
+        lock.release();
+    }
+}
 const blockscoutChains: ChainConfig[] = [
     {
         chainId: 1,
@@ -186,10 +215,11 @@ const verifyOnEtherscan = async (
     const explorerUrls = await getExplorerUrls(chainConfig);
     await verifyWithRetry(
         {
+            chainId: chainConfig.chainId,
             contractAddress,
             contractName,
             explorerUrls,
-            isEtherscan: true
+            isEtherscan: true,
         },
         RETRIES_AMOUNT
     );
@@ -227,18 +257,17 @@ const verifyOnSkale = async (
 }
 
 export const verify = async (contractName: string, contractAddress: string) => {
+    await safeLoadSupportedChains();
     const {chainId} = await ethers.provider.getNetwork();
-    const etherscanConfig = builtinChains.find(config => config.chainId === Number(chainId));
+    const etherscanConfig = etherscanChains.find(config => config.chainId === Number(chainId));
     const blockscoutConfig = blockscoutChains.find(config => config.chainId === Number(chainId));
-    const isSkaleChain = !etherscanConfig && !blockscoutConfig;
-
+    if (blockscoutConfig){
+        await verifyOnBlockscout(contractName, contractAddress, blockscoutConfig);
+    }
     if (etherscanConfig) {
         await verifyOnEtherscan(contractName, contractAddress, etherscanConfig);
     }
-    if (blockscoutConfig) {
-        await verifyOnBlockscout(contractName, contractAddress, blockscoutConfig);
-    }
-    if (isSkaleChain) {
+    if (!etherscanConfig && !blockscoutConfig) {
         await verifyOnSkale(contractName, contractAddress);
     }
 };

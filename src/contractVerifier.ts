@@ -23,7 +23,8 @@ export class ContractVerifier {
         this.etherscan = new Etherscan(
             process.env.ETHERSCAN ?? "",
             this.apiURL,
-            this.browserURL
+            this.browserURL,
+            target.chainId
         );
     }
 
@@ -60,7 +61,7 @@ export class ContractVerifier {
                 params.solcInputJson,
                 params.fullContractName,
                 params.compilerVersion,
-                "0x"
+                ""
             );
             return res.message;
         } catch (error) {
@@ -97,6 +98,9 @@ export class ContractVerifier {
         }
 
         const params = await getVerifyParameters(this.contractName);
+        if (this.isEtherscan) {
+            params.compilerVersion = `v${params.compilerVersion}`;
+        }
         const guid = await this.submitVerification(params);
         if (!guid) {
             return false;
