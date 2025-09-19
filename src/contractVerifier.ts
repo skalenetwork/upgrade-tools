@@ -1,111 +1,109 @@
-import {
-    VerificationTarget,
-    getVerifyParameters,
-    isVerifiedOnBlockscout
-} from "./verification";
-import {Etherscan} from "@nomicfoundation/hardhat-verify/etherscan";
+import {ValidationResponse} from "@nomicfoundation/hardhat-verify/internal/utilities";
+import {artifacts} from "hardhat";
 import chalk from "chalk";
+import proxyArtifact from
+"@openzeppelin/upgrades-core/artifacts/@openzeppelin/contracts-v5/proxy/transparent/TransparentUpgradeableProxy.sol/TransparentUpgradeableProxy.json";
+import proxyBuildInfo from "@openzeppelin/upgrades-core/artifacts/build-info-v5.json";
 
-export class ContractVerifier {
-    private readonly contractName: string;
-    private readonly contractAddress: string;
-    private readonly apiURL: string;
-    private readonly browserURL: string;
-    private readonly isEtherscan: boolean;
-    private readonly etherscan: Etherscan;
+const DEFAULT_RETRIES_AMOUNT = 5;
 
-    constructor(target: VerificationTarget) {
-        this.contractName = target.contractName;
-        this.contractAddress = target.contractAddress;
-        this.apiURL = target.explorerUrls.apiURL;
-        this.browserURL = target.explorerUrls.browserURL;
-        this.isEtherscan = Boolean(target.isEtherscan);
-        this.etherscan = new Etherscan(
-            process.env.ETHERSCAN ?? "",
-            this.apiURL,
-            this.browserURL,
-            target.chainId
-        );
-    }
+export interface VerificationTarget {
+    contractName: string;
+    contractAddress: string;
+}
 
-    private async isAlreadyVerified(): Promise<boolean> {
-        let verified = false;
+export interface VerificationRequestParameters {
+    solcInputJson: string;
+    fullContractName: string;
+    compilerVersion: string;
+}
 
-        if (this.isEtherscan) {
-            verified = await this.etherscan.isVerified(this.contractAddress);
+export abstract class ContractVerifier {
+    public abstract name: string;
+
+    public verify = async (
+        verificationTarget: VerificationTarget,
+        attempts: number = DEFAULT_RETRIES_AMOUNT
+    ) => {
+        const limit = 0;
+        if (attempts > limit) {
+            if (!await this.attemptVerification(verificationTarget)) {
+                const failedAttempts = 1;
+                await this.verify(verificationTarget,
+                    attempts - failedAttempts
+                );
+            }
         }
-        if (!verified) {
-            verified = await isVerifiedOnBlockscout(
-                this.apiURL,
-                this.contractAddress
-            );
-        }
-        if (verified) {
-            console.log(
-                `${this.contractName} is already verified on: ${this.etherscan.getContractUrl(
-                    this.contractAddress
-                )}`
-            );
-        }
-        return verified;
-    }
+    };
 
-    private async submitVerification(params: {
-        solcInputJson: string;
-        fullContractName: string;
-        compilerVersion: string;
-    }): Promise<string | null> {
+    public async attemptVerification(verificationTarget: VerificationTarget): Promise<boolean> {
+        if (await this.isAlreadyVerified(verificationTarget)) {
+            return true;
+        }
+
+        const params = await ContractVerifier.getVerifyParameters(verificationTarget.contractName);
         try {
-            const res = await this.etherscan.verify(
-                this.contractAddress,
-                params.solcInputJson,
-                params.fullContractName,
-                params.compilerVersion,
-                ""
-            );
-            return res.message;
+            const response = await this.submitVerificationRequest(verificationTarget, params);
+            return this.checkVerificationStatus(verificationTarget, response);
         } catch (error) {
             console.log(
                 chalk.yellow(
-                    `Verification attempt for ${this.contractName} failed with error: ${error}`
+                    `Verification attempt for ${
+                        verificationTarget.contractName
+                    } failed on ${
+                        this.name
+                    } with error: ${
+                        error
+                    }`
                 )
-            );
-            return null;
-        }
-    }
-
-    private async checkVerificationStatus(guid: string): Promise<boolean> {
-        const status = await this.etherscan.getVerificationStatus(guid);
-
-        if (status.isFailure()) {
-            console.log(
-                chalk.red(`Failed to verify contract ${this.contractName}`)
             );
             return false;
         }
+    }
 
+    // Protected
+
+    protected abstract isAlreadyVerified(verificationTarget: VerificationTarget): Promise<boolean>;
+    protected abstract submitVerificationRequest(target: VerificationTarget, params: VerificationRequestParameters): Promise<ValidationResponse>;
+    protected abstract getContractUrl(verificationTarget: VerificationTarget): string;
+
+    // Private
+
+    private checkVerificationStatus(verificationTarget: VerificationTarget,response: ValidationResponse): boolean {
+        if (response.isFailure() as unknown as boolean) {
+            console.log(
+                chalk.red(`Failed to verify contract ${verificationTarget.contractName}`)
+            );
+            return false;
+        }
         console.log(
-            `${this.contractName} is successfully verified on: ${this.etherscan.getContractUrl(
-                this.contractAddress
-            )}`
+            chalk.gray(
+                `${verificationTarget.contractName} is successfully verified on: ${this.getContractUrl(
+                    verificationTarget
+                )}`
+            )
         );
         return true;
     }
 
-    public async attempt(): Promise<boolean> {
-        if (await this.isAlreadyVerified()) {
-            return true;
+    private static async getVerifyParameters(contractName: string) {
+        if (contractName === "TransparentUpgradeableProxy") {
+            return {
+                compilerVersion: proxyBuildInfo.solcLongVersion,
+                fullContractName: `${proxyArtifact.sourceName}:${contractName}`,
+                solcInputJson: JSON.stringify(proxyBuildInfo.input)
+            };
         }
-
-        const params = await getVerifyParameters(this.contractName);
-        if (this.isEtherscan) {
-            params.compilerVersion = `v${params.compilerVersion}`;
+        const artifact = await artifacts.readArtifact(contractName);
+        const fullContractName = `${artifact.sourceName}:${contractName}`;
+        const buildInfo = await artifacts.getBuildInfo(fullContractName);
+        if (!buildInfo) {
+            throw new Error(`No build-info for ${contractName}`);
         }
-        const guid = await this.submitVerification(params);
-        if (!guid) {
-            return false;
-        }
-
-        return this.checkVerificationStatus(guid);
+        return {
+            compilerVersion: buildInfo.solcLongVersion,
+            fullContractName,
+            solcInputJson: JSON.stringify(buildInfo.input)
+        };
     }
 }
