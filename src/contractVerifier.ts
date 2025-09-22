@@ -20,6 +20,7 @@ export interface VerificationRequestParameters {
 
 export abstract class ContractVerifier {
     public abstract name: string;
+    private readonly PROXY_CONTRACT_NAME = "TransparentUpgradeableProxy";
 
     public verify = async (
         verificationTarget: VerificationTarget,
@@ -38,10 +39,17 @@ export abstract class ContractVerifier {
 
     public async attemptVerification(verificationTarget: VerificationTarget): Promise<boolean> {
         if (await this.isAlreadyVerified(verificationTarget)) {
+            console.log(
+                chalk.cyan(
+                    `${verificationTarget.contractName} is already verified on ${this.name}:\n${this.getContractUrl(
+                        verificationTarget
+                    )}`
+                )
+            );
             return true;
         }
 
-        const params = await ContractVerifier.getVerifyParameters(verificationTarget.contractName);
+        const params = await this.getVerifyParameters(verificationTarget.contractName);
         try {
             const response = await this.submitVerificationRequest(verificationTarget, params);
             return this.checkVerificationStatus(verificationTarget, response);
@@ -67,27 +75,8 @@ export abstract class ContractVerifier {
     protected abstract submitVerificationRequest(target: VerificationTarget, params: VerificationRequestParameters): Promise<ValidationResponse>;
     protected abstract getContractUrl(verificationTarget: VerificationTarget): string;
 
-    // Private
-
-    private checkVerificationStatus(verificationTarget: VerificationTarget,response: ValidationResponse): boolean {
-        if (response.isFailure() as unknown as boolean) {
-            console.log(
-                chalk.red(`Failed to verify contract ${verificationTarget.contractName}`)
-            );
-            return false;
-        }
-        console.log(
-            chalk.gray(
-                `${verificationTarget.contractName} is successfully verified on: ${this.getContractUrl(
-                    verificationTarget
-                )}`
-            )
-        );
-        return true;
-    }
-
-    private static async getVerifyParameters(contractName: string) {
-        if (contractName === "TransparentUpgradeableProxy") {
+    protected async getVerifyParameters(contractName: string) {
+        if (contractName === this.PROXY_CONTRACT_NAME) {
             return {
                 compilerVersion: proxyBuildInfo.solcLongVersion,
                 fullContractName: `${proxyArtifact.sourceName}:${contractName}`,
@@ -105,5 +94,24 @@ export abstract class ContractVerifier {
             fullContractName,
             solcInputJson: JSON.stringify(buildInfo.input)
         };
+    }
+
+    // Private
+
+    private checkVerificationStatus(verificationTarget: VerificationTarget,response: ValidationResponse): boolean {
+        if (response.isFailure() as unknown as boolean) {
+            console.log(
+                chalk.red(`Failed to verify contract ${verificationTarget.contractName}`)
+            );
+            return false;
+        }
+        console.log(
+            chalk.cyan(
+                `${verificationTarget.contractName} is successfully verified on ${this.name}:\n${this.getContractUrl(
+                    verificationTarget
+                )}`
+            )
+        );
+        return true;
     }
 }

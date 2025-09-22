@@ -35,7 +35,8 @@ export class SkaleBlockscoutVerifier extends BlockscoutVerifier {
         } else if (host.includes("legacy-proxy.")) {
             networkType = "legacy";
         } else {
-            throw new Error(`Unknown network in ENDPOINT: ${endpoint}`);
+            throw new Error(
+                `The chain is not supported by SKALE block explorer or unknown network in ENDPOINT: ${endpoint}`);
         }
         return {networkType, schainName};
     }
