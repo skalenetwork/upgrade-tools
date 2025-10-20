@@ -173,7 +173,8 @@ export abstract class Upgrader {
 
     private async deployNewImplementations () {
         const [deployer] = await ethers.getSigners();
-        this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.nonceProvider ??= await NonceProvider.createForWallet(deployer as any);
         const contracts = await Promise.all(this.contractNamesToUpgrade.
             map(
                 this.protectedDeployNewImplementation,

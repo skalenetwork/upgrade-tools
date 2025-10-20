@@ -9,8 +9,7 @@ import {SkaleManifestData} from "./types/SkaleManifestData";
 import {promises as fs} from "fs";
 import {hashBytecode} from "@openzeppelin/upgrades-core";
 
-
-const getSkaleManifest = async () => {
+export const getSkaleManifest = async () => {
     const manifest = JSON.parse(await fs.readFile(
         await getManifestFile(),
         "utf-8"
@@ -43,7 +42,7 @@ const loadBytesCodes = async (libraryNames: string[]) => {
     return byteCodes;
 };
 
-const updateManifest = async (
+export const updateManifest = async (
     manifest: SkaleManifestData,
     libraries: Map<string, string>,
     oldLibraries: {[k: string]: string}
@@ -81,7 +80,7 @@ export const getLibrariesNames = (linkReferences: LinkReferences) => {
     return libraryNames;
 };
 
-const getLibrariesToUpgrade = async (
+export const getLibrariesToUpgrade = async (
     manifest: SkaleManifestData,
     linkReferences: LinkReferences
 ) => {
@@ -110,7 +109,7 @@ const getLibrariesToUpgrade = async (
 
 export const getContractFactoryAndUpdateManifest = async (
     contract: string,
-    nonceProvider?: NonceProvider
+    nonceProvider?: NonceProvider,
 ) => {
     const {linkReferences} = await artifacts.readArtifact(contract);
     if (!Object.keys(linkReferences).length) {

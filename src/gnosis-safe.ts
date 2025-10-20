@@ -156,7 +156,7 @@ export const createMultiSendTransaction = async (
              * Transaction cannot be executed until
              * Safe's nonce is not equal to this nonce
              */
-            nonce
+            nonce: parseInt(nonce, 10)
         }
     };
     const safeSdk = await Safe.init({

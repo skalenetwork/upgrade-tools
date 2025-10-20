@@ -125,7 +125,8 @@ export class AutoSubmitter extends Submitter {
             process.env.MAINNET_ENDPOINT
         );
         const contractsNetwork =
-            await skaleContracts.getNetworkByProvider(mainnetProvider);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await skaleContracts.getNetworkByProvider(mainnetProvider as any);
         const ima = contractsNetwork.getProject("mainnet-ima");
         return await ima.getInstance(process.env.IMA);
     }
