@@ -2,44 +2,30 @@ import {AddressLike, Contract} from "ethers";
 import {ethers, upgrades} from "hardhat";
 import {NonceProvider} from "../nonceProvider";
 import {ProxyUpgrader} from "../proxyUpgrader";
-import {TransparentProxyUpgrader} from "./transparentProxyUpgrader";
 import chalk from "chalk";
 
+interface TransparentProxyUpgraderConstructorArguments {
+    contractName: string;
+    proxyAddress: AddressLike;
+    proxyAdmin: Contract;
+    nonceProvider?: NonceProvider;
+}
 
 export abstract class AbstractTransparentProxyUpgrader extends ProxyUpgrader {
-    protected proxyAdmin: Contract | null = null;
+    protected proxyAdmin: Contract;
 
-    public static async create(
-        contractName: string,
-        proxyAddress: AddressLike,
-        nonceProvider?: NonceProvider
+    constructor (
+        options: TransparentProxyUpgraderConstructorArguments
     ) {
-        const proxyAdmin = await this.getProxyAdmin(proxyAddress);
-        let upgrader: AbstractTransparentProxyUpgrader | null = null;
-        if (await this.isNewProxyAdmin(proxyAdmin)) {
-            upgrader = new TransparentProxyUpgrader(
-                contractName,
-                proxyAddress,
-                nonceProvider
-            );
-        } else {
-            upgrader = new TransparentProxyUpgrader(
-                contractName,
-                proxyAddress,
-                nonceProvider
-            );
-        }
-        upgrader.proxyAdmin = proxyAdmin;
-        return upgrader;
+        super(options.contractName, options.proxyAddress, options.nonceProvider);
+        this.proxyAdmin = options.proxyAdmin;
     }
 
     public async getOwner(): Promise<string> {
-        return await this.proxyAdmin!.owner();
+        return await this.proxyAdmin.owner();
     }
 
-    // Private
-
-    private static async getProxyAdmin(proxy: AddressLike) {
+    public static async getProxyAdmin(proxy: AddressLike) {
         const proxyAdminAddress = await upgrades.erc1967.getAdminAddress(
             await ethers.resolveAddress(proxy)
         );
@@ -56,7 +42,17 @@ export abstract class AbstractTransparentProxyUpgrader extends ProxyUpgrader {
         );
     }
 
-    private static async isNewProxyAdmin(proxyAdmin: Contract) {
+    public static async getProxyAdminVersion(proxyAdmin: Contract) {
+        try {
+            // This function name is set in external library
+            // eslint-disable-next-line new-cap
+            return await proxyAdmin.UPGRADE_INTERFACE_VERSION() as string;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    public static async isNewProxyAdmin(proxyAdmin: Contract) {
         try {
             console.log(chalk.gray(`ProxyAdmin version ${
                 // This function name is set in external library

@@ -9,6 +9,8 @@ import {ProxyUpgrader} from "./proxyUpgrader";
 import Semaphore from 'semaphore-async-await';
 import {Submitter} from "./submitters/submitter";
 import {Transaction} from "ethers";
+import {TransparentProxyUpgrader} from "./upgraders/transparentProxyUpgrader";
+import {V4TransparentProxyUpgrader} from "./upgraders/v4TransparentProxyUpgrader";
 import chalk from "chalk";
 import {promises as fs} from "fs";
 import {getVersion} from "./version";
@@ -20,9 +22,6 @@ const withoutNull = <T>(array: Array<T | null>) => array.
 
 // TODO: Set to 8 when upgrade plugins become thread safe
 const maxSimultaneousDeployments = 1;
-//                    10 minutes
-export const deployTimeout = 60e4;
-
 
 export abstract class Upgrader {
     private targetVersion: string;
@@ -66,12 +65,29 @@ export abstract class Upgrader {
 
     protected async createProxyUpgrader(contractName: string) {
         const proxyAddress = await this.instance.getContractAddress(contractName);
-        const proxyUpgrader = await AbstractTransparentProxyUpgrader.create(
-            contractName,
-            proxyAddress,
-            this.nonceProvider
+        const proxyAdmin = await AbstractTransparentProxyUpgrader.getProxyAdmin(proxyAddress);
+        const proxyAdminVersion = await AbstractTransparentProxyUpgrader.getProxyAdminVersion(proxyAdmin);
+        const defaultProxyAdminVersion = "5.0.0";
+        if (proxyAdminVersion === defaultProxyAdminVersion) {
+            console.log(chalk.gray(`${contractName} uses ProxyAdmin version ${proxyAdminVersion}`));
+            return new TransparentProxyUpgrader({
+                contractName,
+                nonceProvider: this.nonceProvider,
+                proxyAddress,
+                proxyAdmin
+            }) as ProxyUpgrader;
+        } else if (proxyAdminVersion === null) {
+            console.log(chalk.gray(`${contractName} uses old ProxyAdmin (v4 or lower)`));
+            return new V4TransparentProxyUpgrader({
+                contractName,
+                nonceProvider: this.nonceProvider,
+                proxyAddress,
+                proxyAdmin
+            }) as ProxyUpgrader;
+        }
+        throw new Error(
+            `Unsupported ProxyAdmin version: ${proxyAdminVersion}`
         );
-        return proxyUpgrader as ProxyUpgrader;
     }
 
     // Public
@@ -127,7 +143,10 @@ export abstract class Upgrader {
     }
 
     private async callInitialize () {
-        if (typeof this.initialize !== "undefined") {
+        if (typeof this.initialize === "undefined") {
+            console.log(chalk.gray("No initialize function defined, skipping"));
+        } else {
+            console.log("Generating initialize transaction(s)");
             await this.initialize();
         }
     }
@@ -178,7 +197,7 @@ export abstract class Upgrader {
         this.transactions = [
             ...this.transactions,
             ...await Promise.all(
-                this.proxyUpgraders.map(
+                this.getChangedContracts().map(
                     (upgrader) => upgrader.getUpgradeTransaction(),
                 )
             )

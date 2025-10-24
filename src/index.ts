@@ -6,4 +6,5 @@ export * from "./submitters";
 export * from "./verification";
 export * from "./version";
 export * from "./upgrader";
+export * from "./upgraders/abstractTransparentProxyUpgrader";
 export * from "./upgraders/beaconUpgrader"

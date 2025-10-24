@@ -2,10 +2,12 @@ import {AddressLike, ContractFactory, Transaction} from "ethers";
 import {ethers, network, upgrades} from "hardhat";
 import {NonceProvider} from "./nonceProvider";
 import chalk from "chalk";
-import {deployTimeout} from "./upgrader";
 import {getContractFactoryAndUpdateManifest} from "./contractFactory";
 import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 
+
+//                    10 minutes
+const deployTimeout = 60e4;
 
 export abstract class ProxyUpgrader {
     protected proxyAddress: AddressLike;
@@ -93,10 +95,11 @@ export abstract class ProxyUpgrader {
                 "unsafeAllowRenames": true
             }
         ) as AddressLike;
-        if (newImplementationAddress !== currentImplementationAddress) {
+        if (newImplementationAddress === currentImplementationAddress) {
+            console.log(chalk.gray(`Contract ${this.contractName} is up to date`));
+        } else {
             this.newImplementationAddress = newImplementationAddress;
         }
-        console.log(chalk.gray(`Contract ${this.contractName} is up to date`));
         if (nonce) {
             this.nonceProvider?.releaseNonce(nonce);
         }
