@@ -1,4 +1,5 @@
 import {ethers, network} from "hardhat";
+import {AddressLike} from "ethers";
 import {BlockscoutVerifier} from "./verifiers/blockscoutVerifier";
 import {ContractVerifier} from "./contractVerifier";
 import {EtherscanVerifier} from "./verifiers/etherscanVerifier";
@@ -85,10 +86,11 @@ const setupVerifiers = async () => {
     }
 }
 
-export const verify = async (contractName: string, contractAddress: string) => {
+export const verify = async (contractName: string, contractAddress: AddressLike) => {
     await setupVerifiers();
+    const contractAddressString = await ethers.resolveAddress(contractAddress);
     await Promise.all(verifiers.map(verifier => verifier.verify({
-        contractAddress,
+        contractAddress: contractAddressString,
         contractName
     })));
 };
