@@ -1,5 +1,5 @@
+import {AddressLike, Transaction} from "ethers";
 import {ProxyUpgrader} from "../proxyUpgrader";
-import {Transaction} from "ethers";
 import {ethers} from "hardhat";
 
 
@@ -22,12 +22,20 @@ export class BeaconUpgrader extends ProxyUpgrader {
         });
     }
 
+    // Protected
+
+    protected async getCurrentImplementationAddress(): Promise<AddressLike> {
+        const beacon = await this.getBeacon();
+        return await beacon.implementation();
+    }
+
     // Private
 
     private async getBeacon() {
         const generalUpgradeableBeaconAbi = [
+            "function implementation() view returns (address)",
+            "function owner() view returns (address)",
             "function upgradeTo(address newImplementation)",
-            "function owner() returns (address)"
         ];
         return new ethers.Contract(
             await ethers.resolveAddress(this.proxyAddress),

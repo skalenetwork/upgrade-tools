@@ -1,9 +1,8 @@
 import {AddressLike, ContractFactory, Transaction} from "ethers";
-import {ethers, network, upgrades} from "hardhat";
+import {ethers, upgrades} from "hardhat";
 import {NonceProvider} from "./nonceProvider";
 import chalk from "chalk";
 import {getContractFactoryAndUpdateManifest} from "./contractFactory";
-import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 
 
 //                    10 minutes
@@ -72,14 +71,12 @@ export abstract class ProxyUpgrader {
     // Protected
 
     protected abstract makeUpgradeTransaction(): Promise<Transaction>;
+    protected abstract getCurrentImplementationAddress(): Promise<AddressLike>;
 
     // Private
 
     private async prepareUpgrade(contractFactory: ContractFactory) {
-        const currentImplementationAddress = await getImplementationAddress(
-            network.provider,
-            await ethers.resolveAddress(this.proxyAddress)
-        );
+        const currentImplementationAddress = await this.getCurrentImplementationAddress();
 
         const nonce = this.nonceProvider?.reserveNonce();
 

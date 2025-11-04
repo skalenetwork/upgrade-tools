@@ -1,8 +1,9 @@
 import {AddressLike, Contract} from "ethers";
-import {ethers, upgrades} from "hardhat";
+import {ethers, network, upgrades} from "hardhat";
 import {NonceProvider} from "../nonceProvider";
 import {ProxyUpgrader} from "../proxyUpgrader";
 import chalk from "chalk";
+import {getImplementationAddress} from "@openzeppelin/upgrades-core";
 
 interface TransparentProxyUpgraderConstructorArguments {
     contractName: string;
@@ -64,5 +65,12 @@ export abstract class AbstractTransparentProxyUpgrader extends ProxyUpgrader {
             console.log(chalk.gray("Use old ProxyAdmin"));
             return false;
         }
+    }
+
+    protected async getCurrentImplementationAddress(): Promise<AddressLike> {
+        return await getImplementationAddress(
+            network.provider,
+            await ethers.resolveAddress(this.proxyAddress)
+        );
     }
 }
