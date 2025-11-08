@@ -43,7 +43,7 @@
     "@openzeppelin/hardhat-upgrades": "^3.1.1",
     "@openzeppelin/upgrades-core": "^1.27.1",
     "@safe-global/api-kit": "^2.4.1",
-    "@safe-global/protocol-kit": "^5.0.1",
+    "@safe-global/protocol-kit": "^6.1.1",
     "@safe-global/safe-core-sdk-types": "^5.0.1",
     "@skalenetwork/skale-contracts-ethers-v6": "^2.0.0-develop.1",
     "@types/mocha": "^9.1.0",
