@@ -1886,7 +1886,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@safe-global/protocol-kit@npm:^5.0.1, @safe-global/protocol-kit@npm:^5.1.1":
+"@safe-global/protocol-kit@npm:^5.1.1":
   version: 5.1.1
   resolution: "@safe-global/protocol-kit@npm:5.1.1"
   dependencies:
@@ -1904,6 +1904,27 @@ __metadata:
     "@peculiar/asn1-schema":
       optional: true
   checksum: 4521107e6cb99137176f9a4d488f44c69c272613bf4226dabeb5b14395914334cad1ab425d34f45b1b876a816211f48a7027b77fadb0401b9e0dd5d68c4ae4fe
+  languageName: node
+  linkType: hard
+
+"@safe-global/protocol-kit@npm:^6.1.1":
+  version: 6.1.1
+  resolution: "@safe-global/protocol-kit@npm:6.1.1"
+  dependencies:
+    "@noble/curves": ^1.6.0
+    "@peculiar/asn1-schema": ^2.3.13
+    "@safe-global/safe-deployments": ^1.37.42
+    "@safe-global/safe-modules-deployments": ^2.2.14
+    "@safe-global/types-kit": ^3.0.0
+    abitype: ^1.0.2
+    semver: ^7.7.2
+    viem: ^2.21.8
+  dependenciesMeta:
+    "@noble/curves":
+      optional: true
+    "@peculiar/asn1-schema":
+      optional: true
+  checksum: 3999727d68a0504f5fd0e4ffa64fe83ff3d4ae80797106c52070cbd541f0bbaf6758f76ebf1161cce7c323d87d9e989e4aaaf8d9a3135101c1329c62443992ff
   languageName: node
   linkType: hard
 
@@ -1925,6 +1946,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@safe-global/safe-deployments@npm:^1.37.42":
+  version: 1.37.48
+  resolution: "@safe-global/safe-deployments@npm:1.37.48"
+  dependencies:
+    semver: ^7.6.2
+  checksum: db39ef16b736b7adac2258ad3df2aaffa86ca4bb0a7868ddcbdd146e46c1952683c5c8b587823b3f6cc3b6242c3e969d53fa4c8bb9d233dc0784816384dda421
+  languageName: node
+  linkType: hard
+
+"@safe-global/safe-modules-deployments@npm:^2.2.14":
+  version: 2.2.19
+  resolution: "@safe-global/safe-modules-deployments@npm:2.2.19"
+  checksum: 4368278b9d8c51d042e51b1b14ec46576dbabeb689b9b36eee1418bce9b8cbc3db9fb711902761a897be92f723e77be2e08f42152c8b65c3d5e1b1fc8e713bde
+  languageName: node
+  linkType: hard
+
 "@safe-global/safe-modules-deployments@npm:^2.2.4":
   version: 2.2.4
   resolution: "@safe-global/safe-modules-deployments@npm:2.2.4"
@@ -1938,6 +1975,15 @@ __metadata:
   dependencies:
     abitype: ^1.0.2
   checksum: a13b2793c8d9725dbe94b803e35f435ed25a8941f1c7ee1a300c3c6b29b7399df63742e3cf373a77ec2d1f2c6438c122706afaab538c45ba319b58282f97ec76
+  languageName: node
+  linkType: hard
+
+"@safe-global/types-kit@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@safe-global/types-kit@npm:3.0.0"
+  dependencies:
+    abitype: ^1.0.2
+  checksum: 02f868e8a2de0681c637ed853473766468a4e4b9ee024c3d807b72bf0cbd3555593d88711c0ebd7b0cee159e8d61320542d659dd291cbff0829a2466b5b6fa3f
   languageName: node
   linkType: hard
 
@@ -2132,7 +2178,7 @@ __metadata:
     "@openzeppelin/hardhat-upgrades": ^3.1.1
     "@openzeppelin/upgrades-core": ^1.27.1
     "@safe-global/api-kit": ^2.4.1
-    "@safe-global/protocol-kit": ^5.0.1
+    "@safe-global/protocol-kit": ^6.1.1
     "@safe-global/safe-core-sdk-types": ^5.0.1
     "@skalenetwork/skale-contracts-ethers-v6": ^2.0.0-develop.1
     "@tsconfig/recommended": ^1.0.2
@@ -6439,6 +6485,15 @@ __metadata:
   bin:
     semver: bin/semver.js
   checksum: 4110ec5d015c9438f322257b1c51fe30276e5f766a3f64c09edd1d7ea7118ecbc3f379f3b69032bacf13116dc7abc4ad8ce0d7e2bd642e26b0d271b56b61a7d8
+  languageName: node
+  linkType: hard
+
+"semver@npm:^7.7.2":
+  version: 7.7.3
+  resolution: "semver@npm:7.7.3"
+  bin:
+    semver: bin/semver.js
+  checksum: f013a3ee4607857bcd3503b6ac1d80165f7f8ea94f5d55e2d3e33df82fce487aa3313b987abf9b39e0793c83c9fc67b76c36c067625141a9f6f704ae0ea18db2
   languageName: node
   linkType: hard
 
