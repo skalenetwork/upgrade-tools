@@ -86,10 +86,11 @@ const setupVerifiers = async () => {
     }
 }
 
-export const verify = async (contractName: string, contractAddress: AddressLike) => {
+export const verify = async (contractName: string, contractAddress: AddressLike, constructorArguments?: string) => {
     await setupVerifiers();
     const contractAddressString = await ethers.resolveAddress(contractAddress);
     await Promise.all(verifiers.map(verifier => verifier.verify({
+        constructorArguments,
         contractAddress: contractAddressString,
         contractName
     })));
