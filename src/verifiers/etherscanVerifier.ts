@@ -61,7 +61,7 @@ export class EtherscanVerifier extends ContractVerifier {
                 params.solcInputJson,
                 params.fullContractName,
                 params.compilerVersion,
-                ""
+                target.constructorArguments || ""
             );
         } catch (error: unknown) {
             if (error instanceof Error && error.name === 'ContractVerificationMissingBytecodeError') {

@@ -10,6 +10,7 @@ const DEFAULT_RETRIES_AMOUNT = 5;
 export interface VerificationTarget {
     contractName: string;
     contractAddress: string;
+    constructorArguments?: string;
 }
 
 export interface VerificationRequestParameters {
