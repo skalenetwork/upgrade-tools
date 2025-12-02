@@ -45,7 +45,7 @@
     "@safe-global/api-kit": "^2.4.1",
     "@safe-global/protocol-kit": "^5.0.1",
     "@safe-global/safe-core-sdk-types": "^5.0.1",
-    "@skalenetwork/skale-contracts-ethers-v6": "^2.0.0-develop.1",
+    "@skalenetwork/skale-contracts-ethers-v6": "^2.0.0-develop.6",
     "@types/mocha": "^9.1.0",
     "axios": "^1.4.0",
     "ethereumjs-util": "^7.1.4",
