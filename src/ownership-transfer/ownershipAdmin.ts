@@ -8,9 +8,11 @@ import {
     promptUserConfirmation
 } from "./utils";
 import {PermissionModel, getPermissionModels, grantRole, transferOwnership, tryGetMultiSigInfo} from "./permission-utils";
-import {Transaction, ethers} from "ethers";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v6";
+import {Transaction} from "ethers";
 import chalk from "chalk";
+import {ethers} from "hardhat";
+
 const ZERO = 0;
 interface ContractMetadataDetails {
     name: string;
@@ -137,16 +139,34 @@ export class OwnershipAdmin {
         console.log(chalk.green("\nUser confirmed. Proceeding...\n"));
     }
 
+    private getColumnWidths(): {maxNameWidth: number; maxAddressWidth: number} {
+        let maxNameWidth = 0;
+        let maxAddressWidth = 0;
+        for (const contract of this.contractMetadata.values()) {
+            maxNameWidth = Math.max(maxNameWidth, contract.name.length);
+            maxAddressWidth = Math.max(maxAddressWidth, contract.address.length);
+        }
+        return {maxAddressWidth, maxNameWidth};
+    }
+
+    private displayPatternGroup(pattern: string, contracts: ContractMetadataDetails[]): void {
+        const {maxNameWidth, maxAddressWidth} = this.getColumnWidths();
+        console.log(chalk.bold(`\n${pattern} Pattern (${contracts.length} contracts):`));
+        for (const contract of contracts) {
+            const name = contract.name.padEnd(maxNameWidth);
+            const address = contract.address.padEnd(maxAddressWidth);
+            const permissions = contract.permissionModel?.join(", ") || "None";
+            console.log(chalk.gray(`  ${name}  ${address}  ${permissions}`));
+        }
+    }
+
     private displayMetadataFindings(): void {
         console.log(chalk.cyan("\n=== Contract Pattern Detection Results ===\n"));
         const groupedByPattern = this.groupMetadataByPattern();
+
         for (const [pattern, contracts] of Object.entries(groupedByPattern)) {
-            const minContractsToDisplay = 0;
-            if (contracts.length > minContractsToDisplay) {
-                console.log(chalk.bold(`\n${pattern} Pattern (${contracts.length} contracts):`));
-                for (const contract of contracts) {
-                    console.log(chalk.gray(`  - ${contract.name} (${contract.address}) - Permission Models: ${contract.permissionModel?.join(", ") || "None"}`));
-                }
+            if (contracts.length) {
+                this.displayPatternGroup(pattern, contracts);
             }
         }
         console.log(chalk.cyan("\n==========================================\n"));

@@ -232,14 +232,12 @@ export const isAccessManaged = async (contractAddress: AddressLike): Promise<boo
  * @param contractAddress - The address of the contract to check
  * @returns An object containing owners and threshold if the contract is a MultiSig, null otherwise
  */
-export const tryGetMultiSigInfo = async (contractAddress: AddressLike) => {
+export const tryGetMultiSigInfo = async (contractAddress: string) => {
     let owners: string[] | null = null;
     let threshold: bigint | null = null;
     try {
-        const resolvedAddress = await ethers.resolveAddress(contractAddress);
-
         const contract = new Contract(
-            resolvedAddress,
+            contractAddress,
             MULTISIG_ABI,
             ethers.provider
         );
@@ -266,34 +264,31 @@ export const tryGetMultiSigInfo = async (contractAddress: AddressLike) => {
  */
 // eslint-disable-next-line max-statements
 export const transferOwnership = async (
-    contractAddress: AddressLike,
-    newOwner: AddressLike
+    contractAddress: string,
+    newOwner: string
 ): Promise<Transaction| true> => {
-    const resolvedContractAddress = await ethers.resolveAddress(contractAddress);
-    const resolvedNewOwner = await ethers.resolveAddress(newOwner);
-
     const contract = new Contract(
-        resolvedContractAddress,
+        contractAddress,
         OWNABLE_ABI,
         ethers.provider
     );
 
-    if (await contract.owner() === resolvedNewOwner) {
+    if (await contract.owner() === newOwner) {
         return true;
     }
 
     const data = contract.interface.encodeFunctionData(
         "transferOwnership",
-        [resolvedNewOwner]
+        [newOwner]
     );
 
     console.log(
         chalk.green(
-            `Prepared transferOwnership transaction for ${resolvedContractAddress} to new owner ${resolvedNewOwner}`
+            `Prepared transferOwnership transaction for ${contractAddress} to new owner ${newOwner}`
         )
     );
     const transaction = new Transaction();
-    transaction.to = resolvedContractAddress;
+    transaction.to = contractAddress;
     transaction.data = data;
     return transaction;
 };
