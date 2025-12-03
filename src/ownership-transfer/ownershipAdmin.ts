@@ -57,7 +57,7 @@ export class OwnershipAdmin {
 
         // If true, does not allow to send transactions to blockchain
         this.readonly = options.readonly ?? true;
-        this.newOwner = options.newOwner ?? "MOCK_NEW_OWNER_ADDRESS";
+        this.newOwner = options.newOwner ?? ethers.ZeroAddress;
         this.bytes32RolesToCheck = (options.rolesToCheck ?? []).map(role =>
             // Convert to keccak256 hash
              ethers.id(role)
@@ -73,34 +73,36 @@ export class OwnershipAdmin {
         });
         this.managerRolesToCheck.push(ZERO);
 
-        if (!this.readonly && this.newOwner === "MOCK_NEW_OWNER_ADDRESS") {
+        if (!this.readonly && this.newOwner === ethers.ZeroAddress) {
             throw new Error("New owner address must be provided in options when in write mode.");
         }
         this.contractNames = contractNames;
     }
 
+    // eslint-disable-next-line max-statements
     public async loadContractMetadata(confirmFindings: boolean = true): Promise<void> {
         if (this.isMetadataLoaded) {
             console.log(chalk.yellow("Contract metadata is already loaded. Skipping reload."));
             return;
         }
-        await Promise.all(
-            this.contractNames.map(async (contractName) => {
-                // Already checks the contractName is in the instance
-                const address = await this.instance.getContractAddress(contractName);
+        // TODO: Refactor to parallelize
+        for (const contractName of this.contractNames) {
+            // eslint-disable-next-line no-await-in-loop
+            const address = await this.instance.getContractAddress(contractName);
 
-                if (!this.contractMetadata.has(address)) {
-                    const pattern = await detectPattern(address);
-                    const details: ContractMetadataDetails = {
-                        address,
-                        name: contractName,
-                        pattern,
-                        permissionModel: await getPermissionModels(address)
-                    };
-                    this.contractMetadata.set(address, details);
-                }
-            })
-        );
+            if (!this.contractMetadata.has(address)) {
+                // eslint-disable-next-line no-await-in-loop
+                const pattern = await detectPattern(address);
+                const details: ContractMetadataDetails = {
+                    address,
+                    name: contractName,
+                    pattern,
+                    // eslint-disable-next-line no-await-in-loop
+                    permissionModel: await getPermissionModels(address)
+                };
+                this.contractMetadata.set(address, details);
+            }
+        }
 
         this.isMetadataLoaded = true;
         if (this.contractMetadata.size !== this.contractNames.length) {
