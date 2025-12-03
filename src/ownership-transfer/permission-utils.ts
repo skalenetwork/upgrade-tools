@@ -1,4 +1,5 @@
-import {AddressLike, Contract} from "ethers";
+/* eslint-disable max-lines */
+import {AddressLike, Contract, Transaction} from "ethers";
 import {hasFunctionSelector, isContractAddress} from "./utils";
 import chalk from "chalk";
 import {ethers} from "hardhat";
@@ -6,9 +7,10 @@ import {ethers} from "hardhat";
 export enum PermissionModel {
     // Does not fully complete the process of Ownable2Step
     OWNABLE = "OWNABLE",
-    // This works also for ACCESS_MANAGER contracts - i.e they are ROLE_BASED
+    // This does NOT work for ACCESS_MANAGER contracts
     ROLE_BASED = "ROLE_BASED",
-    ACCESS_MANAGED = "ACCESS_MANAGED"
+    ACCESS_MANAGED = "ACCESS_MANAGED",
+    ACCESS_MANAGER = "ACCESS_MANAGER"
 }
 
 /*
@@ -28,11 +30,25 @@ const ACCESS_CONTROL_ABI = [
     "function revokeRole(bytes32 role, address account)"
 ];
 
+const ACCESS_MANAGER_ABI = [
+    "function hasRole(uint64 role, address account) view returns (bool)",
+    "function grantRole(uint64 role, address account, uint32 executionDelay)",
+    "function revokeRole(uint64 role, address account)"
+];
+
 /*
  * ABI for AccessManaged interface - includes authority() function
  */
 const ACCESS_MANAGED_ABI = [
     "function authority() view returns (address)"
+];
+
+/*
+ * ABI for Gnosis Safe MultiSig interface
+ */
+const MULTISIG_ABI = [
+    "function getOwners() view returns (address[])",
+    "function getThreshold() view returns (uint256)"
 ];
 
 
@@ -126,6 +142,53 @@ export const isAccessControl = async (contractAddress: AddressLike): Promise<boo
     }
 };
 
+const verifyAccessManagerInterface = async (
+    contract: Contract,
+    contractAddress: string
+): Promise<boolean> => {
+    /*
+     * Verify hasRole(uint64,address) view function exists
+     * AccessManager uses uint64 for roleId instead of bytes32
+     */
+    const zeroRole = 0n;
+    await contract.hasRole(zeroRole, ethers.ZeroAddress);
+
+    /*
+     * Verify grantRole(uint64,address,uint32) exists by checking bytecode
+     * AccessManager's grantRole includes an executionDelay parameter
+     */
+    return await hasFunctionSelector(contractAddress, "grantRole(uint64,address,uint32)") &&
+        await hasFunctionSelector(contractAddress, "revokeRole(uint64,address)");
+};
+
+/*
+ * Checks if a contract implements the AccessManager interface.
+ * A contract is considered AccessManager if it has hasRole(uint64,address) and
+ * grantRole(uint64,address,uint32) functions with uint64 role parameter.
+ *
+ * @param contractAddress - The address of the contract to check
+ * @returns true if the contract is AccessManager, false otherwise
+ */
+export const isAccessManager = async (contractAddress: AddressLike): Promise<boolean> => {
+    try {
+        const resolvedAddress = await ethers.resolveAddress(contractAddress);
+
+        if (!await isContractAddress(resolvedAddress)) {
+            return false;
+        }
+
+        const contract = new Contract(
+            resolvedAddress,
+            ACCESS_MANAGER_ABI,
+            ethers.provider
+        );
+
+        return await verifyAccessManagerInterface(contract, resolvedAddress);
+    } catch {
+        return false;
+    }
+};
+
 /*
  * Checks if a contract implements the AccessManaged interface.
  * A contract is considered AccessManaged if it has an authority() function
@@ -162,6 +225,35 @@ export const isAccessManaged = async (contractAddress: AddressLike): Promise<boo
 };
 
 /*
+ * Checks if a contract is a MultiSig (Gnosis Safe).
+ * A contract is considered a MultiSig if it has both getOwners() and getThreshold() functions
+ * and returns valid data (at least one owner and threshold > 0).
+ *
+ * @param contractAddress - The address of the contract to check
+ * @returns An object containing owners and threshold if the contract is a MultiSig, null otherwise
+ */
+export const tryGetMultiSigInfo = async (contractAddress: AddressLike) => {
+    let owners: string[] | null = null;
+    let threshold: bigint | null = null;
+    try {
+        const resolvedAddress = await ethers.resolveAddress(contractAddress);
+
+        const contract = new Contract(
+            resolvedAddress,
+            MULTISIG_ABI,
+            ethers.provider
+        );
+
+        owners = await contract.getOwners();
+        threshold = await contract.getThreshold();
+        return {owners, threshold};
+    } catch (err) {
+        console.warn(`Error calling usual Multi-sig getter functions: ${err}`);
+        return {owners, threshold};
+    }
+};
+
+/*
  * Transfers ownership of an Ownable contract to a new owner.
  * This function encodes the transferOwnership call data for the transaction.
  *
@@ -172,10 +264,11 @@ export const isAccessManaged = async (contractAddress: AddressLike): Promise<boo
  *
  * @dev The address must have already been verified as an Ownable contract before calling this function.
  */
+// eslint-disable-next-line max-statements
 export const transferOwnership = async (
     contractAddress: AddressLike,
     newOwner: AddressLike
-): Promise<{ to: string; data: string } | boolean> => {
+): Promise<Transaction| true> => {
     const resolvedContractAddress = await ethers.resolveAddress(contractAddress);
     const resolvedNewOwner = await ethers.resolveAddress(newOwner);
 
@@ -199,14 +292,58 @@ export const transferOwnership = async (
             `Prepared transferOwnership transaction for ${resolvedContractAddress} to new owner ${resolvedNewOwner}`
         )
     );
+    const transaction = new Transaction();
+    transaction.to = resolvedContractAddress;
+    transaction.data = data;
+    return transaction;
+};
 
-    return {
-        data,
-        "to": resolvedContractAddress
-    };
+/*
+ * Grants a role to an address in a ROLE_BASED (AccessControl) contract.
+ * This function encodes the grantRole call data for the transaction.
+ *
+ * @param contractAddress - The address of the AccessControl contract
+ * @param role - The bytes32 role identifier to grant
+ * @param account - The address to grant the role to
+ * @returns Transaction object with the encoded grantRole call or true
+ * if the account already has the role
+ *
+ * @dev The contract address must be a ROLE_BASED contract (not validated by this function)
+ */
+export const grantRole = async (
+    contractAddress: AddressLike,
+    role: string,
+    account: AddressLike
+): Promise<Transaction | true> => {
+    const resolvedContractAddress = await ethers.resolveAddress(contractAddress);
+    const resolvedAccount = await ethers.resolveAddress(account);
+
+    const contract = new Contract(
+        resolvedContractAddress,
+        ACCESS_CONTROL_ABI,
+        ethers.provider
+    );
+
+    /*
+     * Check if the account already has the role
+     */
+    if (await contract.hasRole(role, resolvedAccount)) {
+        return true;
+    }
+
+    const data = contract.interface.encodeFunctionData(
+        "grantRole",
+        [role, resolvedAccount]
+    );
+
+    const transaction = new Transaction();
+    transaction.to = resolvedContractAddress;
+    transaction.data = data;
+    return transaction;
 };
 
 
+// eslint-disable-next-line max-statements
 export const getPermissionModels = async (address: AddressLike): Promise<PermissionModel[]> => {
     const models: PermissionModel[] = [];
 
@@ -218,8 +355,16 @@ export const getPermissionModels = async (address: AddressLike): Promise<Permiss
         models.push(PermissionModel.ROLE_BASED);
     }
 
+    if (await isAccessManager(address)) {
+        models.push(PermissionModel.ACCESS_MANAGER);
+    }
+
     if (await isAccessManaged(address)) {
         models.push(PermissionModel.ACCESS_MANAGED);
+    }
+
+    if (models.includes(PermissionModel.ACCESS_MANAGER) && models.includes(PermissionModel.ROLE_BASED)) {
+        throw new Error(`Address ${address} cannot be both ACCESS_MANAGER and ROLE_BASED permission models.`);
     }
 
     return models;

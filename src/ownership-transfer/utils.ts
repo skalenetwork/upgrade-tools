@@ -147,15 +147,15 @@ export const identifyProxyPattern = async (address: string): Promise<Pattern> =>
  * Accepts "yes" or "y" (case-insensitive) as confirmation.
  * Returns a Promise that resolves to true if confirmed, false otherwise.
  */
-export const promptUserConfirmation = (): Promise<boolean> => {
+export const promptUserConfirmation = (message?: string): Promise<boolean> => {
     const rl = readline.createInterface({
         "input": process.stdin,
         "output": process.stdout
     });
-
+    const msg = message || "Do you confirm these findings?";
     return new Promise((resolve) => {
         rl.question(
-            chalk.yellow("Do you confirm these findings? (yes/y to confirm): "),
+            chalk.yellow(`${msg} (yes/y to confirm): `),
             (answer) => {
                 rl.close();
                 const normalizedAnswer = answer.trim().toLowerCase();
