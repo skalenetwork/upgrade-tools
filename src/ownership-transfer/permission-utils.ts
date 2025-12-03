@@ -1,7 +1,6 @@
 /* eslint-disable max-lines */
 import {AddressLike, Contract, Transaction} from "ethers";
 import {hasFunctionSelector, isContractAddress} from "./utils";
-import chalk from "chalk";
 import {ethers} from "hardhat";
 
 export enum PermissionModel {
@@ -280,12 +279,6 @@ export const transferOwnership = async (
     const data = contract.interface.encodeFunctionData(
         "transferOwnership",
         [newOwner]
-    );
-
-    console.log(
-        chalk.green(
-            `Prepared transferOwnership transaction for ${contractAddress} to new owner ${newOwner}`
-        )
     );
     const transaction = new Transaction();
     transaction.to = contractAddress;

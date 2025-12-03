@@ -26,7 +26,7 @@ interface TransactionData {
     description?: string;
 }
 
-interface OwnershipAdminOptions {
+export interface OwnershipAdminOptions {
     newOwner?: string;
     readonly?: boolean;
     // Example `MINTER_ROLE` - do not input as keccak string
