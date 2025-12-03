@@ -264,7 +264,8 @@ export const tryGetMultiSigInfo = async (contractAddress: string) => {
 // eslint-disable-next-line max-statements
 export const transferOwnership = async (
     contractAddress: string,
-    newOwner: string
+    newOwner: string,
+    oldOwner: string
 ): Promise<Transaction| true> => {
     const contract = new Contract(
         contractAddress,
@@ -274,6 +275,10 @@ export const transferOwnership = async (
 
     if (await contract.owner() === newOwner) {
         return true;
+    }
+
+    if (await contract.owner() !== oldOwner) {
+        throw new Error(`Current owner of contract ${contractAddress} does not match the provided old owner address.`);
     }
 
     const data = contract.interface.encodeFunctionData(
@@ -298,16 +303,16 @@ export const transferOwnership = async (
  *
  * @dev The contract address must be a ROLE_BASED contract (not validated by this function)
  */
+// eslint-disable-next-line max-statements
 export const grantRole = async (
-    contractAddress: AddressLike,
+    contractAddress: string,
     role: string,
-    account: AddressLike
+    newAccount: AddressLike,
+    oldAccount: AddressLike
+// eslint-disable-next-line max-params
 ): Promise<Transaction | true> => {
-    const resolvedContractAddress = await ethers.resolveAddress(contractAddress);
-    const resolvedAccount = await ethers.resolveAddress(account);
-
     const contract = new Contract(
-        resolvedContractAddress,
+        contractAddress,
         ACCESS_CONTROL_ABI,
         ethers.provider
     );
@@ -315,17 +320,25 @@ export const grantRole = async (
     /*
      * Check if the account already has the role
      */
-    if (await contract.hasRole(role, resolvedAccount)) {
+    if (await contract.hasRole(role, newAccount)) {
         return true;
     }
 
+    if (!await contract.hasRole(ethers.ZeroHash, oldAccount)) {
+        throw new Error(`Account ${oldAccount} does not have permission to grant roles on contract ${contractAddress}.`);
+    }
+    if (!await contract.hasRole(role, oldAccount)) {
+        return true;
+    }
+
+
     const data = contract.interface.encodeFunctionData(
         "grantRole",
-        [role, resolvedAccount]
+        [role, newAccount]
     );
 
     const transaction = new Transaction();
-    transaction.to = resolvedContractAddress;
+    transaction.to = contractAddress;
     transaction.data = data;
     return transaction;
 };

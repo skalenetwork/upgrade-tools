@@ -27,6 +27,7 @@ interface TransactionData {
 }
 
 export interface OwnershipAdminOptions {
+    oldOwner: string;
     newOwner?: string;
     readonly?: boolean;
     // Example `MINTER_ROLE` - do not input as keccak string
@@ -43,12 +44,13 @@ export class OwnershipAdmin {
     private transactions: Transaction[] = [];
     private bytes32RolesToCheck: string[] = [];
     private managerRolesToCheck: number[] = [];
+    private oldOwner: string;
     private newOwner: string;
     private newOwnerConfirmed: boolean = false;
     private readonly: boolean;
 
     // eslint-disable-next-line max-statements
-    constructor(instance: Instance, contractNames: string[], options: OwnershipAdminOptions = {}) {
+    constructor(instance: Instance, contractNames: string[], options: OwnershipAdminOptions) {
         this.instance = instance;
         this.contractMetadata = new Map<string, ContractMetadataDetails>();
 
@@ -72,6 +74,7 @@ export class OwnershipAdmin {
             }
         });
         this.managerRolesToCheck.push(ZERO);
+        this.oldOwner = options.oldOwner;
 
         if (!this.readonly && this.newOwner === ethers.ZeroAddress) {
             throw new Error("New owner address must be provided in options when in write mode.");
@@ -200,7 +203,7 @@ export class OwnershipAdmin {
         contractData: ContractMetadataDetails
     ): Promise<TransactionData | true> {
         const admin = await getAdminAddress(contractData.address);
-        const tx = await transferOwnership(admin, this.newOwner);
+        const tx = await transferOwnership(admin, this.newOwner, this.oldOwner);
         if (typeof tx === "boolean" && tx) {
             console.log(
                 chalk.gray(`    -> Owner of ProxyAdmin of ${contractData.address} is already ${this.newOwner}.`)
@@ -231,7 +234,7 @@ export class OwnershipAdmin {
     private async createOwnableOwnershipTransaction(
         contractData: ContractMetadataDetails
     ): Promise<TransactionData | true> {
-        const tx = await transferOwnership(contractData.address, this.newOwner);
+        const tx = await transferOwnership(contractData.address, this.newOwner, this.oldOwner);
         if (typeof tx === "boolean" && tx) {
             console.log(
                 chalk.gray(`    -> Owner of ${contractData.name} at ${contractData.address} is already ${this.newOwner}.`)
@@ -259,10 +262,10 @@ export class OwnershipAdmin {
         const txs: TransactionData[] = [];
         for (const role of this.bytes32RolesToCheck) {
             // eslint-disable-next-line no-await-in-loop
-            const tx = await grantRole(contractData.address, role, this.newOwner);
+            const tx = await grantRole(contractData.address, role, this.newOwner, this.oldOwner);
             if (typeof tx === "boolean" && tx) {
                 console.log(
-                    chalk.gray(`    -> Role ${role} already granted to ${this.newOwner} in ${contractData.name}.`)
+                    chalk.gray(`    -> Role ${role} already granted to ${this.newOwner} in ${contractData.name} OR ${this.oldOwner} never had it.`)
                 );
             }
             else if (this.isDuplicateTransaction(tx)) {
