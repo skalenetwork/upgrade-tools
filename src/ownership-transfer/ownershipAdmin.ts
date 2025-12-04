@@ -14,6 +14,16 @@ import chalk from "chalk";
 import {ethers} from "hardhat";
 
 const ZERO = 0;
+
+interface BytesRole {
+    name: string;
+    identifier: string;
+}
+
+interface IntegerRole {
+    name: string;
+    identifier: number;
+}
 interface ContractMetadataDetails {
     name: string;
     pattern: Pattern;
@@ -42,8 +52,8 @@ export class OwnershipAdmin {
     private isMetadataLoaded: boolean;
     private transactionsByContractName: Map<string, TransactionData[]>;
     private transactions: Transaction[] = [];
-    private bytes32RolesToCheck: string[] = [];
-    private managerRolesToCheck: number[] = [];
+    private bytes32RolesToCheck: BytesRole[] = [];
+    private managerRolesToCheck: IntegerRole[] = [];
     private oldOwner: string;
     private newOwner: string;
     private newOwnerConfirmed: boolean = false;
@@ -60,20 +70,20 @@ export class OwnershipAdmin {
         // If true, does not allow to send transactions to blockchain
         this.readonly = options.readonly ?? true;
         this.newOwner = options.newOwner ?? ethers.ZeroAddress;
-        this.bytes32RolesToCheck = (options.rolesToCheck ?? []).map(role =>
-            // Convert to keccak256 hash
-             ethers.id(role)
-        );
+        this.bytes32RolesToCheck = (options.rolesToCheck ?? []).map(role => ({
+            identifier: ethers.id(role),
+            name: role
+        }));
         // Always check DEFAULT_ADMIN_ROLE at the end!
-        this.bytes32RolesToCheck.push(ethers.ZeroHash);
+        this.bytes32RolesToCheck.push({identifier: ethers.ZeroHash, name: "DEFAULT_ADMIN_ROLE"});
 
-        this.managerRolesToCheck = options.managerRolesToCheck ?? [];
-        this.managerRolesToCheck.forEach(role => {
+        this.managerRolesToCheck = (options.managerRolesToCheck ?? []).map(role => {
             if (typeof role !== "number" || !Number.isInteger(role) || role < ZERO) {
                 throw new Error(`Invalid manager role: ${role}. Must be a non-negative integer.`);
             }
+            return {identifier: role, name: `Role ${role}`};
         });
-        this.managerRolesToCheck.push(ZERO);
+        this.managerRolesToCheck.push({identifier: ZERO, name: "ADMIN_ROLE"});
         this.oldOwner = options.oldOwner;
 
         if (!this.readonly && this.newOwner === ethers.ZeroAddress) {
@@ -205,28 +215,20 @@ export class OwnershipAdmin {
         const admin = await getAdminAddress(contractData.address);
         const tx = await transferOwnership(admin, this.newOwner, this.oldOwner);
         if (typeof tx === "boolean" && tx) {
-            console.log(
-                chalk.gray(`    -> Owner of ProxyAdmin of ${contractData.address} is already ${this.newOwner}.`)
-            );
             return true;
         }
         else if (this.isDuplicateTransaction(tx)) {
-            console.log(
-                chalk.gray(`    -> Transaction to change Owner of Proxy Admin of ${contractData.name} was already prepared.`)
-            );
-            console.log(
-                chalk.gray(`       NOTE: It's likely ${contractData.name} shares the same Proxy Admin of another contract.`)
-            );
+            // Shares proxy admin with another contract - tx already created
             return true
         }
 
         console.log(
             chalk.yellow(
-                `    -> Tx to change Proxy Admin at ${admin} of ${contractData.name} created.`
+                `    -> Tx to change Proxy Admin Owner at ${admin} created.`
             )
         );
         return {
-            description: `-> Tx to change Proxy Admin at ${admin} to ${this.newOwner}`,
+            description: `-> Tx to change Proxy Admin Owner at ${admin} to ${this.newOwner}`,
             transaction:tx
         }
     }
@@ -236,9 +238,6 @@ export class OwnershipAdmin {
     ): Promise<TransactionData | true> {
         const tx = await transferOwnership(contractData.address, this.newOwner, this.oldOwner);
         if (typeof tx === "boolean" && tx) {
-            console.log(
-                chalk.gray(`    -> Owner of ${contractData.name} at ${contractData.address} is already ${this.newOwner}.`)
-            );
             return true;
         }
         else if (this.isDuplicateTransaction(tx)) {
@@ -262,11 +261,10 @@ export class OwnershipAdmin {
         const txs: TransactionData[] = [];
         for (const role of this.bytes32RolesToCheck) {
             // eslint-disable-next-line no-await-in-loop
-            const tx = await grantRole(contractData.address, role, this.newOwner, this.oldOwner);
+            const tx = await grantRole(contractData.address, role.identifier, this.newOwner, this.oldOwner);
             if (typeof tx === "boolean" && tx) {
-                console.log(
-                    chalk.gray(`    -> Role ${role} already granted to ${this.newOwner} in ${contractData.name} OR ${this.oldOwner} never had it.`)
-                );
+                // eslint-disable-next-line no-continue
+                continue;
             }
             else if (this.isDuplicateTransaction(tx)) {
                 throw new Error(`Error: Transaction to grant role ${role} in ${contractData.name} was already created.`);
@@ -274,11 +272,11 @@ export class OwnershipAdmin {
             else {
                 console.log(
                     chalk.yellow(
-                        `    -> Tx to grant role ${role} to ${this.newOwner} in ${contractData.name} created.`
+                        `    -> Tx to grant role ${role.name} to ${this.newOwner} in ${contractData.name} created.`
                     )
                 );
                 txs.push({
-                    description: `-> Tx to grant role ${role} to ${this.newOwner} in ${contractData.name}`,
+                    description: `-> Tx to grant role ${role.name} to ${this.newOwner} in ${contractData.name}`,
                     transaction: tx
                 });
             }
