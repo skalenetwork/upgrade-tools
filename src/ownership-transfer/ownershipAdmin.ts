@@ -8,6 +8,7 @@ import {
     promptUserConfirmation
 } from "./utils";
 import {PermissionModel, getPermissionModels, grantRole, transferOwnership, tryGetMultiSigInfo} from "./permission-utils";
+import {EoaSubmitter} from "../submitters";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v6";
 import {Transaction} from "ethers";
 import chalk from "chalk";
@@ -126,10 +127,25 @@ export class OwnershipAdmin {
         }
     }
 
+    public async submitTransactions(): Promise<void> {
+        if (this.readonly) {
+            console.log(chalk.yellow("INFO: Read-only mode is enabled. No transactions will be submitted."));
+            return;
+        }
+        if (!this.transactions.length) {
+            console.log(chalk.yellow("No transactions to submit."));
+            return;
+        }
+        for (const [contract, txs] of this.transactionsByContractName.entries()) {
+            // eslint-disable-next-line no-await-in-loop
+            await this.submitTransactionsForContract(contract, txs);
+        }
+    }
+
     public async createNecessaryTransactions(): Promise<void> {
         // Clear previous transactions
         console.log(chalk.grey("INFO: The next Following steps will NOT submit any transactions to the blockchain."));
-        if (!this.readonly) {
+        if (!this.readonly && !this.newOwnerConfirmed) {
             await this.promptConfirmNewOwner();
         }
 
@@ -371,5 +387,51 @@ export class OwnershipAdmin {
                 existingTx.to === transaction.to &&
                 existingTx.data === transaction.data
         );
+    }
+
+    // eslint-disable-next-line max-statements
+    private async submitTransactionsForContract(
+        contractName: string,
+        txs: TransactionData[]
+    ): Promise<void> {
+        console.log(chalk.cyan(`\nSubmitting transactions for contract ${contractName}...\n`));
+        const isEOA = !(await isContractAddress(this.newOwner));
+        if (!isEOA) {
+            console.log(
+                chalk.yellow(
+                    `WARNING: The new owner ${this.newOwner} appears to be a contract address. ` +
+                    `This script does not yet support submitting transactions via Multi-Sig wallets. `
+                )
+            );
+            return;
+        }
+        const [signer] = await ethers.getSigners();
+        if (signer.address.toLowerCase() !== this.oldOwner.toLowerCase()) {
+            throw new Error(
+                `The connected signer ${signer.address} does not match the old owner ${this.oldOwner}. ` +
+                `Please switch the signer and try again.`
+            );
+        }
+        for (const [index, txData] of txs.entries()) {
+            console.log(
+                chalk.blue(
+                    `Transaction ${index}: ${txData.description || "No description"}`
+                )
+            );
+        }
+        const userConfirmed = await promptUserConfirmation(
+            "Do you confirm submitting these transactions to the blockchain?"
+        );
+        if (!userConfirmed) {
+            console.log(chalk.red("User did not confirm. Skipping submission for this contract."));
+            return;
+        }
+        const submitter = new EoaSubmitter();
+        const transactions = txs.map(txData => txData.transaction);
+        await submitter.submit(transactions);
+        this.transactions = this.transactions.filter(
+            (tx) => !transactions.includes(tx)
+        );
+        this.transactionsByContractName.set(contractName, []);
     }
 }
