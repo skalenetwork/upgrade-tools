@@ -94,7 +94,7 @@ export class OwnershipAdmin {
     }
 
     // eslint-disable-next-line max-statements
-    public async loadContractMetadata(confirmFindings: boolean = true): Promise<void> {
+    public async loadContractMetadataAndCreateTransactions(confirmFindings: boolean = true): Promise<void> {
         if (this.isMetadataLoaded) {
             console.log(chalk.yellow("Contract metadata is already loaded. Skipping reload."));
             return;
@@ -122,6 +122,8 @@ export class OwnershipAdmin {
         if (this.contractMetadata.size !== this.contractNames.length) {
             throw new Error("Some contract names did not yield metadata. Names duplicated? Aborting...");
         }
+        await this.createNecessaryTransactions();
+
         if (confirmFindings) {
             await this.confirmMetadata();
         }
@@ -142,7 +144,7 @@ export class OwnershipAdmin {
         }
     }
 
-    public async createNecessaryTransactions(): Promise<void> {
+    private async createNecessaryTransactions(): Promise<void> {
         // Clear previous transactions
         console.log(chalk.grey("INFO: The next Following steps will NOT submit any transactions to the blockchain."));
         if (!this.readonly && !this.newOwnerConfirmed) {
@@ -159,7 +161,7 @@ export class OwnershipAdmin {
 
 
     private async confirmMetadata(): Promise<void> {
-        this.displayMetadataFindings();
+        this.displayFindings();
 
         const userConfirmed = await promptUserConfirmation();
 
@@ -170,29 +172,43 @@ export class OwnershipAdmin {
         console.log(chalk.green("\nUser confirmed. Proceeding...\n"));
     }
 
-    private getColumnWidths(): {maxNameWidth: number; maxAddressWidth: number} {
+    private getColumnWidths(): {
+        maxNameWidth: number;
+        maxAddressWidth: number;
+        maxPermissionsWidth: number;
+    } {
         let maxNameWidth = 0;
         let maxAddressWidth = 0;
+        let maxPermissionsWidth = 0;
         for (const contract of this.contractMetadata.values()) {
             maxNameWidth = Math.max(maxNameWidth, contract.name.length);
             maxAddressWidth = Math.max(maxAddressWidth, contract.address.length);
+            const permissions = contract.permissionModel?.join(", ") || "None";
+            maxPermissionsWidth = Math.max(maxPermissionsWidth, permissions.length);
         }
-        return {maxAddressWidth, maxNameWidth};
+        return {maxAddressWidth, maxNameWidth, maxPermissionsWidth};
     }
 
+    // eslint-disable-next-line max-statements
     private displayPatternGroup(pattern: string, contracts: ContractMetadataDetails[]): void {
-        const {maxNameWidth, maxAddressWidth} = this.getColumnWidths();
+        const {maxNameWidth, maxAddressWidth, maxPermissionsWidth} = this.getColumnWidths();
         console.log(chalk.bold(`\n${pattern} Pattern (${contracts.length} contracts):`));
         for (const contract of contracts) {
             const name = contract.name.padEnd(maxNameWidth);
             const address = contract.address.padEnd(maxAddressWidth);
-            const permissions = contract.permissionModel?.join(", ") || "None";
-            console.log(chalk.gray(`  ${name}  ${address}  ${permissions}`));
+            const permissions = (contract.permissionModel?.join(", ") || "None").padEnd(maxPermissionsWidth);
+            let status = "";
+            if (this.transactionsByContractName.get(contract.name)?.length) {
+                status = chalk.yellow("ACTION REQUIRED");
+            } else {
+                status = chalk.green("GOOD");
+            }
+            console.log(chalk.gray(`  ${name}  ${address}  ${permissions}  `) + status);
         }
     }
 
-    private displayMetadataFindings(): void {
-        console.log(chalk.cyan("\n=== Contract Pattern Detection Results ===\n"));
+    private displayFindings(): void {
+        console.log(chalk.cyan("\n=== Ownership Status Results ===\n"));
         const groupedByPattern = this.groupMetadataByPattern();
 
         for (const [pattern, contracts] of Object.entries(groupedByPattern)) {
@@ -266,7 +282,7 @@ export class OwnershipAdmin {
             )
         );
         return {
-            description: `-> Tx to change Owner of ${contractData.name} at ${contractData.address} to ${this.newOwner} created`,
+            description: `-> Tx to change Owner of ${contractData.name} at ${contractData.address} to ${this.newOwner}.`,
             transaction:tx
         }
     }
