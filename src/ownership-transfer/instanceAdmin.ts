@@ -26,6 +26,8 @@ export interface InstanceAdminOptions {
     revokeRoles: boolean;
     newOwner: string;
     readonly: boolean;
+    testMode: boolean;
+
     // Example `MINTER_ROLE` - do not input as keccak string
     rolesToCheck?: string[];
     // Roles in Access Manager are uint64 numbers
@@ -45,6 +47,7 @@ export class InstanceAdmin {
     private readonly!: boolean;
     private submitter!: SafeSubmitter | EoaSubmitter;
     private revokeRoles!: boolean;
+    private testMode: boolean;
 
     constructor(instance: Instance, contractNames: string[], options: InstanceAdminOptions) {
         this.instance = instance;
@@ -54,6 +57,7 @@ export class InstanceAdmin {
         this.submitter = options.submitter;
         this.oldOwner = options.oldOwner;
         this.revokeRoles = options.revokeRoles;
+        this.testMode = options.testMode;
 
         this.processOptions(options);
     }
@@ -113,7 +117,7 @@ export class InstanceAdmin {
     }
 
     private async confirmAndSubmitTransactions(txsToSubmit: TransactionData[]): Promise<void> {
-        const confirmation = await promptUserConfirmation("Do you want to proceed with submitting these transactions?");
+        const confirmation = await this.promptConfirmation("Do you want to proceed with submitting these transactions?");
         if (!confirmation) {
             throw new Error("Transaction submission aborted by user.");
         }
@@ -176,7 +180,7 @@ export class InstanceAdmin {
     private async confirmData(): Promise<void> {
         this.displayFindings();
 
-        const userConfirmed = await promptUserConfirmation();
+        const userConfirmed = await this.promptConfirmation();
 
         if (!userConfirmed) {
             this.handleUserRejection();
@@ -286,5 +290,11 @@ export class InstanceAdmin {
 
         return grouped;
     }
-}
 
+    private async promptConfirmation(msg?: string): Promise<boolean> {
+        if (this.testMode) {
+            return true;
+        }
+        return await promptUserConfirmation(msg);
+    }
+}
