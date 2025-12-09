@@ -26,7 +26,8 @@ const OWNABLE_ABI = [
 const ACCESS_CONTROL_ABI = [
     "function hasRole(bytes32 role, address account) view returns (bool)",
     "function grantRole(bytes32 role, address account)",
-    "function revokeRole(bytes32 role, address account)"
+    "function revokeRole(bytes32 role, address account)",
+    "function getRoleMemberCount(bytes32 role) view returns (uint256)"
 ];
 
 const ACCESS_MANAGER_ABI = [
@@ -335,6 +336,36 @@ export const grantRole = async (
     const data = contract.interface.encodeFunctionData(
         "grantRole",
         [role, newAccount]
+    );
+
+    const transaction = new Transaction();
+    transaction.to = contractAddress;
+    transaction.data = data;
+    return transaction;
+};
+
+export const revokeRole = async (
+    contractAddress: string,
+    role: string,
+    oldAccount: AddressLike
+): Promise<Transaction | boolean> => {
+    const contract = new Contract(
+        contractAddress,
+        ACCESS_CONTROL_ABI,
+        ethers.provider
+    );
+    if (
+        !await contract.hasRole(role, oldAccount)
+    ) {
+        return true;
+    }
+    // eslint-disable-next-line no-magic-numbers
+    if ((await contract.getRoleMemberCount(role)) < 2n && role === ethers.ZeroHash) {
+        return false;
+    }
+    const data = contract.interface.encodeFunctionData(
+        "revokeRole",
+        [role, oldAccount]
     );
 
     const transaction = new Transaction();

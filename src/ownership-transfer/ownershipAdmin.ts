@@ -1,5 +1,6 @@
 /* eslint-disable max-lines */
 // Cspell:words TUPP keccak
+import {EoaSubmitter, SafeSubmitter} from "../submitters";
 import {
     Pattern,
     detectPattern,
@@ -7,8 +8,7 @@ import {
     isContractAddress,
     promptUserConfirmation
 } from "./utils";
-import {PermissionModel, getPermissionModels, grantRole, transferOwnership, tryGetMultiSigInfo} from "./permission-utils";
-import {EoaSubmitter} from "../submitters";
+import {PermissionModel, getPermissionModels, grantRole, revokeRole, transferOwnership, tryGetMultiSigInfo} from "./permission-utils";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v6";
 import {Transaction} from "ethers";
 import chalk from "chalk";
@@ -39,8 +39,10 @@ interface TransactionData {
 
 export interface OwnershipAdminOptions {
     oldOwner: string;
-    newOwner?: string;
-    readonly?: boolean;
+    submitter: SafeSubmitter | EoaSubmitter;
+    revokeRoles: boolean;
+    newOwner: string;
+    readonly: boolean;
     // Example `MINTER_ROLE` - do not input as keccak string
     rolesToCheck?: string[];
     // Roles in Access Manager are uint64 numbers
@@ -48,119 +50,93 @@ export interface OwnershipAdminOptions {
 }
 export class OwnershipAdmin {
     private instance: Instance;
-    private contractMetadata: Map<string, ContractMetadataDetails>;
+
+    private contractMetadata: Map<string, ContractMetadataDetails> = new Map<string, ContractMetadataDetails>();
     private contractNames: string[];
-    private isMetadataLoaded: boolean;
-    private transactionsByContractName: Map<string, TransactionData[]>;
+
+    private transactionsByContractName: Map<string, TransactionData[]> = new Map<string, TransactionData[]>();
+    private revokeTransactionsByContractName: Map<string, TransactionData[]> = new Map<string, TransactionData[]>();
     private transactions: Transaction[] = [];
+    private revokeRolesTransactions: Transaction[] = [];
+
     private bytes32RolesToCheck: BytesRole[] = [];
     private managerRolesToCheck: IntegerRole[] = [];
-    private oldOwner: string;
-    private newOwner: string;
     private newOwnerConfirmed: boolean = false;
-    private readonly: boolean;
+    // These are assigned in processOptions - called in constructor
+    private oldOwner!: string;
+    private newOwner!: string;
+    private readonly!: boolean;
+    private submitter!: SafeSubmitter | EoaSubmitter;
+    private revokeRoles!: boolean;
 
-    // eslint-disable-next-line max-statements
     constructor(instance: Instance, contractNames: string[], options: OwnershipAdminOptions) {
         this.instance = instance;
-        this.contractMetadata = new Map<string, ContractMetadataDetails>();
-
-        this.isMetadataLoaded = false;
-        this.transactionsByContractName = new Map<string, TransactionData[]>();
-
-        // If true, does not allow to send transactions to blockchain
-        this.readonly = options.readonly ?? true;
-        this.newOwner = options.newOwner ?? ethers.ZeroAddress;
-        this.bytes32RolesToCheck = (options.rolesToCheck ?? []).map(role => ({
-            identifier: ethers.id(role),
-            name: role
-        }));
-        // Always check DEFAULT_ADMIN_ROLE at the end!
-        this.bytes32RolesToCheck.push({identifier: ethers.ZeroHash, name: "DEFAULT_ADMIN_ROLE"});
-
-        this.managerRolesToCheck = (options.managerRolesToCheck ?? []).map(role => {
-            if (typeof role !== "number" || !Number.isInteger(role) || role < ZERO) {
-                throw new Error(`Invalid manager role: ${role}. Must be a non-negative integer.`);
-            }
-            return {identifier: role, name: `Role ${role}`};
-        });
-        this.managerRolesToCheck.push({identifier: ZERO, name: "ADMIN_ROLE"});
-        this.oldOwner = options.oldOwner;
-
-        if (!this.readonly && this.newOwner === ethers.ZeroAddress) {
-            throw new Error("New owner address must be provided in options when in write mode.");
-        }
         this.contractNames = contractNames;
+
+        this.processOptions(options);
     }
 
-    // eslint-disable-next-line max-statements
-    public async loadContractMetadataAndCreateTransactions(confirmFindings: boolean = true): Promise<void> {
-        if (this.isMetadataLoaded) {
-            console.log(chalk.yellow("Contract metadata is already loaded. Skipping reload."));
-            return;
-        }
-        // TODO: Refactor to parallelize
+    public async loadContractMetadataAndCreateTransactions(): Promise<void> {
+        /* eslint-disable no-await-in-loop */
+        // Do not parallelize to avoid rate limit issues which CAN produce wrong outputs
         for (const contractName of this.contractNames) {
-            // eslint-disable-next-line no-await-in-loop
+            /*
+             * We use getContractAddress to not depend on downloaded ABI artifacts
+             * all ABIs are checked locally
+             */
             const address = await this.instance.getContractAddress(contractName);
 
             if (!this.contractMetadata.has(address)) {
-                // eslint-disable-next-line no-await-in-loop
                 const pattern = await detectPattern(address);
                 const details: ContractMetadataDetails = {
                     address,
                     name: contractName,
                     pattern,
-                    // eslint-disable-next-line no-await-in-loop
                     permissionModel: await getPermissionModels(address)
                 };
                 this.contractMetadata.set(address, details);
             }
         }
+        /* eslint-enable no-await-in-loop */
 
-        this.isMetadataLoaded = true;
         if (this.contractMetadata.size !== this.contractNames.length) {
             throw new Error("Some contract names did not yield metadata. Names duplicated? Aborting...");
         }
-        await this.createNecessaryTransactions();
+        await this.createRequiredTransactions();
 
-        if (confirmFindings) {
-            await this.confirmMetadata();
-        }
+        await this.confirmData();
     }
 
-    public async submitTransactions(): Promise<void> {
-        if (this.readonly) {
-            console.log(chalk.yellow("INFO: Read-only mode is enabled. No transactions will be submitted."));
-            return;
+    public async createRevokeRolesTransactions(): Promise<void> {
+        for (const contract of this.contractMetadata.values()) {
+            if (!this.revokeTransactionsByContractName.has(contract.name)) {
+                this.revokeTransactionsByContractName.set(contract.name, []);
+            }
+            if (contract.permissionModel?.includes(PermissionModel.ROLE_BASED)) {
+                // Required to be in order - Admin last
+                // eslint-disable-next-line no-await-in-loop
+                const txs = await this.createRevokeBytes32RolesTransactions(contract);
+                txs.forEach(txData => {
+                    this.revokeRolesTransactions.push(txData.transaction);
+                    this.revokeTransactionsByContractName.get(contract.name)!.push(txData);
+                });
+            }
+            if (contract.permissionModel?.includes(PermissionModel.ACCESS_MANAGER)) {
+                console.log(chalk.yellow("Not implemented yet: Access Manager role revocations."));
+            }
         }
-        if (!this.transactions.length) {
-            console.log(chalk.yellow("No transactions to submit."));
-            return;
-        }
-        for (const [contract, txs] of this.transactionsByContractName.entries()) {
-            // eslint-disable-next-line no-await-in-loop
-            await this.submitTransactionsForContract(contract, txs);
-        }
+        await this.confirmData();
     }
 
-    private async createNecessaryTransactions(): Promise<void> {
-        // Clear previous transactions
-        console.log(chalk.grey("INFO: The next Following steps will NOT submit any transactions to the blockchain."));
-        if (!this.readonly && !this.newOwnerConfirmed) {
-            await this.promptConfirmNewOwner();
-        }
-
-        for(const contract of this.contractMetadata.values()) {
-            // eslint-disable-next-line no-await-in-loop
-            const txs: TransactionData[] = await this.createTxsToChangeContractOwnership(contract);
-            this.transactionsByContractName.set(contract.name, txs);
-            txs.forEach(txData => this.transactions.push(txData.transaction));
-        }
+    public async submitGrantOwnershipTransactions(): Promise<void> {
+        await this.submitTransactions(this.transactions, this.transactionsByContractName);
     }
 
+    public async submitRevokeRolesTransactions(): Promise<void> {
+        await this.submitTransactions(this.revokeRolesTransactions, this.revokeTransactionsByContractName);
+    }
 
-    private async confirmMetadata(): Promise<void> {
+    public async confirmData(): Promise<void> {
         this.displayFindings();
 
         const userConfirmed = await promptUserConfirmation();
@@ -170,6 +146,54 @@ export class OwnershipAdmin {
         }
 
         console.log(chalk.green("\nUser confirmed. Proceeding...\n"));
+    }
+
+    // By 1
+    // eslint-disable-next-line max-statements
+    private processOptions(options: OwnershipAdminOptions): void {
+        // If true, does not allow to send transactions to blockchain
+        this.readonly = options.readonly;
+        this.newOwner = options.newOwner;
+        this.bytes32RolesToCheck = (options.rolesToCheck ?? []).map(role => ({
+            identifier: ethers.id(role),
+            name: role
+        }));
+        this.submitter = options.submitter;
+        // Always have DEFAULT_ADMIN_ROLE at the end!
+        this.bytes32RolesToCheck.push({identifier: ethers.ZeroHash, name: "DEFAULT_ADMIN_ROLE"});
+        if (!this.readonly && this.newOwner === ethers.ZeroAddress) {
+            throw new Error("New owner address must be provided in options when in write mode.");
+        }
+        this.managerRolesToCheck = (options.managerRolesToCheck ?? []).map(role => {
+            if (typeof role !== "number" || !Number.isInteger(role) || role < ZERO) {
+                throw new Error(`Invalid manager role: ${role}. Must be a non-negative integer.`);
+            }
+            return {identifier: role, name: `Role ${role}`};
+        });
+        // Always have ADMIN_ROLE at the end!
+        this.managerRolesToCheck.push({identifier: ZERO, name: "ADMIN_ROLE"});
+        this.oldOwner = options.oldOwner;
+        this.revokeRoles = options.revokeRoles;
+    }
+
+    private async createRequiredTransactions(): Promise<void> {
+        // Clear previous transactions
+        console.log(chalk.grey("INFO: The next Following steps will NOT submit any transactions to the blockchain."));
+        if (!this.readonly && !this.newOwnerConfirmed) {
+            await this.promptConfirmNewOwner();
+        }
+
+        for(const contract of this.contractMetadata.values()) {
+            // eslint-disable-next-line no-await-in-loop
+            const txs: TransactionData[] = await this.createTxsToGrantContractOwnership(contract);
+            this.transactionsByContractName.set(contract.name, txs);
+            txs.forEach(txData => this.transactions.push(txData.transaction));
+        }
+
+        if (!this.transactions.length) {
+            console.log(chalk.green("No ownership transfer transactions required."));
+        }
+        await this.createRevokeRolesTransactions();
     }
 
     private getColumnWidths(): {
@@ -197,11 +221,12 @@ export class OwnershipAdmin {
             const name = contract.name.padEnd(maxNameWidth);
             const address = contract.address.padEnd(maxAddressWidth);
             const permissions = (contract.permissionModel?.join(", ") || "None").padEnd(maxPermissionsWidth);
-            let status = "";
-            if (this.transactionsByContractName.get(contract.name)?.length) {
-                status = chalk.yellow("ACTION REQUIRED");
-            } else {
-                status = chalk.green("GOOD");
+            let status = chalk.green("ALL DONE");
+            if (this.transactionsByContractName.get(contract.name)?.length){
+                status = chalk.yellow("GRANT OWNERSHIP REQUIRED");
+            }
+            else if (this.revokeTransactionsByContractName.get(contract.name)?.length){
+                status = chalk.yellow("REVOKE ROLES REQUIRED");
             }
             console.log(chalk.gray(`  ${name}  ${address}  ${permissions}  `) + status);
         }
@@ -223,7 +248,6 @@ export class OwnershipAdmin {
         console.log(chalk.red("User did not confirm. Aborting and clearing all data..."));
         this.contractMetadata.clear();
         this.transactions.length = 0;
-        this.isMetadataLoaded = false;
         throw new Error("User aborted the operation. Data has been cleared.");
     }
 
@@ -291,34 +315,63 @@ export class OwnershipAdmin {
         contractData: ContractMetadataDetails,
     ): Promise<TransactionData[]> {
         const txs: TransactionData[] = [];
+        /* eslint-disable no-await-in-loop */
+        // Required to process sequentially due to order of transactions
         for (const role of this.bytes32RolesToCheck) {
-            // eslint-disable-next-line no-await-in-loop
             const tx = await grantRole(contractData.address, role.identifier, this.newOwner, this.oldOwner);
             if (typeof tx === "boolean" && tx) {
                 // eslint-disable-next-line no-continue
                 continue;
             }
             else if (this.isDuplicateTransaction(tx)) {
+                // Unexpected - better check
                 throw new Error(`Error: Transaction to grant role ${role} in ${contractData.name} was already created.`);
             }
             else {
+                const description = `-> Tx to grant role ${role.name} to ${this.newOwner} in ${contractData.name}`;
                 console.log(
                     chalk.yellow(
-                        `    -> Tx to grant role ${role.name} to ${this.newOwner} in ${contractData.name} created.`
+                        `    ${description} created.`
                     )
                 );
-                txs.push({
-                    description: `-> Tx to grant role ${role.name} to ${this.newOwner} in ${contractData.name}`,
-                    transaction: tx
-                });
+                txs.push({description, transaction: tx});
             }
         }
         return txs;
     }
 
-    // TODO: Remove this
+    private async createRevokeBytes32RolesTransactions(
+        contractData: ContractMetadataDetails
+    ): Promise<TransactionData[]> {
+        const txs: TransactionData[] = [];
+        /* eslint-disable no-await-in-loop */
+        // Required to process sequentially due to order of transactions
+        for (const role of this.bytes32RolesToCheck) {
+            const tx = await revokeRole(contractData.address, role.identifier, this.oldOwner);
+            if (typeof tx === "boolean" && !tx) {
+                console.log(chalk.yellow(
+                    `    WARNING: Skipping revocation of role ${role.name} in ${contractData.name} as it requires at least 1 member left.`
+                ));
+            }
+            else if (typeof tx !== "boolean" && this.isDuplicateTransaction(tx)) {
+                // Unexpected - better check
+                throw new Error(`Error: Transaction to revoke role ${role} in ${contractData.name} was already created.`);
+            }
+            else if (typeof tx !== "boolean") {
+                const description = `-> Tx to revoke role ${role.name} from ${this.oldOwner} in ${contractData.name}`;
+                console.log(
+                    chalk.yellow(
+                        `    ${description} created.`
+                    )
+                );
+                txs.push({description, transaction: tx});
+            }
+        }
+        return txs;
+    }
+
     // eslint-disable-next-line max-statements
-    private async createTxsToChangeContractOwnership(contractData: ContractMetadataDetails): Promise<TransactionData[]>{
+    private async createTxsToGrantContractOwnership(contractData: ContractMetadataDetails): Promise<TransactionData[]>{
         console.log(chalk.white(`* Creating Transactions to change Ownership of ${contractData.name}.`))
         const txs: TransactionData[] = [];
         if (contractData.pattern === Pattern.TUPP) {
@@ -347,54 +400,27 @@ export class OwnershipAdmin {
 
     // eslint-disable-next-line max-statements
     private async promptConfirmNewOwner(): Promise<void> {
-        if (this.newOwnerConfirmed) {
-            console.log(chalk.white("INFO: New owner already confirmed. Skipping confirmation."));
-            return;
-        }
-        const message1 = `You have specified the new owner address as ${this.newOwner}.`;
-        let message2 = "";
-        let message3 = "";
+        console.log(chalk.white(`You have specified the new owner address as ${this.newOwner}.`));
         const isContract = await isContractAddress(this.newOwner);
         if (isContract) {
-            message2 = chalk.green(`INFO: It appears to be a contract address.`);
+            console.log(chalk.yellow(`   INFO: It appears to be a contract address.`));
             const {owners, threshold} = await tryGetMultiSigInfo(this.newOwner);
+            let message = chalk.red(`WARNING: The script was unable to collect owners details.`);
             if (owners) {
                 const ownersList = owners.join(", ");
-                message3 = chalk.green(`INFO: Found owners of new Owner Multi-Sig: ${ownersList}`);
+                message = chalk.green(`INFO: Found owners of new Owner Multi-Sig: ${ownersList}`);
             }
-            else {
-                message3 = chalk.red(`WARNING: The script was unable to collect owners details.`);
-            }
-
+            console.log(message);
+            message = chalk.red(`WARNING: The script was unable to determine the Multi-Sig threshold.`);
             if (threshold) {
-                message3 += chalk.green(`INFO: Multi-Sig threshold is set to ${threshold}.`);
+                message = chalk.green(`INFO: Multi-Sig threshold is set to ${threshold}.`);
             }
-            else {
-                message3 += chalk.red(`WARNING: The script was unable to determine the Multi-Sig threshold.`);
-            }
+            console.log(message);
         }
-        const message = `${message1}\n${message2 || ""}\n${message3 || ""}\nDo you confirm this is correct?`;
-        const userConfirmed = await promptUserConfirmation(message);
-
-        if (!userConfirmed) {
+        if (!await promptUserConfirmation("")) {
             throw new Error("User did not confirm the new owner address. Aborting...");
         }
         this.newOwnerConfirmed = true;
-    }
-
-    // TODO: Remove disable
-    // eslint-disable-next-line class-methods-use-this
-    private async promptConfirmTransactions(transactions: TransactionData[]): Promise<boolean> {
-        if(!transactions.length) {
-            return true;
-        }
-        console.log(chalk.white("\n=== Prepared Following Ownership Transfer Transactions ===\n"));
-        transactions.forEach((txData, index) => {
-            console.log(chalk.gray(`    - Transaction ${index}: ${txData.description || "No description"}`));
-        });
-        const msg = "Do you confirm these transactions? They will NOT be sent to the blockchain yet.";
-        const userConfirmed = await promptUserConfirmation(msg);
-        return userConfirmed;
     }
 
     private isDuplicateTransaction(transaction: Transaction): boolean {
@@ -402,32 +428,34 @@ export class OwnershipAdmin {
             (existingTx) =>
                 existingTx.to === transaction.to &&
                 existingTx.data === transaction.data
+        ) || this.revokeRolesTransactions.some(
+            (existingTx) =>
+                existingTx.to === transaction.to &&
+                existingTx.data === transaction.data
         );
     }
 
-    // eslint-disable-next-line max-statements
+    private async submitTransactions(txList: Transaction[], txByContractName: Map<string, TransactionData[]>): Promise<void> {
+        if (this.readonly) {
+            console.log(chalk.yellow("INFO: Read-only mode is enabled. No transactions will be submitted."));
+            console.log(chalk.yellow("INFO: We will still iterate through transactions to demonstrate the flow."));
+        }
+        if (!txList.length) {
+            console.log(chalk.yellow("No transactions to submit."));
+            return;
+        }
+        for (const [contract, txs] of txByContractName.entries()) {
+            // We should process contract by contract - prompting user each time
+            // eslint-disable-next-line no-await-in-loop
+            await this.submitTransactionsForContract(contract, txs);
+        }
+    }
+
     private async submitTransactionsForContract(
         contractName: string,
         txs: TransactionData[]
     ): Promise<void> {
         console.log(chalk.cyan(`\nSubmitting transactions for contract ${contractName}...\n`));
-        const isEOA = !(await isContractAddress(this.newOwner));
-        if (!isEOA) {
-            console.log(
-                chalk.yellow(
-                    `WARNING: The new owner ${this.newOwner} appears to be a contract address. ` +
-                    `This script does not yet support submitting transactions via Multi-Sig wallets. `
-                )
-            );
-            return;
-        }
-        const [signer] = await ethers.getSigners();
-        if (signer.address.toLowerCase() !== this.oldOwner.toLowerCase()) {
-            throw new Error(
-                `The connected signer ${signer.address} does not match the old owner ${this.oldOwner}. ` +
-                `Please switch the signer and try again.`
-            );
-        }
         for (const [index, txData] of txs.entries()) {
             console.log(
                 chalk.blue(
@@ -442,12 +470,28 @@ export class OwnershipAdmin {
             console.log(chalk.red("User did not confirm. Skipping submission for this contract."));
             return;
         }
-        const submitter = new EoaSubmitter();
-        const transactions = txs.map(txData => txData.transaction);
-        await submitter.submit(transactions);
-        this.transactions = this.transactions.filter(
-            (tx) => !transactions.includes(tx)
-        );
-        this.transactionsByContractName.set(contractName, []);
+        if (!this.readonly) {
+            await this.submitter.submit(txs.map(txData => txData.transaction));
+        }
+        this.removeSubmittedTransactions(contractName, txs.map(txData => txData.transaction));
+    }
+
+    private removeSubmittedTransactions(contractName:string, transactions: Transaction[]): void {
+        if (this.transactionsByContractName.get(contractName)?.map(tx => tx.transaction).some(
+            (tx) => transactions.includes(tx)
+        )) {
+            this.transactions = this.transactions.filter(
+                (tx) => !transactions.includes(tx)
+            );
+            this.transactionsByContractName.set(contractName, []);
+        }
+        else if (this.revokeTransactionsByContractName.get(contractName)?.map(tx => tx.transaction).some(
+            (tx) => transactions.includes(tx)
+        )) {
+            this.revokeRolesTransactions = this.revokeRolesTransactions.filter(
+                (tx) => !transactions.includes(tx)
+            );
+            this.revokeTransactionsByContractName.set(contractName, []);
+        }
     }
 }
