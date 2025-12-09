@@ -266,7 +266,7 @@ export const transferOwnership = async (
     contractAddress: string,
     newOwner: string,
     oldOwner: string
-): Promise<Transaction| true> => {
+): Promise<Transaction| false> => {
     const contract = new Contract(
         contractAddress,
         OWNABLE_ABI,
@@ -274,7 +274,7 @@ export const transferOwnership = async (
     );
 
     if (await contract.owner() === newOwner) {
-        return true;
+        return false;
     }
 
     if (await contract.owner() !== oldOwner) {
@@ -309,7 +309,7 @@ export const grantRole = async (
     newAccount: AddressLike,
     oldAccount: AddressLike
 // eslint-disable-next-line max-params
-): Promise<Transaction | true> => {
+): Promise<Transaction | false> => {
     const contract = new Contract(
         contractAddress,
         ACCESS_CONTROL_ABI,
@@ -320,7 +320,7 @@ export const grantRole = async (
      * Check if the account already has the role OR if the oldAccount does not have it - no action
      */
     if (await contract.hasRole(role, newAccount) || !await contract.hasRole(role, oldAccount)) {
-        return true;
+        return false;
     }
 
     if (!await contract.hasRole(ethers.ZeroHash, oldAccount)) {

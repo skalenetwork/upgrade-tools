@@ -8,4 +8,4 @@ export * from "./version";
 export * from "./upgrader";
 export * from "./upgraders/abstractTransparentProxyUpgrader";
 export * from "./upgraders/beaconUpgrader"
-export * from "./ownership-transfer/ownershipAdmin";
+export * from "./ownership-transfer/instanceAdmin";

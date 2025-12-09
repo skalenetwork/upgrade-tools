@@ -1,5 +1,6 @@
 // Cspell:words TUPP
 import {AddressLike} from "ethers";
+import {TransactionData} from "./contractAdmin";
 import chalk from "chalk";
 import {ethers} from "hardhat";
 import readline from "readline";
@@ -207,4 +208,22 @@ export const hasFunctionSelector = async (address: string, signature: string): P
         // Reverted = function exists, but call params invalid
         return true;
     }
+}
+
+export const removeDuplicateTransactions = (items: TransactionData[]): TransactionData[] => {
+    const seen = new Set<string>();
+    return items.filter((item) => {
+        /*
+         * Create a unique composite key for the 'to' and 'data' pair.
+         * We use a separator ('|') to ensure 'a' + 'bc' doesn't clash with 'ab' + 'c'
+         */
+        const uniqueKey = `${item.transaction.to}|${item.transaction.data}`;
+
+        if (seen.has(uniqueKey)) {
+            return false;
+        }
+
+        seen.add(uniqueKey);
+        return true;
+    });
 }
