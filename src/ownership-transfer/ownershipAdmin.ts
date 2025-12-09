@@ -445,9 +445,11 @@ export class OwnershipAdmin {
             return;
         }
         for (const [contract, txs] of txByContractName.entries()) {
-            // We should process contract by contract - prompting user each time
-            // eslint-disable-next-line no-await-in-loop
-            await this.submitTransactionsForContract(contract, txs);
+            if (txs.length) {
+                // We should process contract by contract - prompting user each time
+                // eslint-disable-next-line no-await-in-loop
+                await this.submitTransactionsForContract(contract, txs);
+            }
         }
     }
 

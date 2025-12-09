@@ -262,7 +262,6 @@ export const tryGetMultiSigInfo = async (contractAddress: string) => {
  *
  * @dev The address must have already been verified as an Ownable contract before calling this function.
  */
-// eslint-disable-next-line max-statements
 export const transferOwnership = async (
     contractAddress: string,
     newOwner: string,
@@ -304,7 +303,6 @@ export const transferOwnership = async (
  *
  * @dev The contract address must be a ROLE_BASED contract (not validated by this function)
  */
-// eslint-disable-next-line max-statements
 export const grantRole = async (
     contractAddress: string,
     role: string,
@@ -319,19 +317,15 @@ export const grantRole = async (
     );
 
     /*
-     * Check if the account already has the role
+     * Check if the account already has the role OR if the oldAccount does not have it - no action
      */
-    if (await contract.hasRole(role, newAccount)) {
+    if (await contract.hasRole(role, newAccount) || !await contract.hasRole(role, oldAccount)) {
         return true;
     }
 
     if (!await contract.hasRole(ethers.ZeroHash, oldAccount)) {
         throw new Error(`Account ${oldAccount} does not have permission to grant roles on contract ${contractAddress}.`);
     }
-    if (!await contract.hasRole(role, oldAccount)) {
-        return true;
-    }
-
 
     const data = contract.interface.encodeFunctionData(
         "grantRole",
