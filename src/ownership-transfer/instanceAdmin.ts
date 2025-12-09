@@ -209,7 +209,7 @@ export class InstanceAdmin {
 
     private async createRequiredTransactions(): Promise<void> {
         console.log(chalk.grey("INFO: The next Following steps will NOT submit any transactions to the blockchain."));
-        // Preffered to create sequentially due to rate limits
+        // Preferred to create sequentially due to rate limits
         /* eslint-disable no-await-in-loop */
         for(const contract of this.contractMetadata.values()) {
             await contract.createGrantOwnershipTransactions(

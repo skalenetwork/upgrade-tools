@@ -1,3 +1,10 @@
+import {
+    ACCESS_CONTROL_ABI,
+    ACCESS_MANAGED_ABI,
+    ACCESS_MANAGER_ABI,
+    MULTISIG_ABI,
+    OWNABLE_ABI
+} from "./constants";
 import {AddressLike, Contract, Transaction} from "ethers";
 import {hasFunctionSelector, isContractAddress} from "./utils";
 import {ethers} from "hardhat";
@@ -11,34 +18,6 @@ export enum PermissionModel {
 }
 
 const MIN_ROLE_HOLDERS = 2n;
-
-const OWNABLE_ABI = [
-    "function transferOwnership(address newOwner)",
-    "function owner() view returns (address)"
-];
-
-const ACCESS_CONTROL_ABI = [
-    "function hasRole(bytes32 role, address account) view returns (bool)",
-    "function grantRole(bytes32 role, address account)",
-    "function revokeRole(bytes32 role, address account)",
-    "function getRoleMemberCount(bytes32 role) view returns (uint256)"
-];
-
-const ACCESS_MANAGER_ABI = [
-    "function hasRole(uint64 role, address account) view returns (bool)",
-    "function grantRole(uint64 role, address account, uint32 executionDelay)",
-    "function revokeRole(uint64 role, address account)"
-];
-
-const ACCESS_MANAGED_ABI = [
-    "function authority() view returns (address)"
-];
-
-const MULTISIG_ABI = [
-    "function getOwners() view returns (address[])",
-    "function getThreshold() view returns (uint256)"
-];
-
 
 const verifyOwnableInterface = async (
     contract: Contract,
@@ -297,26 +276,20 @@ export const revokeRole = async (
 // eslint-disable-next-line max-statements
 export const getPermissionModels = async (address: AddressLike): Promise<PermissionModel[]> => {
     const models: PermissionModel[] = [];
-
     if (await isOwnable(address)) {
         models.push(PermissionModel.OWNABLE);
     }
-
     if (await isAccessControl(address)) {
         models.push(PermissionModel.ROLE_BASED);
     }
-
     if (await isAccessManager(address)) {
         models.push(PermissionModel.ACCESS_MANAGER);
     }
-
     if (await isAccessManaged(address)) {
         models.push(PermissionModel.ACCESS_MANAGED);
     }
-
     if (models.includes(PermissionModel.ACCESS_MANAGER) && models.includes(PermissionModel.ROLE_BASED)) {
         throw new Error(`Address ${address} cannot be both ACCESS_MANAGER and ROLE_BASED permission models.`);
     }
-
     return models;
 }
