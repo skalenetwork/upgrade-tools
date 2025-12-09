@@ -192,8 +192,8 @@ export class OwnershipAdmin {
 
         if (!this.transactions.length) {
             console.log(chalk.green("No ownership transfer transactions required."));
+            await this.createRevokeRolesTransactions();
         }
-        await this.createRevokeRolesTransactions();
     }
 
     private getColumnWidths(): {
