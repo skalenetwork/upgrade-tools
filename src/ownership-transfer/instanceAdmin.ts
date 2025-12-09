@@ -49,6 +49,11 @@ export class InstanceAdmin {
     constructor(instance: Instance, contractNames: string[], options: InstanceAdminOptions) {
         this.instance = instance;
         this.contractNames = contractNames;
+        this.readonly = options.readonly;
+        this.newOwner = options.newOwner;
+        this.submitter = options.submitter;
+        this.oldOwner = options.oldOwner;
+        this.revokeRoles = options.revokeRoles;
 
         this.processOptions(options);
     }
@@ -94,18 +99,20 @@ export class InstanceAdmin {
         }
     }
 
-    // eslint-disable-next-line max-statements
     private async submitRevokeRolesTransactions(): Promise<void> {
         const txsToSubmit: TransactionData[] = [];
         for (const contract of this.contractMetadata.values()) {
-            const revokeTxs = contract.getRevokeOwnershipTransactions();
-            txsToSubmit.push(...revokeTxs);
+            txsToSubmit.push(...contract.getRevokeOwnershipTransactions());
             contract.clearRevokeTransactions();
         }
         console.log(chalk.green(`Submitting ${txsToSubmit.length} revoke ownership transactions...`));
         for (const [index, txData] of txsToSubmit.entries()) {
             console.log(chalk.grey(`    -> Transaction ${index}: ${txData.description || "No description"}`));
         }
+        await this.confirmAndSubmitTransactions(txsToSubmit);
+    }
+
+    private async confirmAndSubmitTransactions(txsToSubmit: TransactionData[]): Promise<void> {
         const confirmation = await promptUserConfirmation("Do you want to proceed with submitting these transactions?");
         if (!confirmation) {
             throw new Error("Transaction submission aborted by user.");
@@ -113,12 +120,10 @@ export class InstanceAdmin {
         await this.submitter.submit(txsToSubmit.map(tx => tx.transaction));
     }
 
-    // eslint-disable-next-line max-statements
     private async submitGrantOwnershipTransactions(): Promise<void> {
         const txsToSubmit: TransactionData[] = [];
         for (const contract of this.contractMetadata.values()) {
-            const grantTxs = contract.getGrantOwnershipTransactions();
-            txsToSubmit.push(...grantTxs);
+            txsToSubmit.push(...contract.getGrantOwnershipTransactions());
             contract.clearGrantTransactions();
         }
 
@@ -128,11 +133,7 @@ export class InstanceAdmin {
         for (const [index, txData] of txsToSubmitFiltered.entries()) {
             console.log(chalk.grey(`    -> Transaction ${index}: ${txData.description || "No description"}`));
         }
-        const confirmation = await promptUserConfirmation("Do you want to proceed with submitting these transactions?");
-        if (!confirmation) {
-            throw new Error("Transaction submission aborted by user.");
-        }
-        await this.submitter.submit(txsToSubmitFiltered.map(tx => tx.transaction));
+        await this.confirmAndSubmitTransactions(txsToSubmit);
     }
 
     private ownershipGrantingRequired(): boolean {
@@ -184,17 +185,13 @@ export class InstanceAdmin {
         console.log(chalk.green("\nUser confirmed. Proceeding...\n"));
     }
 
-    // By 1
-    // eslint-disable-next-line max-statements
     private processOptions(options: InstanceAdminOptions): void {
         // If true, does not allow to send transactions to blockchain
-        this.readonly = options.readonly;
-        this.newOwner = options.newOwner;
+
         this.bytes32RolesToCheck = (options.rolesToCheck ?? []).map(role => ({
             identifier: ethers.id(role),
             name: role
         }));
-        this.submitter = options.submitter;
         // Always have DEFAULT_ADMIN_ROLE at the end!
         this.bytes32RolesToCheck.push({identifier: ethers.ZeroHash, name: "DEFAULT_ADMIN_ROLE"});
         if (!this.readonly && this.newOwner === ethers.ZeroAddress) {
@@ -208,14 +205,11 @@ export class InstanceAdmin {
         });
         // Always have ADMIN_ROLE at the end!
         this.managerRolesToCheck.push({identifier: ZERO, name: "ADMIN_ROLE"});
-        this.oldOwner = options.oldOwner;
-        this.revokeRoles = options.revokeRoles;
     }
 
     private async createRequiredTransactions(): Promise<void> {
-        // Clear previous transactions
         console.log(chalk.grey("INFO: The next Following steps will NOT submit any transactions to the blockchain."));
-        // Required to be processed sequentially - `performance` is not an issue here
+        // Preffered to create sequentially due to rate limits
         /* eslint-disable no-await-in-loop */
         for(const contract of this.contractMetadata.values()) {
             await contract.createGrantOwnershipTransactions(
@@ -253,7 +247,6 @@ export class InstanceAdmin {
         return {maxAddressWidth, maxNameWidth, maxPermissionsWidth};
     }
 
-    // eslint-disable-next-line max-statements
     private displayPatternGroup(pattern: string, contracts: ContractAdmin[]): void {
         const columnWidths = this.getColumnWidths();
         console.log(chalk.bold(`\n${pattern} Pattern (${contracts.length} contracts):`));

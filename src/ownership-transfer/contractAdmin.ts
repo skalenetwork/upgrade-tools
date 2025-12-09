@@ -162,6 +162,7 @@ export class ContractAdmin {
         bytes32RolesToCheck: BytesRole[]
     ): Promise<void> {
         for (const role of bytes32RolesToCheck) {
+            // Required to process sequentially as it access shared memory state
             // eslint-disable-next-line no-await-in-loop
             const tx = await grantRole(this.address, role.identifier, newOwner, oldOwner);
             if (tx) {
@@ -188,7 +189,7 @@ export class ContractAdmin {
         bytes32RolesToCheck: BytesRole[]
     ): Promise<void> {
         for (const role of bytes32RolesToCheck) {
-            // Required to process sequentially due to order of transactions - 0x00 role last
+            // Required to process sequentially as it access shared memory state
             // eslint-disable-next-line no-await-in-loop
             const tx = await revokeRole(this.address, role.identifier, oldOwner);
             if (typeof tx !== "boolean" && tx) {

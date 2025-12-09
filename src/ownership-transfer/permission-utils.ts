@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import {AddressLike, Contract, Transaction} from "ethers";
 import {hasFunctionSelector, isContractAddress} from "./utils";
 import {ethers} from "hardhat";
@@ -6,23 +5,18 @@ import {ethers} from "hardhat";
 export enum PermissionModel {
     // Does not fully complete the process of Ownable2Step
     OWNABLE = "OWNABLE",
-    // This does NOT work for ACCESS_MANAGER contracts
     ROLE_BASED = "ROLE_BASED",
     ACCESS_MANAGED = "ACCESS_MANAGED",
     ACCESS_MANAGER = "ACCESS_MANAGER"
 }
 
-/*
- * ABI for Ownable interface - includes owner() function
- */
+const MIN_ROLE_HOLDERS = 2n;
+
 const OWNABLE_ABI = [
     "function transferOwnership(address newOwner)",
     "function owner() view returns (address)"
 ];
 
-/*
- * ABI for AccessControl interface
- */
 const ACCESS_CONTROL_ABI = [
     "function hasRole(bytes32 role, address account) view returns (bool)",
     "function grantRole(bytes32 role, address account)",
@@ -36,16 +30,10 @@ const ACCESS_MANAGER_ABI = [
     "function revokeRole(uint64 role, address account)"
 ];
 
-/*
- * ABI for AccessManaged interface - includes authority() function
- */
 const ACCESS_MANAGED_ABI = [
     "function authority() view returns (address)"
 ];
 
-/*
- * ABI for Gnosis Safe MultiSig interface
- */
 const MULTISIG_ABI = [
     "function getOwners() view returns (address[])",
     "function getThreshold() view returns (uint256)"
@@ -70,14 +58,7 @@ const verifyOwnableInterface = async (
     return await hasFunctionSelector(contractAddress, "transferOwnership(address)");
 };
 
-/*
- * Checks if a contract implements the Ownable interface.
- * A contract is considered Ownable if it has both owner() and transferOwnership() functions.
- * We verify this by reading the current owner and doing a static call (dry run) of transferOwnership.
- *
- * @param contractAddress - The address of the contract to check
- * @returns true if the contract is Ownable, false otherwise
- */
+
 export const isOwnable = async (contractAddress: AddressLike): Promise<boolean> => {
     try {
         const resolvedAddress = await ethers.resolveAddress(contractAddress);
@@ -114,14 +95,7 @@ const verifyAccessControlInterface = async (
         await hasFunctionSelector(contractAddress, "revokeRole(bytes32,address)");
 };
 
-/*
- * Checks if a contract implements the AccessControl interface.
- * A contract is considered AccessControl if it has hasRole() and grantRole() functions.
- * We verify this by calling hasRole() and doing a static call (dry run) of grantRole().
- *
- * @param contractAddress - The address of the contract to check
- * @returns true if the contract is AccessControl, false otherwise
- */
+
 export const isAccessControl = async (contractAddress: AddressLike): Promise<boolean> => {
     try {
         const resolvedAddress = await ethers.resolveAddress(contractAddress);
@@ -146,10 +120,6 @@ const verifyAccessManagerInterface = async (
     contract: Contract,
     contractAddress: string
 ): Promise<boolean> => {
-    /*
-     * Verify hasRole(uint64,address) view function exists
-     * AccessManager uses uint64 for roleId instead of bytes32
-     */
     const zeroRole = 0n;
     await contract.hasRole(zeroRole, ethers.ZeroAddress);
 
@@ -161,14 +131,7 @@ const verifyAccessManagerInterface = async (
         await hasFunctionSelector(contractAddress, "revokeRole(uint64,address)");
 };
 
-/*
- * Checks if a contract implements the AccessManager interface.
- * A contract is considered AccessManager if it has hasRole(uint64,address) and
- * grantRole(uint64,address,uint32) functions with uint64 role parameter.
- *
- * @param contractAddress - The address of the contract to check
- * @returns true if the contract is AccessManager, false otherwise
- */
+
 export const isAccessManager = async (contractAddress: AddressLike): Promise<boolean> => {
     try {
         const resolvedAddress = await ethers.resolveAddress(contractAddress);
@@ -189,14 +152,6 @@ export const isAccessManager = async (contractAddress: AddressLike): Promise<boo
     }
 };
 
-/*
- * Checks if a contract implements the AccessManaged interface.
- * A contract is considered AccessManaged if it has an authority() function
- * that returns a non-zero address pointing to a manager contract.
- *
- * @param contractAddress - The address of the contract to check
- * @returns true if the contract is AccessManaged, false otherwise
- */
 export const isAccessManaged = async (contractAddress: AddressLike): Promise<boolean> => {
     try {
         const resolvedAddress = await ethers.resolveAddress(contractAddress);
@@ -224,14 +179,6 @@ export const isAccessManaged = async (contractAddress: AddressLike): Promise<boo
     }
 };
 
-/*
- * Checks if a contract is a MultiSig (Gnosis Safe).
- * A contract is considered a MultiSig if it has both getOwners() and getThreshold() functions
- * and returns valid data (at least one owner and threshold > 0).
- *
- * @param contractAddress - The address of the contract to check
- * @returns An object containing owners and threshold if the contract is a MultiSig, null otherwise
- */
 export const tryGetMultiSigInfo = async (contractAddress: string) => {
     let owners: string[] | null = null;
     let threshold: bigint | null = null;
@@ -251,17 +198,6 @@ export const tryGetMultiSigInfo = async (contractAddress: string) => {
     }
 };
 
-/*
- * Transfers ownership of an Ownable contract to a new owner.
- * This function encodes the transferOwnership call data for the transaction.
- *
- * @param contractAddress - The address of the Ownable contract
- * @param newOwner - The address of the new owner
- * @returns Transaction object with the encoded transferOwnership call or true
- * if the new owner is already the desired owner
- *
- * @dev The address must have already been verified as an Ownable contract before calling this function.
- */
 export const transferOwnership = async (
     contractAddress: string,
     newOwner: string,
@@ -291,18 +227,7 @@ export const transferOwnership = async (
     return transaction;
 };
 
-/*
- * Grants a role to an address in a ROLE_BASED (AccessControl) contract.
- * This function encodes the grantRole call data for the transaction.
- *
- * @param contractAddress - The address of the AccessControl contract
- * @param role - The bytes32 role identifier to grant
- * @param account - The address to grant the role to
- * @returns Transaction object with the encoded grantRole call or true
- * if the account already has the role
- *
- * @dev The contract address must be a ROLE_BASED contract (not validated by this function)
- */
+
 export const grantRole = async (
     contractAddress: string,
     role: string,
@@ -353,8 +278,8 @@ export const revokeRole = async (
     ) {
         return true;
     }
-    // eslint-disable-next-line no-magic-numbers
-    if ((await contract.getRoleMemberCount(role)) < 2n && role === ethers.ZeroHash) {
+
+    if ((await contract.getRoleMemberCount(role)) < MIN_ROLE_HOLDERS && role === ethers.ZeroHash) {
         return false;
     }
     const data = contract.interface.encodeFunctionData(
