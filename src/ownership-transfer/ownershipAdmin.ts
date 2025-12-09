@@ -61,7 +61,6 @@ export class OwnershipAdmin {
 
     private bytes32RolesToCheck: BytesRole[] = [];
     private managerRolesToCheck: IntegerRole[] = [];
-    private newOwnerConfirmed: boolean = false;
     // These are assigned in processOptions - called in constructor
     private oldOwner!: string;
     private newOwner!: string;
@@ -179,8 +178,8 @@ export class OwnershipAdmin {
     private async createRequiredTransactions(): Promise<void> {
         // Clear previous transactions
         console.log(chalk.grey("INFO: The next Following steps will NOT submit any transactions to the blockchain."));
-        if (!this.readonly && !this.newOwnerConfirmed) {
-            await this.promptConfirmNewOwner();
+        if (!this.readonly) {
+            await this.promptNewOwnerDetails();
         }
 
         for(const contract of this.contractMetadata.values()) {
@@ -372,7 +371,7 @@ export class OwnershipAdmin {
 
     // eslint-disable-next-line max-statements
     private async createTxsToGrantContractOwnership(contractData: ContractMetadataDetails): Promise<TransactionData[]>{
-        console.log(chalk.white(`* Creating Transactions to change Ownership of ${contractData.name}.`))
+        console.log(chalk.white(`* Creating Transactions to grant Ownership in ${contractData.name}.`))
         const txs: TransactionData[] = [];
         if (contractData.pattern === Pattern.TUPP) {
             const tx = await this.createTUPPOwnershipTransaction(contractData);
@@ -399,7 +398,7 @@ export class OwnershipAdmin {
     }
 
     // eslint-disable-next-line max-statements
-    private async promptConfirmNewOwner(): Promise<void> {
+    private async promptNewOwnerDetails(): Promise<void> {
         console.log(chalk.white(`You have specified the new owner address as ${this.newOwner}.`));
         const isContract = await isContractAddress(this.newOwner);
         if (isContract) {
@@ -417,10 +416,6 @@ export class OwnershipAdmin {
             }
             console.log(message);
         }
-        if (!await promptUserConfirmation("")) {
-            throw new Error("User did not confirm the new owner address. Aborting...");
-        }
-        this.newOwnerConfirmed = true;
     }
 
     private isDuplicateTransaction(transaction: Transaction): boolean {
