@@ -152,7 +152,7 @@ export const isAccessManaged = async (contractAddress: AddressLike): Promise<boo
          */
         const authorityAddress = await contract.authority();
 
-        return await isAccessControl(authorityAddress);
+        return await isAccessManager(authorityAddress);
     } catch {
         return false;
     }
