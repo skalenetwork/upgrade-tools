@@ -1,6 +1,15 @@
+/* eslint-disable max-lines */
+// Exceeded by 3 - required for now
+
 // Cspell:words keccak
 
-import {BytesRole, ContractAdmin, ContractMetadataDetails, TransactionData} from "./contractAdmin";
+import {
+    BytesRole,
+    ContractAdmin,
+    ContractMetadataDetails,
+    TransactionData,
+    UintRole
+} from "./contractAdmin";
 import {EoaSubmitter, SafeSubmitter} from "../submitters";
 import {
     Pattern,
@@ -8,22 +17,17 @@ import {
     promptUserConfirmation,
     removeDuplicateTransactions
 } from "./utils";
+import {PermissionModel, getPermissionModels} from "./permission-utils";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v6";
 import chalk from "chalk";
 import {ethers} from "hardhat";
-import {getPermissionModels} from "./permission-utils";
 
 const ZERO = 0;
-
-interface IntegerRole {
-    name: string;
-    identifier: number;
-}
 
 export interface InstanceAdminOptions {
     oldOwner: string;
     submitter: SafeSubmitter | EoaSubmitter;
-    revokeRoles: boolean;
+    renounceRoles: boolean;
     newOwner: string;
     readonly: boolean;
     testMode: boolean;
@@ -33,32 +37,33 @@ export interface InstanceAdminOptions {
     // Roles in Access Manager are uint64 numbers
     managerRolesToCheck?: number[];
 }
+
+interface ContractId {
+    name: string;
+    address?: string;
+}
 export class InstanceAdmin {
-    private instance: Instance;
-
+    private instance?: Instance;
     private contractMetadata: Map<string, ContractAdmin> = new Map<string, ContractAdmin>();
-    private contractNames: string[];
-
+    private contractIds: ContractId[];
     private bytes32RolesToCheck: BytesRole[] = [];
-    private managerRolesToCheck: IntegerRole[] = [];
-    // These are assigned in processOptions - called in constructor
-    private oldOwner!: string;
-    private newOwner!: string;
-    private readonly!: boolean;
-    private submitter!: SafeSubmitter | EoaSubmitter;
-    private revokeRoles!: boolean;
+    private managerRolesToCheck: UintRole[] = [];
+    private oldOwner: string;
+    private newOwner: string;
+    private readonly: boolean;
+    private submitter: SafeSubmitter | EoaSubmitter;
+    private renounceRoles: boolean;
     private testMode: boolean;
 
-    constructor(instance: Instance, contractNames: string[], options: InstanceAdminOptions) {
+    constructor(contractIds: ContractId[], options: InstanceAdminOptions, instance?: Instance) {
         this.instance = instance;
-        this.contractNames = contractNames;
+        this.contractIds = contractIds;
         this.readonly = options.readonly;
         this.newOwner = options.newOwner;
         this.submitter = options.submitter;
         this.oldOwner = options.oldOwner;
-        this.revokeRoles = options.revokeRoles;
+        this.renounceRoles = options.renounceRoles;
         this.testMode = options.testMode;
-
         this.processOptions(options);
     }
 
@@ -69,9 +74,9 @@ export class InstanceAdmin {
             return;
         }
         await this.processGrantStepIfRequired();
-        await this.processRevokeStepIfRequired();
+        await this.processRenounceStepIfRequired();
         this.displayFindings();
-        if (this.ownershipGrantingRequired() || this.ownershipRevokingRequired() && this.revokeRoles) {
+        if (this.ownershipGrantingRequired() || this.ownershipRevokingRequired() && this.renounceRoles) {
             console.error(chalk.red("Unexpected state: There are still actions requires."));
         }
         else{
@@ -79,7 +84,7 @@ export class InstanceAdmin {
         }
     }
 
-        private async initialize(): Promise<void> {
+    private async initialize(): Promise<void> {
         await this.loadContractMetadataAndCreateTransactions();
         await this.confirmData();
     }
@@ -87,27 +92,27 @@ export class InstanceAdmin {
     private async processGrantStepIfRequired(): Promise<void> {
         if (this.ownershipGrantingRequired()) {
             await this.submitGrantOwnershipTransactions();
-            if (this.revokeRoles) {
+            if (this.renounceRoles) {
                 await this.createRequiredTransactions();
             }
             await this.confirmData();
         }
     }
 
-    private async processRevokeStepIfRequired(): Promise<void> {
-        if (this.revokeRoles && this.ownershipRevokingRequired() === true) {
-            await this.submitRevokeRolesTransactions();
+    private async processRenounceStepIfRequired(): Promise<void> {
+        if (this.renounceRoles && this.ownershipRevokingRequired() === true) {
+            await this.submitRenounceRolesTransactions();
             await this.createRequiredTransactions();
         }
     }
 
-    private async submitRevokeRolesTransactions(): Promise<void> {
+    private async submitRenounceRolesTransactions(): Promise<void> {
         const txsToSubmit: TransactionData[] = [];
         for (const contract of this.contractMetadata.values()) {
-            txsToSubmit.push(...contract.getRevokeOwnershipTransactions());
-            contract.clearRevokeTransactions();
+            txsToSubmit.push(...contract.getRenounceOwnershipTransactions());
+            contract.clearRenounceTransactions();
         }
-        console.log(chalk.green(`Submitting ${txsToSubmit.length} revoke ownership transactions...`));
+        console.log(chalk.green(`Submitting ${txsToSubmit.length} renounce ownership transactions...`));
         for (const [index, txData] of txsToSubmit.entries()) {
             console.log(chalk.grey(`    -> Transaction ${index}: ${txData.description || "No description"}`));
         }
@@ -155,20 +160,34 @@ export class InstanceAdmin {
         );
     }
 
+    private async resolveContractAddress(contractName: string): Promise<string> {
+        if (!this.instance) {
+            throw new Error(`Instance is not defined. Cannot resolve ${contractName} address.`);
+        }
+        return await this.instance.getContractAddress(contractName);
+    }
+
     private async loadContractMetadataAndCreateTransactions(): Promise<void> {
         /* eslint-disable no-await-in-loop */
         // Do not parallelize to avoid rate limit issues which CAN produce wrong outputs
-        for (const contractName of this.contractNames) {
-            const address = await this.instance.getContractAddress(contractName);
-            if (!this.contractMetadata.has(address)) {
-                const pattern = await detectPattern(address);
+        for (const {name: contractName, address} of this.contractIds) {
+            const resolvedAddress = address || await this.resolveContractAddress(contractName);
+            if (!this.contractMetadata.has(resolvedAddress)) {
+                const pattern = await detectPattern(resolvedAddress);
                 const details: ContractMetadataDetails = {
-                    address,
+                    address: resolvedAddress,
                     name: contractName,
                     pattern,
-                    permissionModel: await getPermissionModels(address)
+                    permissionModel: await getPermissionModels(resolvedAddress)
                 };
-                this.contractMetadata.set(address, new ContractAdmin(details));
+                const maxPermissionsIfBeacon = 1;
+                if (pattern === Pattern.BEACON &&
+                    !details.permissionModel?.includes(PermissionModel.OWNABLE) &&
+                    details.permissionModel?.length !== maxPermissionsIfBeacon
+                ) {
+                    throw new Error(`UpgradeableBeacon at address ${resolvedAddress} should ONLY have OWNABLE permission model.`);
+                }
+                this.contractMetadata.set(resolvedAddress, new ContractAdmin(details));
             }
         }
         /* eslint-enable no-await-in-loop */
@@ -194,12 +213,12 @@ export class InstanceAdmin {
             throw new Error("New owner address must be provided in options when in write mode.");
         }
         this.managerRolesToCheck = (options.managerRolesToCheck ?? []).map(role => {
-            if (typeof role !== "number" || !Number.isInteger(role) || role < ZERO) {
-                throw new Error(`Invalid manager role: ${role}. Must be a non-negative integer.`);
+            if (typeof role !== "bigint" || role as bigint <= ZERO) {
+                throw new Error(`Invalid manager role: ${role}. Must be a non-zero bigint.`);
             }
             return {identifier: role, name: `Role ${role}`};
         });
-        this.managerRolesToCheck.push({identifier: ZERO, name: "ADMIN_ROLE"});
+        this.managerRolesToCheck.push({identifier: BigInt(ZERO), name: "ADMIN_ROLE"});
     }
 
     private async createRequiredTransactions(): Promise<void> {
@@ -210,15 +229,14 @@ export class InstanceAdmin {
             await contract.createGrantOwnershipTransactions(
                 this.oldOwner,
                 this.newOwner,
-                this.bytes32RolesToCheck
-                //TODO: this.managerRolesToCheck
+                this.bytes32RolesToCheck,
+                this.managerRolesToCheck
             );
             if (!contract.requiresOwnershipGranting()) {
-                await contract.createRevokeOwnershipTransactions(
+                await contract.createRenounceOwnershipTransactions(
                     this.oldOwner,
-                    this.newOwner,
                     this.bytes32RolesToCheck,
-                    // TODO: this.managerRolesToCheck
+                    this.managerRolesToCheck
                 );
             }
         }

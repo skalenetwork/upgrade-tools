@@ -1,7 +1,6 @@
 // Cspell:words TUPP
 import {
     ERC1967_ADMIN_SLOT,
-    ERC1967_BEACON_SLOT,
     ERC1967_IMPLEMENTATION_SLOT,
     basicBeaconAbi
 } from "./constants";
@@ -41,7 +40,7 @@ export const getAdminAddress = async (address: string): Promise<string> => {
     return extractAddressFromSlot(adminSlotValue);
 };
 
-export const getImplementationAddress = async (address: string): Promise<string> => {
+export const getTUPPImplementationAddress = async (address: string): Promise<string> => {
     const implementationSlotValue = await ethers.provider.getStorage(
         address,
         ERC1967_IMPLEMENTATION_SLOT
@@ -59,7 +58,7 @@ const validateTUPPProxy = async (
         return false;
     }
 
-    const implementationAddress = await getImplementationAddress(proxyAddress);
+    const implementationAddress = await getTUPPImplementationAddress(proxyAddress);
     return implementationAddress !== ethers.ZeroAddress && await isContractAddress(implementationAddress);
 };
 
@@ -81,6 +80,27 @@ export const isTUPPPattern = async (address: string): Promise<boolean> => {
     }
 };
 
+const resolveImplementationAddress = async (address: string): Promise<string> => {
+    if (await isTUPPPattern(address)) {
+        return getTUPPImplementationAddress(address);
+    }
+    // Beacon not required because we only change upgradeability ownership - on UpgradeableBeacon
+    return address;
+};
+
+export const hasFunctionSelector = async (address: string, signature: string): Promise<boolean> => {
+    const iface = new ethers.Interface([`function ${signature}`]);
+    const toSlice = "0x".length;
+    const selector = iface.getFunction(signature)?.selector.slice(toSlice).toLowerCase();
+    if (!selector) {
+        throw new Error(`Invalid function signature: ${signature}`);
+    }
+    const implementationAddress = await resolveImplementationAddress(address);
+    const bytecode = (await ethers.provider.getCode(implementationAddress)).toLowerCase();
+    // May very rarely cause false positives - But user verifies findings
+    return bytecode.includes(selector);
+}
+
 /*
  * Checks if the contract follows the Beacon Proxy Pattern.
  * A Beacon proxy has a beacon address in the ERC1967 beacon slot,
@@ -88,32 +108,19 @@ export const isTUPPPattern = async (address: string): Promise<boolean> => {
  */
 export const isBeaconPattern = async (address: string): Promise<boolean> => {
     try {
-        // Check beacon slot
-        const beaconSlotValue = await ethers.provider.getStorage(
-            address,
-            ERC1967_BEACON_SLOT
-        );
-
-        const beaconAddress = extractAddressFromSlot(beaconSlotValue);
-
-        if (beaconAddress === ethers.ZeroAddress) {
-            return false;
-        }
-
         const contract = new ethers.Contract(
             address,
             basicBeaconAbi,
             ethers.provider
         );
-
-        const [owner, implementation] = await Promise.all([
-            contract.owner(),
-            contract.implementation()
-        ]);
+        const implementation = await contract.implementation();
+        const owner = await contract.owner();
+        const interfaceHasUpgradeTo = await hasFunctionSelector(address, "upgradeTo(address)");
 
         return owner !== ethers.ZeroAddress &&
-            implementation === beaconAddress &&
-            await isContractAddress(implementation);
+            implementation !== ethers.ZeroAddress &&
+            await isContractAddress(implementation) &&
+            interfaceHasUpgradeTo;
     } catch {
         return false;
     }
@@ -182,29 +189,7 @@ export const detectPattern = async (address: AddressLike): Promise<Pattern> => {
     }
 }
 
-export const hasFunctionSelector = async (address: string, signature: string): Promise<boolean> => {
-    const iface = new ethers.Interface([`function ${signature}`]);
-    const {selector} = iface.getFunction(signature) || {};
 
-    if (!selector) {
-        throw new Error(`Invalid function signature: ${signature}`);
-    }
-
-    try {
-        // Empty arguments used — we just want to test if the selector is valid
-        const result = await ethers.provider.call({
-            data: selector,
-            to: address
-        });
-        if (result === "0x") {
-            return false;
-        }
-        return true;
-    } catch (err) {
-        // Reverted = function exists, but call params invalid
-        return true;
-    }
-}
 
 export const removeDuplicateTransactions = (items: TransactionData[]): TransactionData[] => {
     const seen = new Set<string>();

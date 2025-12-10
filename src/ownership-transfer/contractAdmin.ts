@@ -1,12 +1,24 @@
 // Cspell:words TUPP
 import {Pattern, getAdminAddress} from "./utils";
-import {PermissionModel, grantRole, revokeRole, transferOwnership} from "./permission-utils";
+import {
+    PermissionModel,
+    grantAccessManagerRole,
+    grantRole,
+    renounceAccessManagerRole,
+    renounceRole,
+    transferOwnership
+} from "./permission-utils";
 import {Transaction} from "ethers";
 import chalk from "chalk";
 
 export interface BytesRole {
     name: string;
     identifier: string;
+}
+
+export interface UintRole {
+    name: string;
+    identifier: bigint;
 }
 
 export interface ContractMetadataDetails {
@@ -28,7 +40,7 @@ export class ContractAdmin {
     public permissionModel: PermissionModel[] = [];
 
     private grantOwnershipRoleTxs: TransactionData[] = [];
-    private revokeOwnershipTxs: TransactionData[] = [];
+    private renounceOwnershipTxs: TransactionData[] = [];
 
     constructor(details: ContractMetadataDetails) {
         this.contractName = details.name;
@@ -37,17 +49,20 @@ export class ContractAdmin {
         this.permissionModel = details.permissionModel ?? [];
     }
 
+    // Looks cleaner than passing an object. Also parsing the object would be more verbose.
+    // eslint-disable-next-line max-params, max-statements
     public async createGrantOwnershipTransactions(
         oldOwner: string,
         newOwner: string,
         bytes32RolesToCheck: BytesRole[],
-        //Add managerRolesToCheck: string[]
+        managerRolesToCheck: UintRole[]
     ) {
         if (!this.grantOwnershipRoleTxs.length) {
             console.log(chalk.white(`* Creating Transactions to grant Ownership in ${this.contractName}.`));
             if (this.pattern === Pattern.TUPP) {
                 await this.createTUPPGrantOwnershipTransaction(oldOwner, newOwner);
             }
+            // UpgradeableBeacon is detected also as OWNABLE
             if (this.permissionModel.includes(PermissionModel.OWNABLE)) {
                 await this.createOwnableOwnershipTransaction(oldOwner, newOwner);
             }
@@ -55,26 +70,25 @@ export class ContractAdmin {
                 await this.createAssignBytes32RolesTransactions(oldOwner, newOwner, bytes32RolesToCheck);
             }
             if (this.permissionModel.includes(PermissionModel.ACCESS_MANAGER)){
-                console.log(chalk.yellow("Not implemented yet: Access Manager role assignments."));
+                this.createAssignUint64RolesTransactions(oldOwner, newOwner, managerRolesToCheck);
             }
         }
     }
 
-    public async createRevokeOwnershipTransactions(
+    public async createRenounceOwnershipTransactions(
         oldOwner: string,
-        newOwner: string,
         bytes32RolesToCheck: BytesRole[],
-        //Add managerRolesToCheck: string[]
+        managerRolesToCheck: UintRole[]
     ) {
-        if (this.revokeOwnershipTxs.length) {
+        if (this.renounceOwnershipTxs.length) {
             return;
         }
-        console.log(chalk.white(`* Creating Transactions to revoke Ownership in ${this.contractName}.`));
+        console.log(chalk.white(`* Creating Transactions to renounce Ownership in ${this.contractName}.`));
         if (this.permissionModel.includes(PermissionModel.ROLE_BASED)){
-            await this.createRevokeBytes32RolesTransactions(oldOwner, newOwner, bytes32RolesToCheck);
+            await this.createRenounceBytes32RolesTransactions(oldOwner, bytes32RolesToCheck);
         }
         if (this.permissionModel.includes(PermissionModel.ACCESS_MANAGER)){
-            console.log(chalk.yellow("Not implemented yet: Access Manager role revocations."));
+            await this.createRenounceUint64RolesTransactions(oldOwner, managerRolesToCheck);
         }
     }
 
@@ -82,12 +96,12 @@ export class ContractAdmin {
         return this.grantOwnershipRoleTxs;
     }
 
-    public getRevokeOwnershipTransactions(): TransactionData[] {
-        return this.revokeOwnershipTxs;
+    public getRenounceOwnershipTransactions(): TransactionData[] {
+        return this.renounceOwnershipTxs;
     }
 
-    public clearRevokeTransactions(): void {
-        this.revokeOwnershipTxs = [];
+    public clearRenounceTransactions(): void {
+        this.renounceOwnershipTxs = [];
     }
 
     public clearGrantTransactions(): void {
@@ -99,7 +113,7 @@ export class ContractAdmin {
     }
 
     public requiresOwnershipRevoking(): boolean {
-        return Boolean(this.revokeOwnershipTxs.length);
+        return Boolean(this.renounceOwnershipTxs.length);
     }
 
     public displayData(
@@ -113,13 +127,13 @@ export class ContractAdmin {
         if (this.grantOwnershipRoleTxs.length){
             status = chalk.yellow("GRANT OWNERSHIP REQUIRED");
         }
-        else if (this.revokeOwnershipTxs.length){
+        else if (this.renounceOwnershipTxs.length){
             status = chalk.yellow("REVOKE ROLES REQUIRED");
         }
         console.log(chalk.gray(`  ${name}  ${address}  ${permissions}  `) + status);
     }
 
-    // TODO: Handle case where 1 proxy admin manages multiple proxies
+    // InstanceAdmin filters duplicates across multiple contracts sharing the same proxy admin
     private async createTUPPGrantOwnershipTransaction(
         oldOwner: string,
         newOwner: string
@@ -156,6 +170,73 @@ export class ContractAdmin {
         }
     }
 
+    private async createAssignUint64RolesTransactions(
+        oldOwner: string,
+        newOwner: string,
+        managerRolesToCheck: UintRole[]
+    ): Promise<void> {
+        for (const role of managerRolesToCheck) {
+            // Required to process sequentially as it access shared memory state
+            // eslint-disable-next-line no-await-in-loop
+            const tx = await grantAccessManagerRole(this.address, role.identifier, newOwner, oldOwner);
+            if (tx) {
+                if (this.isDuplicateTransaction({transaction: tx})) {
+                    // Unexpected - better check
+                    throw new Error(`Error: Transaction to grant manager role ${role.name} in ${this.contractName} was already created.`);
+                }
+                else {
+                    const description =
+                        `-> Tx to grant role ${role.name} to ${newOwner} in ${this.contractName}`;
+                    console.log(
+                        chalk.yellow(
+                            `    ${description} created.`
+                        )
+                    );
+                    this.grantOwnershipRoleTxs.push({description, transaction: tx});
+                }
+            }
+        }
+    }
+
+    private handleRenounceOwnershipTransaction(
+        tx: Transaction | boolean,
+        roleName: string,
+        oldOwner: string,
+    ): void {
+        if (typeof tx !== "boolean" && tx) {
+            if (this.isDuplicateTransaction({transaction: tx})) {
+                // Unexpected - better check
+                throw new Error(`Error: Transaction to renounce role ${roleName} in ${this.contractName} was already created.`);
+            }
+            else {
+                const description = `-> Tx to renounce role ${roleName} from ${oldOwner} in ${this.contractName}`;
+                console.log(
+                    chalk.yellow(
+                        `    ${description} created.`
+                    )
+                );
+                this.renounceOwnershipTxs.push({description, transaction: tx});
+            }
+        }
+        else if (!tx) {
+            console.log(chalk.yellow(
+                `    WARNING: Skipping revocation of role ${roleName} in ${this.contractName} as it requires at least 1 member left.`
+            ));
+        }
+    }
+
+    private async createRenounceUint64RolesTransactions(
+        oldOwner: string,
+        managerRolesToCheck: UintRole[]
+    ): Promise<void> {
+        for (const role of managerRolesToCheck) {
+            // Required to process sequentially as it access shared memory state
+            // eslint-disable-next-line no-await-in-loop
+            const tx = await renounceAccessManagerRole(this.address, role.identifier, oldOwner);
+            this.handleRenounceOwnershipTransaction(tx, role.name, oldOwner);
+        }
+    }
+
     private async createAssignBytes32RolesTransactions(
         oldOwner: string,
         newOwner: string,
@@ -168,10 +249,11 @@ export class ContractAdmin {
             if (tx) {
                 if (this.isDuplicateTransaction({transaction: tx})) {
                     // Unexpected - better check
-                    throw new Error(`Error: Transaction to grant role ${role} in ${this.contractName} was already created.`);
+                    throw new Error(`Error: Transaction to grant role ${role.name} in ${this.contractName} was already created.`);
                 }
                 else {
-                    const description = `-> Tx to grant role ${role.name} to ${newOwner} in ${this.contractName}`;
+                    const description =
+                        `-> Tx to grant role ${role.name} to ${newOwner} in ${this.contractName}`;
                     console.log(
                         chalk.yellow(
                             `    ${description} created.`
@@ -183,35 +265,15 @@ export class ContractAdmin {
         }
     }
 
-    private async createRevokeBytes32RolesTransactions(
+    private async createRenounceBytes32RolesTransactions(
         oldOwner: string,
-        newOwner: string,
         bytes32RolesToCheck: BytesRole[]
     ): Promise<void> {
         for (const role of bytes32RolesToCheck) {
             // Required to process sequentially as it access shared memory state
             // eslint-disable-next-line no-await-in-loop
-            const tx = await revokeRole(this.address, role.identifier, oldOwner);
-            if (typeof tx !== "boolean" && tx) {
-                if (this.isDuplicateTransaction({transaction: tx})) {
-                    // Unexpected - better check
-                    throw new Error(`Error: Transaction to revoke role ${role} in ${this.contractName} was already created.`);
-                }
-                else {
-                    const description = `-> Tx to revoke role ${role.name} from ${oldOwner} in ${this.contractName}`;
-                    console.log(
-                        chalk.yellow(
-                            `    ${description} created.`
-                        )
-                    );
-                    this.revokeOwnershipTxs.push({description, transaction: tx});
-                }
-            }
-            else if (!tx) {
-                console.log(chalk.yellow(
-                    `    WARNING: Skipping revocation of role ${role.name} in ${this.contractName} as it requires at least 1 member left.`
-                ));
-            }
+            const tx = await renounceRole(this.address, role.identifier, oldOwner);
+            this.handleRenounceOwnershipTransaction(tx, role.name, oldOwner);
         }
     }
 
@@ -221,11 +283,11 @@ export class ContractAdmin {
                 existingTx.transaction.to === transaction.transaction.to &&
                 existingTx.transaction.data === transaction.transaction.data
         );
-        const isRevokeDuplicate = this.revokeOwnershipTxs.some(
+        const isRenounceDuplicate = this.renounceOwnershipTxs.some(
             (existingTx) =>
                 existingTx.transaction.to === transaction.transaction.to &&
                 existingTx.transaction.data === transaction.transaction.data
         );
-        return  isGrantDuplicate || isRevokeDuplicate;
+        return  isGrantDuplicate || isRenounceDuplicate;
     }
 }
