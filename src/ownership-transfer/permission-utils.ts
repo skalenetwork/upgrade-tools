@@ -245,7 +245,9 @@ export const grantAccessManagerRole = async (
 export const renounceAccessManagerRole = async (
     contractAddress: string,
     role: bigint,
-    oldAccount: AddressLike
+    oldAccount: AddressLike,
+    newAccount: AddressLike
+// eslint-disable-next-line max-params
 ): Promise<Transaction | boolean> => {
     const contract = new Contract(
         contractAddress,
@@ -257,8 +259,10 @@ export const renounceAccessManagerRole = async (
     ) {
         return true;
     }
-    // Prevent revoking last role holder of default admin role
-    if (role === BigInt(ZERO) && (await contract.getRoleMemberCount(role)) < MIN_ROLE_HOLDERS) {
+
+
+    // Ensure role was granted to newAccount before renouncing
+    if (role === BigInt(ZERO) && !(await contract.hasRole(role, newAccount))) {
         return false;
     }
     const data = contract.interface.encodeFunctionData(

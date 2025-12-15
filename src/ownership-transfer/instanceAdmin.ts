@@ -235,6 +235,7 @@ export class InstanceAdmin {
             if (!contract.requiresOwnershipGranting()) {
                 await contract.createRenounceOwnershipTransactions(
                     this.oldOwner,
+                    this.newOwner,
                     this.bytes32RolesToCheck,
                     this.managerRolesToCheck
                 );

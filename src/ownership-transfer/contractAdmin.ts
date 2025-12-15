@@ -70,13 +70,15 @@ export class ContractAdmin {
                 await this.createAssignBytes32RolesTransactions(oldOwner, newOwner, bytes32RolesToCheck);
             }
             if (this.permissionModel.includes(PermissionModel.ACCESS_MANAGER)){
-                this.createAssignUint64RolesTransactions(oldOwner, newOwner, managerRolesToCheck);
+                await this.createAssignUint64RolesTransactions(oldOwner, newOwner, managerRolesToCheck);
             }
         }
     }
 
+    // eslint-disable-next-line max-params
     public async createRenounceOwnershipTransactions(
         oldOwner: string,
+        newOwner: string,
         bytes32RolesToCheck: BytesRole[],
         managerRolesToCheck: UintRole[]
     ) {
@@ -88,7 +90,7 @@ export class ContractAdmin {
             await this.createRenounceBytes32RolesTransactions(oldOwner, bytes32RolesToCheck);
         }
         if (this.permissionModel.includes(PermissionModel.ACCESS_MANAGER)){
-            await this.createRenounceUint64RolesTransactions(oldOwner, managerRolesToCheck);
+            await this.createRenounceUint64RolesTransactions(oldOwner, newOwner, managerRolesToCheck);
         }
     }
 
@@ -227,12 +229,13 @@ export class ContractAdmin {
 
     private async createRenounceUint64RolesTransactions(
         oldOwner: string,
+        newOwner: string,
         managerRolesToCheck: UintRole[]
     ): Promise<void> {
         for (const role of managerRolesToCheck) {
             // Required to process sequentially as it access shared memory state
             // eslint-disable-next-line no-await-in-loop
-            const tx = await renounceAccessManagerRole(this.address, role.identifier, oldOwner);
+            const tx = await renounceAccessManagerRole(this.address, role.identifier, oldOwner, newOwner);
             this.handleRenounceOwnershipTransaction(tx, role.name, oldOwner);
         }
     }
