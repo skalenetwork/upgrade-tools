@@ -1,8 +1,4 @@
-/* eslint-disable max-lines */
-// Exceeded by 3 - required for now
-
 // Cspell:words keccak
-
 import {
     BytesRole,
     ContractAdmin,
@@ -13,11 +9,9 @@ import {
 import {EoaSubmitter, SafeSubmitter} from "../submitters";
 import {
     Pattern,
-    detectPattern,
     promptUserConfirmation,
     removeDuplicateTransactions
 } from "./utils";
-import {PermissionModel, getPermissionModels} from "./permission-utils";
 import {Instance} from "@skalenetwork/skale-contracts-ethers-v6";
 import chalk from "chalk";
 import {ethers} from "hardhat";
@@ -31,7 +25,6 @@ export interface InstanceAdminOptions {
     newOwner: string;
     readonly: boolean;
     testMode: boolean;
-
     // Example `MINTER_ROLE` - do not input as keccak string
     rolesToCheck?: string[];
     // Roles in Access Manager are uint64 numbers
@@ -42,6 +35,7 @@ interface ContractId {
     name: string;
     address?: string;
 }
+
 export class InstanceAdmin {
     private instance?: Instance;
     private contractMetadata: Map<string, ContractAdmin> = new Map<string, ContractAdmin>();
@@ -169,25 +163,20 @@ export class InstanceAdmin {
 
     private async loadContractMetadataAndCreateTransactions(): Promise<void> {
         /* eslint-disable no-await-in-loop */
-        // Do not parallelize to avoid rate limit issues which CAN produce wrong outputs
+        // Do not parallelize to avoid rate limit issues which CAN produce wrong outputs - sensitive
         for (const {name: contractName, address} of this.contractIds) {
             const resolvedAddress = address || await this.resolveContractAddress(contractName);
             if (!this.contractMetadata.has(resolvedAddress)) {
-                const pattern = await detectPattern(resolvedAddress);
                 const details: ContractMetadataDetails = {
                     address: resolvedAddress,
                     name: contractName,
-                    pattern,
-                    permissionModel: await getPermissionModels(resolvedAddress)
                 };
-                const maxPermissionsIfBeacon = 1;
-                if (pattern === Pattern.BEACON &&
-                    !details.permissionModel?.includes(PermissionModel.OWNABLE) &&
-                    details.permissionModel?.length !== maxPermissionsIfBeacon
-                ) {
-                    throw new Error(`UpgradeableBeacon at address ${resolvedAddress} should ONLY have OWNABLE permission model.`);
-                }
-                this.contractMetadata.set(resolvedAddress, new ContractAdmin(details));
+                const contractAdmin = new ContractAdmin(details, this.oldOwner, this.newOwner);
+                await contractAdmin.scanPatternAndPermissionModels();
+                this.contractMetadata.set(
+                    resolvedAddress,
+                    contractAdmin
+                );
             }
         }
         /* eslint-enable no-await-in-loop */
@@ -205,6 +194,7 @@ export class InstanceAdmin {
 
     private processOptions(options: InstanceAdminOptions): void {
         this.bytes32RolesToCheck = (options.rolesToCheck ?? []).map(role => ({
+            // Never will include "0x00..." as role - default admin handled separately
             identifier: ethers.id(role),
             name: role
         }));
@@ -217,25 +207,22 @@ export class InstanceAdmin {
                 throw new Error(`Invalid manager role: ${role}. Must be a non-zero bigint.`);
             }
             return {identifier: role, name: `Role ${role}`};
-        });
+            // Filter out ADMIN_ROLE (0) as it should be added at the end
+        }).filter(role => role.identifier !== BigInt(ZERO));
         this.managerRolesToCheck.push({identifier: BigInt(ZERO), name: "ADMIN_ROLE"});
     }
 
     private async createRequiredTransactions(): Promise<void> {
         console.log(chalk.grey("INFO: The next Following steps will NOT submit any transactions to the blockchain."));
-        // Preferred to create sequentially due to rate limits
+        // Preferred to create sequentially due to rate limits of RPC providers - sensitive
         /* eslint-disable no-await-in-loop */
         for(const contract of this.contractMetadata.values()) {
             await contract.createGrantOwnershipTransactions(
-                this.oldOwner,
-                this.newOwner,
                 this.bytes32RolesToCheck,
                 this.managerRolesToCheck
             );
             if (!contract.requiresOwnershipGranting()) {
                 await contract.createRenounceOwnershipTransactions(
-                    this.oldOwner,
-                    this.newOwner,
                     this.bytes32RolesToCheck,
                     this.managerRolesToCheck
                 );
@@ -293,7 +280,8 @@ export class InstanceAdmin {
                 return acc;
             }, {} as Record<Pattern, ContractAdmin[]>);
         for (const metadata of this.contractMetadata.values()) {
-            grouped[metadata.pattern].push(metadata);
+            // Used only after scan - will be defined if it reaches here
+            grouped[metadata.pattern!].push(metadata);
         }
         return grouped;
     }

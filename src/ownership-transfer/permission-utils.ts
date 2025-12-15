@@ -131,32 +131,31 @@ export const transferOwnership = async (
 
 
 export const grantRole = async (
-    contractAddress: string,
-    role: string,
-    newAccount: AddressLike,
-    oldAccount: AddressLike
-// Cleaner, and the 4 are required
-// eslint-disable-next-line max-params
+    input: {contractAddress: string,
+        role: string,
+        newAccount: AddressLike,
+        oldAccount: AddressLike
+    }
 ): Promise<Transaction | false> => {
     const contract = new Contract(
-        contractAddress,
+        input.contractAddress,
         ACCESS_CONTROL_ABI,
         ethers.provider
     );
     // If new account already has role or old account never had it in the first place - no action
-    if (await contract.hasRole(role, newAccount) || !await contract.hasRole(role, oldAccount)) {
+    if (await contract.hasRole(input.role, input.newAccount) || !await contract.hasRole(input.role, input.oldAccount)) {
         return false;
     }
-    if (!await contract.hasRole(ethers.ZeroHash, oldAccount)) {
+    if (!await contract.hasRole(ethers.ZeroHash, input.oldAccount)) {
         // Currently we do not support roleAdmins - must be ran by owner
-        throw new Error(`Account ${oldAccount} does not have permission to grant roles on contract ${contractAddress}.`);
+        throw new Error(`Account ${input.oldAccount} does not have permission to grant roles on contract ${input.contractAddress}.`);
     }
     const data = contract.interface.encodeFunctionData(
         "grantRole",
-        [role, newAccount]
+        [input.role, input.newAccount]
     );
     const transaction = new Transaction();
-    transaction.to = contractAddress;
+    transaction.to = input.contractAddress;
     transaction.data = data;
     return transaction;
 };
@@ -213,65 +212,65 @@ export const getPermissionModels = async (address: AddressLike): Promise<Permiss
 }
 
 export const grantAccessManagerRole = async (
-    contractAddress: string,
-    role: bigint,
-    newAccount: AddressLike,
-    oldAccount: AddressLike
-// eslint-disable-next-line max-params
+    input: {contractAddress: string,
+        role: bigint,
+        newAccount: AddressLike,
+        oldAccount: AddressLike
+    }
 ): Promise<Transaction | false> => {
     const contract = new Contract(
-        contractAddress,
+        input.contractAddress,
         ACCESS_MANAGER_ABI,
         ethers.provider
     );
     // If new account already has role or old account never had it in the first place - no action
-    if (await contract.hasRole(role, newAccount) || !await contract.hasRole(role, oldAccount)) {
+    if (await contract.hasRole(input.role, input.newAccount) || !await contract.hasRole(input.role, input.oldAccount)) {
         return false;
     }
-    if (!await contract.hasRole(ZERO, oldAccount)) {
+    if (!await contract.hasRole(ZERO, input.oldAccount)) {
         // Currently we do not support roleAdmins - must be ran by owner
-        throw new Error(`Account ${oldAccount} does not have permission to grant roles on contract ${contractAddress}.`);
+        throw new Error(`Account ${input.oldAccount} does not have permission to grant roles on contract ${input.contractAddress}.`);
     }
     const data = contract.interface.encodeFunctionData(
         "grantRole",
-        [role, newAccount, ZERO]
+        [input.role, input.newAccount, ZERO]
     );
     const transaction = new Transaction();
-    transaction.to = contractAddress;
+    transaction.to = input.contractAddress;
     transaction.data = data;
     return transaction;
 }
 
 export const renounceAccessManagerRole = async (
-    contractAddress: string,
-    role: bigint,
-    oldAccount: AddressLike,
-    newAccount: AddressLike
-// eslint-disable-next-line max-params
+    input: {contractAddress: string,
+        role: bigint,
+        newAccount: AddressLike,
+        oldAccount: AddressLike
+    }
 ): Promise<Transaction | boolean> => {
     const contract = new Contract(
-        contractAddress,
+        input.contractAddress,
         ACCESS_MANAGER_ABI,
         ethers.provider
     );
     if (
-        !await contract.hasRole(role, oldAccount)
+        !await contract.hasRole(input.role, input.oldAccount)
     ) {
         return true;
     }
 
 
     // Ensure role was granted to newAccount before renouncing
-    if (role === BigInt(ZERO) && !(await contract.hasRole(role, newAccount))) {
+    if (input.role === BigInt(ZERO) && !(await contract.hasRole(input.role, input.newAccount))) {
         return false;
     }
     const data = contract.interface.encodeFunctionData(
         "renounceRole",
-        [role, oldAccount]
+        [input.role, input.oldAccount]
     );
 
     const transaction = new Transaction();
-    transaction.to = contractAddress;
+    transaction.to = input.contractAddress;
     transaction.data = data;
     return transaction;
 };
