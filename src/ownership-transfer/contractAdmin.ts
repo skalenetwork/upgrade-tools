@@ -148,11 +148,6 @@ export class ContractAdmin {
         ) {
             throw new Error(`UpgradeableBeacon at address ${this.address} should ONLY have OWNABLE permission model.`);
         }
-        if (this.pattern === Pattern.TUPP &&
-            !this.permissionModel.includes(PermissionModel.OWNABLE)
-        ) {
-            throw new Error(`TUPP Proxy at address ${this.address} must have OWNABLE permission model to transfer proxy admin ownership.`);
-        }
     }
     private async createTUPPGrantOwnershipTransaction(): Promise<void> {
         const admin = await getAdminAddress(this.address);
