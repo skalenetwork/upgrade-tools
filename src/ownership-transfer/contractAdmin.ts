@@ -115,11 +115,11 @@ export class ContractAdmin {
         this.grantOwnershipRoleTxs = [];
     }
 
-    public requiresOwnershipGranting(): boolean {
+    public requiresGrantingOwnership(): boolean {
         return Boolean(this.grantOwnershipRoleTxs.length);
     }
 
-    public requiresOwnershipRevoking(): boolean {
+    public requiresRenouncingOwnership(): boolean {
         return Boolean(this.renounceOwnershipTxs.length);
     }
 

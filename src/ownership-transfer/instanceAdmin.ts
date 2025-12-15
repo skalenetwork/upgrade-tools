@@ -28,7 +28,7 @@ export interface InstanceAdminOptions {
     // Example `MINTER_ROLE` - do not input as keccak string
     rolesToCheck?: string[];
     // Roles in Access Manager are uint64 numbers
-    managerRolesToCheck?: number[];
+    managerRolesToCheck?: bigint[];
 }
 
 interface ContractId {
@@ -70,8 +70,8 @@ export class InstanceAdmin {
         await this.processGrantStepIfRequired();
         await this.processRenounceStepIfRequired();
         this.displayFindings();
-        if (this.ownershipGrantingRequired() || this.ownershipRevokingRequired() && this.renounceRoles) {
-            console.error(chalk.red("Unexpected state: There are still actions requires."));
+        if (this.ownershipGrantingRequired() || (this.ownershipRevokingRequired() && this.renounceRoles)) {
+            console.error(chalk.red("Unexpected state: There are still actions required."));
         }
         else{
             console.log(chalk.green("Ownership transfer process completed. - Nothing more to do."));
@@ -121,7 +121,7 @@ export class InstanceAdmin {
         await this.submitter.submit(txsToSubmit.map(tx => tx.transaction));
         if (this.submitter instanceof SafeSubmitter) {
             await this.promptConfirmation(
-                "Please confirm ONLY AFTER the Safe transactions have been executed on-chain.\n" +
+                "Please proceed only AFTER the Safe transactions have been executed on-chain.\n" +
                 "Do you want to proceed?"
             );
         }
@@ -144,13 +144,13 @@ export class InstanceAdmin {
 
     private ownershipGrantingRequired(): boolean {
         return Array.from(this.contractMetadata.values()).some(contract =>
-            contract.requiresOwnershipGranting()
+            contract.requiresGrantingOwnership()
         );
     }
 
     private ownershipRevokingRequired(): boolean {
         return Array.from(this.contractMetadata.values()).some(contract =>
-            contract.requiresOwnershipRevoking()
+            contract.requiresRenouncingOwnership()
         );
     }
 
@@ -203,12 +203,11 @@ export class InstanceAdmin {
             throw new Error("New owner address must be provided in options when in write mode.");
         }
         this.managerRolesToCheck = (options.managerRolesToCheck ?? []).map(role => {
-            if (typeof role !== "bigint" || role as bigint <= ZERO) {
+            if (typeof role !== "bigint" || role <= ZERO) {
                 throw new Error(`Invalid manager role: ${role}. Must be a non-zero bigint.`);
             }
             return {identifier: role, name: `Role ${role}`};
-            // Filter out ADMIN_ROLE (0) as it should be added at the end
-        }).filter(role => role.identifier !== BigInt(ZERO));
+        });
         this.managerRolesToCheck.push({identifier: BigInt(ZERO), name: "ADMIN_ROLE"});
     }
 
@@ -221,7 +220,7 @@ export class InstanceAdmin {
                 this.bytes32RolesToCheck,
                 this.managerRolesToCheck
             );
-            if (!contract.requiresOwnershipGranting()) {
+            if (!contract.requiresGrantingOwnership()) {
                 await contract.createRenounceOwnershipTransactions(
                     this.bytes32RolesToCheck,
                     this.managerRolesToCheck

@@ -253,17 +253,15 @@ export const renounceAccessManagerRole = async (
         ACCESS_MANAGER_ABI,
         ethers.provider
     );
-    if (
-        !await contract.hasRole(input.role, input.oldAccount)
-    ) {
+
+    if (!await contract.hasRole(input.role, input.oldAccount)) {
         return true;
     }
-
-
     // Ensure role was granted to newAccount before renouncing
     if (input.role === BigInt(ZERO) && !(await contract.hasRole(input.role, input.newAccount))) {
         return false;
     }
+
     const data = contract.interface.encodeFunctionData(
         "renounceRole",
         [input.role, input.oldAccount]
