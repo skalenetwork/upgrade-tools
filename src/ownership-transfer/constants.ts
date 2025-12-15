@@ -4,7 +4,7 @@ export const ERC1967_ADMIN_SLOT = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8e
 export const ERC1967_IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 
 
-export const basicBeaconAbi = [
+export const UPGRADEABLE_BEACON_ABI = [
     "function owner() view returns (address)",
     "function implementation() view returns (address)",
     "function upgradeTo(address newImplementation)"

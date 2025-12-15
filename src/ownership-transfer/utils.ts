@@ -2,7 +2,8 @@
 import {
     ERC1967_ADMIN_SLOT,
     ERC1967_IMPLEMENTATION_SLOT,
-    basicBeaconAbi
+    MULTISIG_ABI,
+    UPGRADEABLE_BEACON_ABI
 } from "./constants";
 import {AddressLike} from "ethers";
 import {TransactionData} from "./contractAdmin";
@@ -101,6 +102,26 @@ export const hasFunctionSelector = async (address: string, signature: string): P
     return bytecode.includes(selector);
 }
 
+export const isMultisig = async (contractAddress: AddressLike): Promise<boolean> => {
+    try {
+        const resolvedAddress = await ethers.resolveAddress(contractAddress);
+        if (!await isContractAddress(resolvedAddress)) {
+            return false;
+        }
+        const contract = new ethers.Contract(resolvedAddress, MULTISIG_ABI, ethers.provider);
+        const owners = await contract.getOwners();
+        const threshold = Number(await contract.getThreshold());
+        const minOwnersRequired = 1;
+        return owners.length >= minOwnersRequired &&
+            threshold >= minOwnersRequired &&
+            threshold <= owners.length;
+    } catch {
+        // We prefer false negatives here than false positives - user should check Network/RPC issues
+        return false;
+    }
+};
+
+
 /*
  * Checks if the contract follows the Beacon Proxy Pattern.
  * A Beacon proxy has a beacon address in the ERC1967 beacon slot,
@@ -110,7 +131,7 @@ export const isBeaconPattern = async (address: string): Promise<boolean> => {
     try {
         const contract = new ethers.Contract(
             address,
-            basicBeaconAbi,
+            UPGRADEABLE_BEACON_ABI,
             ethers.provider
         );
         const implementation = await contract.implementation();

@@ -9,6 +9,3 @@ export * from "./upgrader";
 export * from "./upgraders/abstractTransparentProxyUpgrader";
 export * from "./upgraders/beaconUpgrader"
 export * from "./ownership-transfer/instanceAdmin";
-export * from "./ownership-transfer/contractAdmin";
-export * from "./ownership-transfer/permission-utils";
-export * from "./ownership-transfer/utils";
