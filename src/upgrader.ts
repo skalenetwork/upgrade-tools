@@ -134,6 +134,8 @@ export abstract class Upgrader {
     }
 
     private async createProxyUpgraders() {
+        const [deployer] = await ethers.getSigners();
+        this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
         this.proxyUpgraders = await Promise.all(
             this.contractNamesToUpgrade.map(
                 this.createProxyUpgrader,
@@ -205,8 +207,6 @@ export abstract class Upgrader {
     }
 
     private async deployNewImplementations () {
-        const [deployer] = await ethers.getSigners();
-        this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
         const contracts = await Promise.all(this.proxyUpgraders.
             map(
                 (upgrader) => this.protectedDeployNewImplementation(upgrader),
