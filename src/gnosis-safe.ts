@@ -3,57 +3,12 @@ import {
     OperationType,
     SafeTransaction,
 } from "@safe-global/safe-core-sdk-types";
-import {Network, Transaction} from "ethers";
 import {ethers, network} from "hardhat";
 import Safe from "@safe-global/protocol-kit";
 import SafeApiKit from "@safe-global/api-kit";
+import {Transaction} from "ethers";
 
 // Cspell:words arbitrum celo sepolia xdai holesky
-
-// Constants
-
-const URLS = {
-    "safe_transaction": {
-        [Network.from("mainnet").chainId.toString()]:
-            "https://safe-transaction-mainnet.safe.global/api",
-        [Network.from("arbitrum").chainId.toString()]:
-            "https://safe-transaction-arbitrum.safe.global/api",
-        [Network.from("base").chainId.toString()]:
-            "https://safe-transaction-base.safe.global/api",
-        [Network.from("base-sepolia").chainId.toString()]:
-            "https://safe-transaction-base-sepolia.safe.global/api",
-        [Network.from("bnb").chainId.toString()]:
-            "https://safe-transaction-bsc.safe.global/api",
-        [Network.from("xdai").chainId.toString()]:
-            "https://safe-transaction-gnosis-chain.safe.global/api",
-        [Network.from("optimism").chainId.toString()]:
-            "https://safe-transaction-optimism.safe.global/api",
-        [Network.from("matic").chainId.toString()]:
-            "https://safe-transaction-polygon.safe.global/api",
-        [Network.from("sepolia").chainId.toString()]:
-            "https://safe-transaction-sepolia.safe.global/api",
-        [Network.from("holesky").chainId.toString()]:
-            "https://transaction-holesky.holesky-safe.protofire.io/api",
-        // Aurora
-        "0x4e454152":
-            "https://safe-transaction-aurora.safe.global/api",
-        // Polygon zkEVM
-        "1101":
-            "https://safe-transaction-zkevm.safe.global/api",
-        // ZkSync Era Mainnet
-        "324":
-            "https://safe-transaction-zksync.safe.global/api",
-        // Celo
-        "42220":
-            "https://safe-transaction-celo.safe.global/api",
-        // Avalanche
-        "43114":
-            "https://safe-transaction-avalanche.safe.global/api",
-        // Scroll
-        "534352":
-            "https://safe-transaction-scroll.safe.global/api",
-    }
-};
 
 const defaultOptions = {
 
@@ -95,20 +50,14 @@ const getSafeTransactionData = (transactions: Transaction[]) => {
     return safeTransactionData;
 };
 
-const getSafeTransactionUrl = (chainId: bigint) => {
-    if (Object.keys(URLS.safe_transaction).includes(chainId.toString())) {
-        return URLS.safe_transaction[
-            Number(chainId) as keyof typeof URLS.safe_transaction
-        ];
-    }
-    throw Error("Can't get Safe Transaction Service url" +
-        ` at network with chainId = ${chainId}`);
-};
-
 const getSafeService = (chainId: bigint) => {
+    if(!process.env.GNOSIS_API_KEY) {
+        throw new Error("GNOSIS_API_KEY is not set");
+    }
     const safeService = new SafeApiKit({
+        apiKey: process.env.GNOSIS_API_KEY,
         chainId,
-        "txServiceUrl": getSafeTransactionUrl(chainId)
+        // Does not need the URL - chainId is enough
     });
     return safeService;
 };
@@ -156,7 +105,7 @@ export const createMultiSendTransaction = async (
              * Transaction cannot be executed until
              * Safe's nonce is not equal to this nonce
              */
-            nonce
+            nonce: parseInt(nonce, 10)
         }
     };
     const safeSdk = await Safe.init({
