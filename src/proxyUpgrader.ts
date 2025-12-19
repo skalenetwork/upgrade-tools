@@ -94,11 +94,12 @@ export abstract class ProxyUpgrader {
         ) as AddressLike;
         if (newImplementationAddress === currentImplementationAddress) {
             console.log(chalk.gray(`Contract ${this.contractName} is up to date`));
+            // Release only if no upgrade is needed
+            if (nonce) {
+                this.nonceProvider?.releaseNonce(nonce);
+            }
         } else {
             this.newImplementationAddress = newImplementationAddress;
-        }
-        if (nonce) {
-            this.nonceProvider?.releaseNonce(nonce);
         }
     }
 }
