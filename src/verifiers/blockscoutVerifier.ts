@@ -62,6 +62,10 @@ export class BlockscoutVerifier extends ContractVerifier {
     }
 
     protected async submitVerificationRequest(target: VerificationTarget, params: VerificationRequestParameters): Promise<ValidationResponse> {
+        if (target.constructorArguments) {
+            // TODO: remove this exception when Blockscout supports constructor arguments
+            throw new Error("Constructor arguments are not supported for Blockscout verification.");
+        }
         return await this.blockscout.verify(
             target.contractAddress,
             params.solcInputJson,

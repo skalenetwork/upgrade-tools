@@ -28,9 +28,9 @@ export class SkaleBlockscoutVerifier extends BlockscoutVerifier {
         const schainName = pathname.split("/").filter(Boolean).pop()!;
 
         let networkType: keyof typeof BASE_EXPLORER_URLS = "mainnet";
-        if (host.includes("mainnet.")) {
+        if (host.includes("mainnet.skalenodes")) {
             networkType = "mainnet";
-        } else if (host.includes("testnet.")) {
+        } else if (host.includes("testnet.skalenodes")) {
             networkType = "testnet";
         } else if (host.includes("legacy-proxy.")) {
             networkType = "legacy";

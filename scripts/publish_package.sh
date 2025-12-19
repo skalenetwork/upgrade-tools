@@ -39,4 +39,5 @@ jq -c ".version = \"$VERSION\"" package.json > package.json.new
 mv package.json.new package.json
 
 yarn config set npmAuthToken "$NODE_AUTH_TOKEN"
+yarn config set npmRegistryServer https://registry.npmjs.org/
 yarn npm publish --access public $TAG
