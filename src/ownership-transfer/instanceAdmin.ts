@@ -71,11 +71,9 @@ export class InstanceAdmin {
         await this.processRenounceStepIfRequired();
         this.displayFindings();
         if (this.ownershipGrantingRequired() || (this.ownershipRevokingRequired() && this.renounceRoles)) {
-            console.error(chalk.red("Unexpected state: There are still actions required."));
+            throw new Error("Unexpected state: There are still actions required.");
         }
-        else{
-            console.log(chalk.green("Ownership transfer process completed. - Nothing more to do."));
-        }
+        console.log(chalk.green("Ownership transfer process completed. - Nothing more to do."));
     }
 
     private async initialize(): Promise<void> {

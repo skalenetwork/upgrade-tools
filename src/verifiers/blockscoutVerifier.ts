@@ -37,6 +37,22 @@ const BLOCKSCOUT_CHAINS: ChainConfig[] = [
             apiURL: "https://eth-hoodi.blockscout.com/api",
             browserURL: "https://eth-hoodi.blockscout.com",
         }
+    },
+    {
+        chainId: 8453,
+        network: "base",
+        urls: {
+            apiURL: "https://base.blockscout.com/api",
+            browserURL: "https://base.blockscout.com",
+        }
+    },
+    {
+        chainId: 84532,
+        network: "base-sepolia",
+        urls: {
+            apiURL: "https://base-sepolia.blockscout.com/api",
+            browserURL: "https://base-sepolia.blockscout.com",
+        }
     }
 ]
 
@@ -63,8 +79,8 @@ export class BlockscoutVerifier extends ContractVerifier {
 
     protected async submitVerificationRequest(target: VerificationTarget, params: VerificationRequestParameters): Promise<ValidationResponse> {
         if (target.constructorArguments) {
-            // TODO: remove this exception when Blockscout supports constructor arguments
-            throw new Error("Constructor arguments are not supported for Blockscout verification.");
+            // TODO: remove this when Blockscout supports constructor arguments
+            console.log(`Ignoring constructor arguments for Blockscout verification of ${target.contractAddress}`);
         }
         return await this.blockscout.verify(
             target.contractAddress,
