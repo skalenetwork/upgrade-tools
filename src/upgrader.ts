@@ -184,7 +184,8 @@ export abstract class Upgrader {
             console.log("Skip verification");
         } else {
             console.log("Start verification");
-            await Promise.all(
+            // Try all, don't fail if one fails
+            await Promise.allSettled(
                 this.getChangedContracts().map(
                     (upgrader) => verify(
                         upgrader.getContractName(),

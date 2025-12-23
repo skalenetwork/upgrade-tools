@@ -3,6 +3,7 @@ import {AddressLike} from "ethers";
 import {BlockscoutVerifier} from "./verifiers/blockscoutVerifier";
 import {ContractVerifier} from "./contractVerifier";
 import {EtherscanVerifier} from "./verifiers/etherscanVerifier";
+import Semaphore from "semaphore-async-await";
 import {SkaleBlockscoutVerifier} from "./verifiers/skaleBlockscoutVerifier";
 import chalk from "chalk";
 import {getImplementationAddress} from "@openzeppelin/upgrades-core";
@@ -72,24 +73,33 @@ const setupSkale = async () => {
 
 const verifiers: ContractVerifier[] = [];
 let verifiersSetup = false;
+// Semaphore to limit concurrent creation of verifiers
+const MAX_CONCURRENCY = 1;
+const lock = new Semaphore(MAX_CONCURRENCY);
 
 const setupVerifiers = async () => {
-    if (!verifiersSetup) {
-        verifiersSetup = true;
-        const {chainId} = await ethers.provider.getNetwork();
-        const candidates = [
-            await setupEtherscan(chainId),
-            setupBlockscout(chainId),
-            await setupSkale()
-        ];
-        verifiers.push(...candidates.filter(item => item !== null));
+    try {
+        await lock.acquire();
+        if (!verifiersSetup) {
+            verifiersSetup = true;
+            const {chainId} = await ethers.provider.getNetwork();
+            const candidates = [
+                await setupEtherscan(chainId),
+                setupBlockscout(chainId),
+                await setupSkale()
+            ];
+            verifiers.push(...candidates.filter(item => item !== null));
+        }
+    } finally {
+        lock.release();
     }
 }
 
 export const verify = async (contractName: string, contractAddress: AddressLike, constructorArguments?: string) => {
     await setupVerifiers();
     const contractAddressString = await ethers.resolveAddress(contractAddress);
-    await Promise.all(verifiers.map(verifier => verifier.verify({
+    // Try all, don't fail if one fails
+    await Promise.allSettled(verifiers.map(verifier => verifier.verify({
         constructorArguments,
         contractAddress: contractAddressString,
         contractName
