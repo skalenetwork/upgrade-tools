@@ -267,8 +267,18 @@ export abstract class Upgrader {
     }
 
     private verifySubmitter() {
+        /*
+         * Check safety of the upgrade
+         * Auto-Submitter has its own check
+         * Safe Submitter is always safe
+         * All the others right now are not fully atomic (including the ones that use IMA)
+         */
         const maxNotAtomicTransactions = 1;
-        if (this.submitter.name !== "Safe Submitter" && this.transactions.length > maxNotAtomicTransactions) {
+        if (
+            this.submitter.name !== "Safe Submitter" &&
+            this.submitter.name !== "Auto Submitter" &&
+            this.transactions.length > maxNotAtomicTransactions
+        ) {
             Upgrader.atomicityWarning();
         }
     }
