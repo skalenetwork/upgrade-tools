@@ -43,7 +43,7 @@ export class SafeToImaSubmitter extends SafeSubmitter {
             ),
             "to": messageProxyForMainnetAddress
         }));
-        // Althouth transactions are atomic on mainnet side, they are not atomic on schain side.
+        // Although transactions are atomic on mainnet side, they are not atomic on schain side.
         await super.submit(transactionsToIma);
     }
 
