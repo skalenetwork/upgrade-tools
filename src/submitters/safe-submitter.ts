@@ -5,6 +5,7 @@ import {ethers} from "hardhat";
 
 
 export class SafeSubmitter extends Submitter {
+    name = "Safe Submitter";
     safeAddress: string;
 
     chainId: bigint | undefined;

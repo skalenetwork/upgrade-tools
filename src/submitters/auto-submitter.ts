@@ -52,6 +52,7 @@ export class AutoSubmitter extends Submitter {
         const owner = await this.upgrader.getOwner();
         if (await ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
+            Upgrader.atomicityWarning();
             return new EoaSubmitter();
         }
 

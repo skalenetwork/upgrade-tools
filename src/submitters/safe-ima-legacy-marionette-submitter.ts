@@ -42,10 +42,6 @@ export class SafeImaLegacyMarionetteSubmitter extends SafeToImaSubmitter {
     ) as LegacyMarionette;
 
     async submit (transactions: Transaction[]): Promise<void> {
-        const singleTransaction = 1;
-        if (transactions.length > singleTransaction) {
-            SafeImaLegacyMarionetteSubmitter.atomicityWarning();
-        }
         const marionetteAddress = await this.marionette.getAddress();
         const transactionsToMarionette =
             (await Promise.all(transactions.
