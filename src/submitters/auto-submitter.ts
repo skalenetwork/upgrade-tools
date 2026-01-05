@@ -52,20 +52,21 @@ export class AutoSubmitter extends Submitter {
         const owner = await this.upgrader.getOwner();
         if (await ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
-            Upgrader.atomicityWarning();
+            this.upgrader.atomicityWarning();
             return new EoaSubmitter();
         }
 
         console.log("Owner is a contract");
-        return AutoSubmitter.getSubmitterForContractOwner(owner);
+        return this.getSubmitterForContractOwner(owner);
     }
 
-    private static async getSubmitterForContractOwner (owner: string) {
+    private async getSubmitterForContractOwner (owner: string) {
         const mainnetChainId = AutoSubmitter.getMainnetChainId();
         if (ethers.getAddress(owner) ===
             ethers.getAddress(MARIONETTE_ADDRESS)) {
             console.log("Marionette owner is detected");
 
+            this.upgrader.atomicityWarning();
             const imaInstance = await AutoSubmitter.getImaInstance();
             const safeAddress = AutoSubmitter.getSafeAddress();
             const schainHash = AutoSubmitter.getSchainHash();
@@ -107,7 +108,6 @@ export class AutoSubmitter extends Submitter {
 
         // Assuming owner is a Gnosis Safe
         console.log("Using Gnosis Safe");
-
         return new SafeSubmitter(owner, mainnetChainId);
     }
 

@@ -92,18 +92,6 @@ export abstract class Upgrader {
 
     // Public
 
-    public static atomicityWarning () {
-        if (process.env.ALLOW_NOT_ATOMIC_UPGRADE) {
-            console.log(chalk.yellow("Not atomic upgrade is performing"));
-        } else {
-            console.log(chalk.red("The upgrade will consist" +
-                " of multiple transactions and will not be atomic"));
-            console.log(chalk.red("If not atomic upgrade is OK" +
-                " set ALLOW_NOT_ATOMIC_UPGRADE environment variable"));
-            process.exit(EXIT_CODES.NOT_ATOMIC_UPGRADE);
-        }
-    }
-
     async upgrade () {
         const version = await this.prepareVersion();
         await this.callDeployNewContracts();
@@ -266,20 +254,35 @@ export abstract class Upgrader {
         }
     }
 
-    private verifySubmitter() {
-        /*
-         * Check safety of the upgrade
-         * Auto-Submitter has its own check
-         * Safe Submitter is always safe
-         * All the others right now are not fully atomic (including the ones that use IMA)
-         */
-        const maxNotAtomicTransactions = 1;
+    private verifySubmitter () {
+        if (this.submitter.name === "Auto Submitter") {
+            // AutoSubmitter performs its own atomicity check
+            return;
+        }
+        if (this.submitter.name === "Safe Submitter") {
+            // SafeSubmitter always provides atomicity
+            return;
+        }
+        this.atomicityWarning();
+    }
+
+    // Call only if submitter is NOT SafeSubmitter
+    public atomicityWarning () {
+        const maxTransactionsForAtomicUpgrade = 1;
         if (
-            this.submitter.name !== "Safe Submitter" &&
-            this.submitter.name !== "Auto Submitter" &&
-            this.transactions.length > maxNotAtomicTransactions
+            this.transactions.length <= maxTransactionsForAtomicUpgrade
         ) {
-            Upgrader.atomicityWarning();
+            // Safe
+            return;
+        }
+        if (process.env.ALLOW_NOT_ATOMIC_UPGRADE) {
+            console.log(chalk.yellow("Not atomic upgrade is performing"));
+        } else {
+            console.log(chalk.red("The upgrade will consist" +
+                " of multiple transactions and will not be atomic"));
+            console.log(chalk.red("If not atomic upgrade is OK" +
+                " set ALLOW_NOT_ATOMIC_UPGRADE environment variable"));
+            process.exit(EXIT_CODES.NOT_ATOMIC_UPGRADE);
         }
     }
 }
