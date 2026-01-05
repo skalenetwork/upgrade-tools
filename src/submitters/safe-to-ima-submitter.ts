@@ -14,6 +14,7 @@ export class SafeToImaSubmitter extends SafeSubmitter {
 
     targetSchainHash: BytesLike;
 
+    protected atomicSubmitter = false;
     private messageProxyForMainnet: BaseContract | undefined;
 
     constructor (

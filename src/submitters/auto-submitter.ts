@@ -15,7 +15,8 @@ import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v6";
 
 export class AutoSubmitter extends Submitter {
     name = "Auto Submitter";
-    upgrader: Upgrader
+    upgrader: Upgrader;
+    submitter: Submitter | undefined;
 
     constructor (
         upgrader: Upgrader
@@ -42,31 +43,40 @@ export class AutoSubmitter extends Submitter {
 
     async submit (transactions: Transaction[]) {
         console.log(`Submit via ${this.name}`);
-        const submitter = await this.getSubmitter();
-        await submitter.submit(transactions);
+        await this.loadSubmitter();
+        await this.submitter!.submit(transactions);
+    }
+
+    async isAtomicSubmitter(): Promise<boolean> {
+        await this.loadSubmitter();
+        return this.submitter!.isAtomicSubmitter();
     }
 
     // Private
+
+    private async loadSubmitter () {
+        if(!this.submitter) {
+            this.submitter = await this.getSubmitter();
+        }
+    }
 
     private async getSubmitter () {
         const owner = await this.upgrader.getOwner();
         if (await ethers.provider.getCode(owner) === "0x") {
             console.log("Owner is not a contract");
-            this.upgrader.atomicityWarning();
             return new EoaSubmitter();
         }
 
         console.log("Owner is a contract");
-        return this.getSubmitterForContractOwner(owner);
+        return AutoSubmitter.getSubmitterForContractOwner(owner);
     }
 
-    private async getSubmitterForContractOwner (owner: string) {
+    private static async getSubmitterForContractOwner (owner: string) {
         const mainnetChainId = AutoSubmitter.getMainnetChainId();
         if (ethers.getAddress(owner) ===
             ethers.getAddress(MARIONETTE_ADDRESS)) {
             console.log("Marionette owner is detected");
 
-            this.upgrader.atomicityWarning();
             const imaInstance = await AutoSubmitter.getImaInstance();
             const safeAddress = AutoSubmitter.getSafeAddress();
             const schainHash = AutoSubmitter.getSchainHash();

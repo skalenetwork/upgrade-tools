@@ -100,7 +100,7 @@ export abstract class Upgrader {
         // Write version
         await this.setVersion(version);
         await this.writeTransactions(version);
-        this.verifySubmitter();
+        await this.verifySubmitter();
         await this.submitter.submit(this.transactions);
         await this.verify();
         console.log("Done");
@@ -254,35 +254,24 @@ export abstract class Upgrader {
         }
     }
 
-    private verifySubmitter () {
-        if (this.submitter.name === "Auto Submitter") {
-            // AutoSubmitter performs its own atomicity check
-            return;
-        }
-        if (this.submitter.name === "Safe Submitter") {
-            // SafeSubmitter always provides atomicity
-            return;
-        }
-        this.atomicityWarning();
-    }
-
-    // Call only if submitter is NOT SafeSubmitter
-    public atomicityWarning () {
+    private async verifySubmitter () {
         const maxTransactionsForAtomicUpgrade = 1;
         if (
-            this.transactions.length <= maxTransactionsForAtomicUpgrade
+            this.transactions.length <= maxTransactionsForAtomicUpgrade ||
+            await this.submitter.isAtomicSubmitter()
         ) {
-            // Safe
+            console.log(chalk.yellow("Atomic upgrade is performing."));
             return;
         }
+
         if (process.env.ALLOW_NOT_ATOMIC_UPGRADE) {
-            console.log(chalk.yellow("Not atomic upgrade is performing"));
-        } else {
-            console.log(chalk.red("The upgrade will consist" +
-                " of multiple transactions and will not be atomic"));
-            console.log(chalk.red("If not atomic upgrade is OK" +
-                " set ALLOW_NOT_ATOMIC_UPGRADE environment variable"));
-            process.exit(EXIT_CODES.NOT_ATOMIC_UPGRADE);
+            console.log(chalk.yellow("Not atomic upgrade is performing."));
+            return;
         }
+        console.log(chalk.red("The upgrade will consist" +
+            " of multiple transactions and will not be atomic"));
+        console.log(chalk.red("If not atomic upgrade is OK" +
+            " set ALLOW_NOT_ATOMIC_UPGRADE environment variable"));
+        process.exit(EXIT_CODES.NOT_ATOMIC_UPGRADE);
     }
 }

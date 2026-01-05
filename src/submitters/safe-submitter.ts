@@ -7,6 +7,7 @@ import {ethers} from "hardhat";
 export class SafeSubmitter extends Submitter {
     name = "Safe Submitter";
     safeAddress: string;
+    protected atomicSubmitter = true;
 
     chainId: bigint | undefined;
 
@@ -25,5 +26,9 @@ export class SafeSubmitter extends Submitter {
             this.chainId,
             transactions
         );
+    }
+
+    public isAtomicSubmitter(): boolean {
+        return this.atomicSubmitter;
     }
 }
