@@ -1,7 +1,11 @@
 import {Transaction} from "ethers";
 
 export abstract class Submitter {
+    protected atomicSubmitter: boolean = false;
     abstract name: string;
     abstract submit(transactions: Transaction[]): Promise<void>;
-    abstract isAtomicSubmitter(): Promise<boolean> | boolean;
+
+    isAtomicSubmitter(): Promise<boolean> | boolean {
+        return this.atomicSubmitter;
+    }
 }

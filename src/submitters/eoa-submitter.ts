@@ -5,7 +5,6 @@ import {ethers} from "hardhat";
 
 export class EoaSubmitter extends Submitter {
     name = "EOA Submitter";
-    protected atomicSubmitter = false;
 
     async submit (transactions: Transaction[]) {
         const [deployer] = await ethers.getSigners();
@@ -28,9 +27,5 @@ export class EoaSubmitter extends Submitter {
         }
 
         console.log("All transactions sent and confirmed");
-    }
-
-    public isAtomicSubmitter(): boolean {
-        return this.atomicSubmitter;
     }
 }

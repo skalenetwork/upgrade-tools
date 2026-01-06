@@ -13,8 +13,6 @@ export class SafeToImaSubmitter extends SafeSubmitter {
     imaInstance: Instance;
 
     targetSchainHash: BytesLike;
-
-    protected atomicSubmitter = false;
     private messageProxyForMainnet: BaseContract | undefined;
 
     constructor (
@@ -28,6 +26,8 @@ export class SafeToImaSubmitter extends SafeSubmitter {
         );
         this.imaInstance = imaInstance;
         this.targetSchainHash = network.targetSchainHash;
+        // After super call
+        this.atomicSubmitter = false;
     }
 
     async submit (transactions: Transaction[]): Promise<void> {

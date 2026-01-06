@@ -15,6 +15,7 @@ export class SafeSubmitter extends Submitter {
         super();
         this.safeAddress = safeAddress;
         this.chainId = chainId;
+        this.atomicSubmitter = true;
     }
 
     async submit (transactions: Transaction[]): Promise<void> {
@@ -26,9 +27,5 @@ export class SafeSubmitter extends Submitter {
             this.chainId,
             transactions
         );
-    }
-
-    public isAtomicSubmitter(): boolean {
-        return this.atomicSubmitter;
     }
 }
