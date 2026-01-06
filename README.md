@@ -1,6 +1,8 @@
 # upgrade-tools
 
-Scripts to support upgrades of smart contracts. The package contains common used functions for writing hardhat scripts for smart contracts deployment and upgrade.
+Scripts to support upgrades and ownership of smart contracts. The package contains common used functions for writing hardhat scripts for smart contracts deployment and upgrade.
+
+It also includes helper classes to allow a swift full or partial transfer of ownership of a SKALE smart-contract project. More details in [ownership-transfer/README](./src/ownership-transfer/README.md).
 
 ## Upgrade scripts
 
