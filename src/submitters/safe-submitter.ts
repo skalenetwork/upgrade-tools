@@ -5,7 +5,9 @@ import {ethers} from "hardhat";
 
 
 export class SafeSubmitter extends Submitter {
+    name = "Safe Submitter";
     safeAddress: string;
+    protected atomicSubmitter = true;
 
     chainId: bigint | undefined;
 
@@ -13,6 +15,7 @@ export class SafeSubmitter extends Submitter {
         super();
         this.safeAddress = safeAddress;
         this.chainId = chainId;
+        this.atomicSubmitter = true;
     }
 
     async submit (transactions: Transaction[]): Promise<void> {

@@ -9,10 +9,10 @@ interface Network {
 }
 
 export class SafeToImaSubmitter extends SafeSubmitter {
+    name = "Safe to IMA Submitter";
     imaInstance: Instance;
 
     targetSchainHash: BytesLike;
-
     private messageProxyForMainnet: BaseContract | undefined;
 
     constructor (
@@ -26,13 +26,11 @@ export class SafeToImaSubmitter extends SafeSubmitter {
         );
         this.imaInstance = imaInstance;
         this.targetSchainHash = network.targetSchainHash;
+        // After super call
+        this.atomicSubmitter = false;
     }
 
     async submit (transactions: Transaction[]): Promise<void> {
-        const singleTransaction = 1;
-        if (transactions.length > singleTransaction) {
-            SafeToImaSubmitter.atomicityWarning();
-        }
         const messageProxyForMainnet = await this.getMessageProxyForMainnet();
         const messageProxyForMainnetAddress = await messageProxyForMainnet.getAddress();
         const transactionsToIma = transactions.map((transaction) => Transaction.from({
@@ -46,6 +44,7 @@ export class SafeToImaSubmitter extends SafeSubmitter {
             ),
             "to": messageProxyForMainnetAddress
         }));
+        // Although transactions are atomic on mainnet side, they are not atomic on schain side.
         await super.submit(transactionsToIma);
     }
 

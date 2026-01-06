@@ -5,6 +5,7 @@ import {ethers} from "hardhat";
 
 
 export class SafeImaMarionetteSubmitter extends SafeToImaSubmitter {
+    protected atomicSubmitter = false;
     marionette = new ethers.BaseContract(
         MARIONETTE_ADDRESS,
         new ethers.Interface([

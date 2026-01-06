@@ -15,7 +15,8 @@ import {skaleContracts} from "@skalenetwork/skale-contracts-ethers-v6";
 
 export class AutoSubmitter extends Submitter {
     name = "Auto Submitter";
-    upgrader: Upgrader
+    upgrader: Upgrader;
+    submitter: Submitter | undefined;
 
     constructor (
         upgrader: Upgrader
@@ -42,11 +43,22 @@ export class AutoSubmitter extends Submitter {
 
     async submit (transactions: Transaction[]) {
         console.log(`Submit via ${this.name}`);
-        const submitter = await this.getSubmitter();
-        await submitter.submit(transactions);
+        await this.loadSubmitter();
+        await this.submitter!.submit(transactions);
+    }
+
+    async isAtomicSubmitter(): Promise<boolean> {
+        await this.loadSubmitter();
+        return this.submitter!.isAtomicSubmitter();
     }
 
     // Private
+
+    private async loadSubmitter () {
+        if(!this.submitter) {
+            this.submitter = await this.getSubmitter();
+        }
+    }
 
     private async getSubmitter () {
         const owner = await this.upgrader.getOwner();
@@ -106,7 +118,6 @@ export class AutoSubmitter extends Submitter {
 
         // Assuming owner is a Gnosis Safe
         console.log("Using Gnosis Safe");
-
         return new SafeSubmitter(owner, mainnetChainId);
     }
 

@@ -100,6 +100,7 @@ export abstract class Upgrader {
         // Write version
         await this.setVersion(version);
         await this.writeTransactions(version);
+        await this.verifySubmitter();
         await this.submitter.submit(this.transactions);
         await this.verify();
         console.log("Done");
@@ -251,5 +252,26 @@ export abstract class Upgrader {
                 `Can't check currently deployed version of ${this.projectName}`;
             console.log(chalk.yellow(cannotCheckMessage));
         }
+    }
+
+    private async verifySubmitter () {
+        const maxTransactionsForAtomicUpgrade = 1;
+        if (
+            this.transactions.length <= maxTransactionsForAtomicUpgrade ||
+            await this.submitter.isAtomicSubmitter()
+        ) {
+            console.log(chalk.yellow("Atomic upgrade is performing."));
+            return;
+        }
+
+        if (process.env.ALLOW_NOT_ATOMIC_UPGRADE) {
+            console.log(chalk.yellow("Not atomic upgrade is performing."));
+            return;
+        }
+        console.log(chalk.red("The upgrade will consist" +
+            " of multiple transactions and will not be atomic"));
+        console.log(chalk.red("If not atomic upgrade is OK" +
+            " set ALLOW_NOT_ATOMIC_UPGRADE environment variable"));
+        process.exit(EXIT_CODES.NOT_ATOMIC_UPGRADE);
     }
 }
