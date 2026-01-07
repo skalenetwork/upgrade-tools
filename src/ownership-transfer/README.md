@@ -8,7 +8,7 @@ The classes and set of helper functions in this directory aim to assist in the s
 
 ## How it works
 
-### 1 Fill Metadata
+### 1. Fill Metadata
 
 First of, the tool ensures it has all required information to proceed (Contract Names and addresses).
 Then it passes on to the more complex gathering of information. For each contract, the tool must classify it given two different areas: **Upgradeability Pattern** and **Permission Model**.
@@ -26,33 +26,40 @@ Other details:
 * If a contract is **AccessManaged**, it is not **AccessManager** (and vice-versa). This is a design choice
 * If a contract is `Ownable2Step`, this tool does NOT confirm the change of ownership, and correctly classifies the contract as **Ownable**.
 
-### 2 Check current ownership status
+### 2. Check current ownership status
 
 In this step, the script will scan each contract, and it's `ProxyAdmin` contracts if any, and decide whether or not there are any permissions given to **oldOwner** that the **newOwner** does not yet have.
 
-If there is, you will see an output with lines like the following:
+If there is, you will see an output with lines like the following (where you should confirm your findings):
+<img width="940" height="607" alt="image" src="https://github.com/user-attachments/assets/00cc01e2-ffbe-44bf-872e-edc19f446282" />
 
 Note that if there is at least 1 transaction in this step, even thought the script might detect transactions for the next step, it will only execute the transactions from this step first and then re-scan the contracts for the next phase.
 
 If no contracts have transactions for this step, the script skips to the next immediately (no need to re-scan).
 
 At the end of this step, the script will collect all transactions for this step and confirm with the user to send them to the blockchain:
+<img width="1313" height="367" alt="image" src="https://github.com/user-attachments/assets/f08566ab-48af-4717-913f-621cac7af6a8" />
 
-### 3 Check if there are roles to revoke
+### 3. Check if there are roles to revoke
 
 The script re-scans the contracts IF **revokeRoles** option is enabled.
 This step looks for any access that the **oldOwner** still has. It marks all roles passed as input to revoke from the **oldOwner**.
 
 The only exceptions are `DEFAULT_ADMIN_ROLE` and `ADMIN_ROLE` for **RoleBased** and **AccessManager** respectively. For these two roles, it only revokes the role from the **oldOwner** IF both have the role - this is an extra layer of protection to avoid cases in which no root role is lost completely which can be fatal in non-upgradeable contracts.
 
-At the end of this step, the script will collect all transactions for this step and confirm with the user to send them to the blockchain:
+IF there are roles to revoke, you expect an output like the following, which you should confirm or not:
+<img width="887" height="599" alt="image" src="https://github.com/user-attachments/assets/15a6dc0e-17fb-4c22-85ac-5231bfbe37e7" />
 
-### 4 End
+If there are no roles to revoke, you expect an output as in Step4 "ALL DONE".
+At the end of this step, the script will collect all transactions for this step and confirm with the user to send them to the blockchain (Simmilar to step 2).
+
+### 4. End
 
 If all steps are completed, the following output is expected:
+<img width="895" height="567" alt="image" src="https://github.com/user-attachments/assets/4915b528-266b-4d98-8c12-de0cbbd25f4a" />
 
 
-If **revokeRoles** step is disabled, the final output will be the one at the end of Step 3 with no further actions.
+If **revokeRoles** step is disabled, the final output will be the one at the end of Step 3 - You may see lines with "REVOKE ROLES REQUIRED".
 
 ## How to write a transfer ownership script
 
