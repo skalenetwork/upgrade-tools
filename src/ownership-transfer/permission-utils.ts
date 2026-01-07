@@ -16,7 +16,6 @@ export enum PermissionModel {
     ACCESS_MANAGER = "ACCESS_MANAGER"
 }
 const ZERO = 0;
-const MIN_ROLE_HOLDERS = 2n;
 
 const verifyOwnableInterface = async (
     contract: Contract,
@@ -161,31 +160,34 @@ export const grantRole = async (
 };
 
 export const renounceRole = async (
-    contractAddress: string,
-    role: string,
-    oldAccount: AddressLike
+    input: {
+        contractAddress: string,
+        role: string,
+        newAccount: AddressLike,
+        oldAccount: AddressLike
+    }
 ): Promise<Transaction | boolean> => {
     const contract = new Contract(
-        contractAddress,
+        input.contractAddress,
         ACCESS_CONTROL_ABI,
         ethers.provider
     );
     if (
-        !await contract.hasRole(role, oldAccount)
+        !await contract.hasRole(input.role, input.oldAccount)
     ) {
         return true;
     }
     // Prevent revoking last role holder of default admin role
-    if (role === ethers.ZeroHash && (await contract.getRoleMemberCount(role)) < MIN_ROLE_HOLDERS) {
+    if (input.role === ethers.ZeroHash && !(await contract.hasRole(input.role, input.newAccount))) {
         return false;
     }
     const data = contract.interface.encodeFunctionData(
         "renounceRole",
-        [role, oldAccount]
+        [input.role, input.oldAccount]
     );
 
     const transaction = new Transaction();
-    transaction.to = contractAddress;
+    transaction.to = input.contractAddress;
     transaction.data = data;
     return transaction;
 };

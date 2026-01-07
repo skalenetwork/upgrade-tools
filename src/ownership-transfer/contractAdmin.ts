@@ -274,7 +274,12 @@ export class ContractAdmin {
         for (const role of bytes32RolesToCheck) {
             // Required to process sequentially as it access shared memory state and due to RPC rate limits
             // eslint-disable-next-line no-await-in-loop
-            const tx = await renounceRole(this.address, role.identifier, this.oldOwner);
+            const tx = await renounceRole({
+                contractAddress: this.address,
+                newAccount: this.newOwner,
+                oldAccount: this.oldOwner,
+                role: role.identifier,
+            });
             this.handleRenounceOwnershipTransaction(tx, role.name);
         }
     }
