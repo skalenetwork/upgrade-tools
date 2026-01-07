@@ -51,7 +51,7 @@ IF there are roles to revoke, you expect an output like the following, which you
 <img width="887" height="599" alt="image" src="https://github.com/user-attachments/assets/15a6dc0e-17fb-4c22-85ac-5231bfbe37e7" />
 
 If there are no roles to revoke, you expect an output as in Step4 "ALL DONE".
-At the end of this step, the script will collect all transactions for this step and confirm with the user to send them to the blockchain (Simmilar to step 2).
+At the end of this step, the script will collect all transactions for this step and confirm with the user to send them to the blockchain (Similar to step 2).
 
 ### 4. End
 
