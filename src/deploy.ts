@@ -129,6 +129,19 @@ const getLibraryArtifacts = async (libraries: Map<string, string>) => {
     return libraryArtifacts;
 };
 
+export const deployLibrariesByChainId = async (
+    libraryNames: string[],
+    chainId: bigint,
+    nonceProvider?: NonceProvider
+) => {
+    const hardhatChainId = 31337n;
+    const metamaskLocalChainId = 1337n;
+    if (chainId === hardhatChainId || chainId === metamaskLocalChainId) {
+        return await deployLibrariesSequential(libraryNames, nonceProvider);
+    }
+    return await deployLibraries(libraryNames, nonceProvider);
+};
+
 export const getContractFactory = async (contract: string) => {
     const {linkReferences} = await artifacts.readArtifact(contract);
     if (!Object.keys(linkReferences).length) {
@@ -138,18 +151,10 @@ export const getContractFactory = async (contract: string) => {
     const libraryNames = getLibrariesNames(linkReferences);
     const {chainId} = await ethers.provider.getNetwork();
 
-    const libraries = await (async () => {
-        /*
-         * In testing environments, deployement should be sequential
-         * We enforce sequential deployment for these networks even if automining is off
-         */
-        const hardhatChainId = 31337n;
-        const metamaskLocalChainId = 1337n;
-        if (chainId === hardhatChainId || chainId === metamaskLocalChainId) {
-            return await deployLibrariesSequential(libraryNames);
-        }
-        return await deployLibraries(libraryNames);
-    })();
+    const libraries = await deployLibrariesByChainId(
+        libraryNames,
+        chainId
+    );
 
     const libraryArtifacts = await getLibraryArtifacts(libraries);
 
