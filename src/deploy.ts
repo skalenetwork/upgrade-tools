@@ -139,8 +139,13 @@ export const getContractFactory = async (contract: string) => {
     const {chainId} = await ethers.provider.getNetwork();
 
     const libraries = await (async () => {
+        /*
+         * In testing environments, deployement should be sequential
+         * We enforce sequential deployment for these networks even if automining is off
+         */
         const hardhatChainId = 31337n;
-        if (chainId === hardhatChainId) {
+        const metamaskLocalChainId = 1337n;
+        if (chainId === hardhatChainId || chainId === metamaskLocalChainId) {
             return await deployLibrariesSequential(libraryNames);
         }
         return await deployLibraries(libraryNames);
