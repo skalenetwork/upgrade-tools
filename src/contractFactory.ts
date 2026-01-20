@@ -128,7 +128,6 @@ export const getContractFactoryAndUpdateManifest = async (
     );
     const libraries = await deployLibrariesByChainId(
         librariesToUpgrade,
-        await ethers.provider.getNetwork().then(net => BigInt(net.chainId)),
         nonceProvider
     );
     await updateManifest(
