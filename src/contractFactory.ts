@@ -1,6 +1,6 @@
 import {artifacts, ethers} from "hardhat";
 import {
-    deployLibraries,
+    deployLibrariesByChainId,
     getManifestFile
 } from "./deploy";
 import {LinkReferences} from "hardhat/types";
@@ -126,7 +126,7 @@ export const getContractFactoryAndUpdateManifest = async (
         manifest,
         linkReferences
     );
-    const libraries = await deployLibraries(
+    const libraries = await deployLibrariesByChainId(
         librariesToUpgrade,
         nonceProvider
     );
