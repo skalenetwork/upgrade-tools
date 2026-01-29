@@ -16,7 +16,6 @@ import {promises as fs} from "fs";
 import {getVersion} from "./version";
 import {verify} from "./verification";
 
-
 const withoutNull = <T>(array: Array<T | null>) => array.
     filter((element) => element !== null) as Array<T>;
 
@@ -26,6 +25,7 @@ const maxSimultaneousDeployments = 1;
 export abstract class Upgrader {
     private targetVersion: string;
     private contractNamesToUpgrade: string[];
+    private addressForContractsToUpgrade: {[key: string]: string[]};
     private projectName: string;
     private submitter: Submitter;
     private deploySemaphore: Semaphore;
@@ -45,6 +45,7 @@ export abstract class Upgrader {
         }
         this.instance = project.instance;
         this.contractNamesToUpgrade = project.contractNamesToUpgrade;
+        this.addressForContractsToUpgrade = project.addressForContractsToUpgrade ?? {};
         this.projectName = project.name;
         this.transactions = [];
         this.submitter = submitter ?? new AutoSubmitter(this);
@@ -63,8 +64,7 @@ export abstract class Upgrader {
 
     initialize?: () => Promise<void>;
 
-    protected async createProxyUpgrader(contractName: string) {
-        const proxyAddress = await this.instance.getContractAddress(contractName);
+    protected async createProxyUpgrader(contractName: string, proxyAddress: string) {
         const proxyAdmin = await AbstractTransparentProxyUpgrader.getProxyAdmin(proxyAddress);
         const proxyAdminVersion = await AbstractTransparentProxyUpgrader.getProxyAdminVersion(proxyAdmin);
         const defaultProxyAdminVersion = "5.0.0";
@@ -137,12 +137,21 @@ export abstract class Upgrader {
     private async createProxyUpgraders() {
         const [deployer] = await ethers.getSigners();
         this.nonceProvider ??= await NonceProvider.createForWallet(deployer);
-        this.proxyUpgraders = await Promise.all(
-            this.contractNamesToUpgrade.map(
-                this.createProxyUpgrader,
-                this
-            )
+        this.verifyInputParams();
+        await Promise.all(
+            this.contractNamesToUpgrade.map(async (contractName) => {
+                if (!this.addressForContractsToUpgrade[contractName]) {
+                    this.addressForContractsToUpgrade[contractName] = [await this.instance.getContractAddress(contractName)];
+                }
+            })
         );
+        const upgraders: Promise<ProxyUpgrader>[] = [];
+        Object.keys(this.addressForContractsToUpgrade).forEach((contractName) => {
+            this.addressForContractsToUpgrade[contractName].forEach((address) => {
+                upgraders.push(this.createProxyUpgrader(contractName, address));
+            });
+        });
+        this.proxyUpgraders = await Promise.all(upgraders);
     }
 
     private async callInitialize () {
@@ -273,5 +282,15 @@ export abstract class Upgrader {
         console.log(chalk.red("If not atomic upgrade is OK" +
             " set ALLOW_NOT_ATOMIC_UPGRADE environment variable"));
         process.exit(EXIT_CODES.NOT_ATOMIC_UPGRADE);
+    }
+
+    private verifyInputParams() {
+        for (const item of Object.keys(this.addressForContractsToUpgrade)) {
+            if (!this.contractNamesToUpgrade.includes(item)) {
+                throw new Error(
+                    `Input params provided for unknown contract: ${item}`
+                );
+            }
+        }
     }
 }

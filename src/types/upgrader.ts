@@ -10,5 +10,6 @@ export interface Project {
     name: string;
     instance: Instance;
     version: string;
-    contractNamesToUpgrade: string[]
+    contractNamesToUpgrade: string[],
+    addressForContractsToUpgrade?: {[key: string]: string[]};
 }
