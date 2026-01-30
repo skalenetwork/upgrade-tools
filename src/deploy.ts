@@ -1,4 +1,4 @@
-import {Manifest, hashBytecode} from "@openzeppelin/upgrades-core";
+import {Manifest, hashBytecode, isDevelopmentNetwork} from "@openzeppelin/upgrades-core";
 import {artifacts, ethers} from "hardhat";
 import {NonceProvider} from "./nonceProvider";
 import {SkaleManifestData} from "./types/SkaleManifestData";
@@ -129,6 +129,23 @@ const getLibraryArtifacts = async (libraries: Map<string, string>) => {
     return libraryArtifacts;
 };
 
+export const deployLibrariesByChainId = async (
+    libraryNames: string[],
+    nonceProvider?: NonceProvider
+) => {
+    let isDevNetwork = false;
+    try {
+        isDevNetwork = await isDevelopmentNetwork(ethers.provider);
+    }
+    catch {
+        console.error("Could not get web3_clientVersion. Assuming production network.");
+    }
+    if (isDevNetwork) {
+        return await deployLibrariesSequential(libraryNames, nonceProvider);
+    }
+    return await deployLibraries(libraryNames, nonceProvider);
+};
+
 export const getContractFactory = async (contract: string) => {
     const {linkReferences} = await artifacts.readArtifact(contract);
     if (!Object.keys(linkReferences).length) {
@@ -136,15 +153,10 @@ export const getContractFactory = async (contract: string) => {
     }
 
     const libraryNames = getLibrariesNames(linkReferences);
-    const {chainId} = await ethers.provider.getNetwork();
 
-    const libraries = await (async () => {
-        const hardhatChainId = 31337n;
-        if (chainId === hardhatChainId) {
-            return await deployLibrariesSequential(libraryNames);
-        }
-        return await deployLibraries(libraryNames);
-    })();
+    const libraries = await deployLibrariesByChainId(
+        libraryNames
+    );
 
     const libraryArtifacts = await getLibraryArtifacts(libraries);
 
