@@ -1,5 +1,6 @@
 import {AddressLike, ContractFactory, Transaction} from "ethers";
 import {ethers, upgrades} from "hardhat";
+import {DeployImplementationResponse} from "@openzeppelin/hardhat-upgrades/dist/deploy-implementation";
 import {NonceProvider} from "./nonceProvider";
 import chalk from "chalk";
 import {getContractFactoryAndUpdateManifest} from "./contractFactory";
@@ -80,10 +81,11 @@ export abstract class ProxyUpgrader {
 
         const nonce = this.nonceProvider?.reserveNonce();
 
-        const newImplementationAddress = await upgrades.prepareUpgrade(
+        const response = await upgrades.prepareUpgrade(
             await ethers.resolveAddress(this.proxyAddress),
             contractFactory,
             {
+                "getTxResponse": true,
                 "timeout": deployTimeout,
                 "txOverrides": {
                     nonce
@@ -91,15 +93,32 @@ export abstract class ProxyUpgrader {
                 "unsafeAllowLinkedLibraries": true,
                 "unsafeAllowRenames": true
             }
-        ) as AddressLike;
+        );
+        // Resolves the deployment, getting the address and releasing nonce if needed
+        const newImplementationAddress = await this.resolveDeployment(response, nonce);
+
         if (newImplementationAddress === currentImplementationAddress) {
             console.log(chalk.gray(`Contract ${this.contractName} is up to date`));
-            // Release only if no upgrade is needed
-            if (nonce) {
-                this.nonceProvider?.releaseNonce(nonce);
-            }
         } else {
             this.newImplementationAddress = newImplementationAddress;
         }
+    }
+
+    private async resolveDeployment(response: DeployImplementationResponse, nonce?: number): Promise<string> {
+        // If return is string, means no deployment transaction was required
+        if (typeof response === "string") {
+            if (nonce) {
+                this.nonceProvider?.releaseNonce(nonce);
+            }
+            return response;
+        }
+        const receipt = await response.wait();
+        if(!receipt) {
+            throw new Error(`Failed to get receipt for deployment transaction`);
+        }
+        if (!receipt.contractAddress) {
+            throw new Error(`Failed to get contract address from deployment receipt`);
+        }
+        return receipt.contractAddress;
     }
 }
