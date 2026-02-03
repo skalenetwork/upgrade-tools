@@ -1,4 +1,4 @@
-import {AddressLike, ContractFactory, Transaction} from "ethers";
+import {AddressLike, ContractFactory, Transaction, isAddress} from "ethers";
 import {ethers, upgrades} from "hardhat";
 import {DeployImplementationResponse} from "@openzeppelin/hardhat-upgrades/dist/deploy-implementation";
 import {NonceProvider} from "./nonceProvider";
@@ -105,8 +105,8 @@ export abstract class ProxyUpgrader {
     }
 
     private async resolveDeployment(response: DeployImplementationResponse, nonce?: number): Promise<string> {
-        // If return is string, means no deployment transaction was required
-        if (typeof response === "string") {
+        // If return is valid address, means no deployment transaction was required
+        if (isAddress(response)) {
             if (nonce) {
                 this.nonceProvider?.releaseNonce(nonce);
             }
