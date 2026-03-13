@@ -2118,25 +2118,25 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/skale-contracts-ethers-v6@npm:^2.0.0-develop.6":
-  version: 2.0.0-develop.6
-  resolution: "@skalenetwork/skale-contracts-ethers-v6@npm:2.0.0-develop.6"
+"@skalenetwork/skale-contracts-ethers-v6@npm:^2.0.0-develop.7":
+  version: 2.0.0-merge.0
+  resolution: "@skalenetwork/skale-contracts-ethers-v6@npm:2.0.0-merge.0"
   dependencies:
-    "@skalenetwork/skale-contracts": 2.0.0-develop.6
+    "@skalenetwork/skale-contracts": 2.0.0-merge.0
     ethers: ^6.13.5
-  checksum: ac8c2e2e40150d1b276c867a46cb580ba10947df59686950b4cae60a4740a1364bd62c82b2512fc1198bb4708377f791b985858eaa6686fa28c5518648ec5c45
+  checksum: a7e3bd6d948756f8f19d32d85047fa2ac95b85cbe6fb42706d213b5b9d7f06be27cdcf7129da59d15241a9fd4ccf8fd8f5f2b7634d2f0f06bcac3a78f07f96c7
   languageName: node
   linkType: hard
 
-"@skalenetwork/skale-contracts@npm:2.0.0-develop.6":
-  version: 2.0.0-develop.6
-  resolution: "@skalenetwork/skale-contracts@npm:2.0.0-develop.6"
+"@skalenetwork/skale-contracts@npm:2.0.0-merge.0":
+  version: 2.0.0-merge.0
+  resolution: "@skalenetwork/skale-contracts@npm:2.0.0-merge.0"
   dependencies:
     "@renovatebot/pep440": ^4.1.0
     axios: ^1.4.0
     dotenv: ^16.5.0
     semver: ^7.6.0
-  checksum: 9b75c5661ce76c5840799d48006c56311b76a7e6236ee2577ad5631ec87496398d5fc3edeb396be454e5acc46b1af13be1647cfa92ce1a4ee28400e9182e9547
+  checksum: df72161f9044b11e8b016f67b60b668869c8f2ad5c3bd6fb381f5c94e6e8bb24dc612113da6c196124fbd29522310581b76f652c042cd59b263d03e6143e5523
   languageName: node
   linkType: hard
 
@@ -2152,7 +2152,7 @@ __metadata:
     "@safe-global/api-kit": ^4.0.1
     "@safe-global/protocol-kit": ^6.1.2
     "@safe-global/safe-core-sdk-types": ^5.1.0
-    "@skalenetwork/skale-contracts-ethers-v6": ^2.0.0-develop.6
+    "@skalenetwork/skale-contracts-ethers-v6": ^2.0.0-develop.7
     "@tsconfig/recommended": ^1.0.2
     "@typechain/ethers-v6": ^0.5.1
     "@typechain/hardhat": ^9.1.0
