@@ -24,7 +24,7 @@ const withoutNull = <T>(array: Array<T | null>) => array.
 const maxSimultaneousDeployments = 1;
 
 export abstract class Upgrader {
-    private targetVersion: string;
+    private targetVersions: string[];
     private contractNamesToUpgrade: string[];
     private projectName: string;
     private submitter: Submitter;
@@ -39,10 +39,20 @@ export abstract class Upgrader {
         project: Project,
         submitter?: Submitter
     ) {
-        this.targetVersion = project.version;
-        if (!project.version.includes("-")) {
-            this.targetVersion = `${project.version}-stable.0`;
+        if (typeof(project.oldVersion) === 'string') {
+            this.targetVersions = [project.oldVersion]
         }
+        else {
+            this.targetVersions = project.oldVersion;
+        }
+
+        this.targetVersions.map((version) => {
+            if (!version.includes("-")) {
+                return `${version}-stable.0`;
+            }
+            return version;
+        })
+
         this.instance = project.instance;
         this.contractNamesToUpgrade = project.contractNamesToUpgrade;
         this.projectName = project.name;
@@ -240,7 +250,7 @@ export abstract class Upgrader {
     private async checkVersion (version: string) {
         const deployedVersion = await this.getNormalizedDeployedVersion();
         if (deployedVersion) {
-            if (deployedVersion !== this.targetVersion) {
+            if (!this.targetVersions.includes(deployedVersion)) {
                 const cannotUpgradeMessage =
                     `This script can't upgrade version ${deployedVersion}` +
                     ` to ${version}`;
