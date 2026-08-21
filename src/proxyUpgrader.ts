@@ -105,7 +105,7 @@ export abstract class ProxyUpgrader {
     }
 
     private async resolveDeployment(response: DeployImplementationResponse, nonce?: number): Promise<string> {
-        if (nonce && (isAddress(response) || response.nonce < nonce)) {
+        if (typeof nonce !== "undefined" && (isAddress(response) || response.nonce < nonce)) {
             this.nonceProvider?.releaseNonce(nonce);
         }
 
