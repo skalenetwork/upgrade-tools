@@ -19,7 +19,7 @@ export class NonceProvider {
             this.currentNonce += 1;
             return nonce;
         }
-        return this.releasedNonces.shift();
+        return this.releasedNonces.shift()!;
     }
 
     releaseNonce (nonce: number) {

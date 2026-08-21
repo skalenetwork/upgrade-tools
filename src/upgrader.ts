@@ -94,8 +94,8 @@ export abstract class Upgrader {
 
     async upgrade () {
         const version = await this.prepareVersion();
-        await this.callDeployNewContracts();
         await this.upgradeOldContracts();
+        await this.callDeployNewContracts();
         await this.callInitialize();
         // Write version
         await this.setVersion(version);

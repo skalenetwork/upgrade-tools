@@ -105,13 +105,14 @@ export abstract class ProxyUpgrader {
     }
 
     private async resolveDeployment(response: DeployImplementationResponse, nonce?: number): Promise<string> {
-        // If return is valid address, means no deployment transaction was required
+        if (typeof nonce !== "undefined" && (isAddress(response) || response.nonce < nonce)) {
+            this.nonceProvider?.releaseNonce(nonce);
+        }
+
         if (isAddress(response)) {
-            if (nonce) {
-                this.nonceProvider?.releaseNonce(nonce);
-            }
             return response;
         }
+
         const receipt = await response.wait();
         if(!receipt) {
             throw new Error(`Failed to get receipt for deployment transaction`);
