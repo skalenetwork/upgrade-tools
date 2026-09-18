@@ -9,6 +9,6 @@ export interface ContractToUpgrade {
 export interface Project {
     name: string;
     instance: Instance;
-    version: string;
+    oldVersion: string | string [];
     contractNamesToUpgrade: string[]
 }
