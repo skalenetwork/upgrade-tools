@@ -137,7 +137,7 @@ export class InstanceAdmin {
         for (const [index, txData] of txsToSubmitFiltered.entries()) {
             console.log(chalk.grey(`    -> Transaction ${index}: ${txData.description || "No description"}`));
         }
-        await this.confirmAndSubmitTransactions(txsToSubmit);
+        await this.confirmAndSubmitTransactions(txsToSubmitFiltered);
     }
 
     private ownershipGrantingRequired(): boolean {
