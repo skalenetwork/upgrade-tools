@@ -20,8 +20,7 @@
     "no-hooks": "git config core.hooksPath .git/hooks",
     "fullCheck": "yarn compile && yarn eslint && yarn cspell",
     "eslint": "npx eslint .",
-    "cspell": "npx cspell \"**/*\"",
-    "test": "npx hardhat test"
+    "cspell": "npx cspell \"**/*\""
   },
   "devDependencies": {
     "@openzeppelin/contracts-upgradeable": "^4.4.2",
