@@ -32,3 +32,6 @@ jobs:
 
     - name: lint
       run: yarn fullCheck
+
+    - name: test
+      run: yarn test
